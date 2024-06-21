@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import { PUSH_EV_NAME, globalStore } from './index';
 
-export const useStoreVal = (stroreName: string) => {
-  const [state, setState] = useState(globalStore[stroreName]);
+export const useStoreVal = <T,>(stroreName: string) => {
+  const [state, setState] = useState<T>(globalStore[stroreName]);
 
   useEffect(() => {
     const onTargetEvent = (ev: Event) => {

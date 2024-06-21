@@ -57,7 +57,7 @@ export const createState = <T extends Record<string, IStore>>(
           val: T[keyof T] | ((prev: T[keyof T]) => Partial<T[keyof T]>)
         ) => _setStoreValue(key, val),
         [`use${key.charAt(0).toUpperCase() + key.slice(1)}`]: () =>
-          useStoreVal(key),
+          useStoreVal<T[keyof T]>(key),
       }),
       {} as {
         [P in keyof T as `set${Capitalize<P & string>}`]: (
