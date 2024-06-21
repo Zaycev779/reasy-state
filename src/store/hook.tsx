@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { PUSH_EV_NAME, globalStore } from '.';
+import { PUSH_EV_NAME, globalStore } from './index';
 
 export const useStoreVal = (stroreName: string) => {
   const [state, setState] = useState(globalStore[stroreName]);

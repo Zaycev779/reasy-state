@@ -1,7 +1,7 @@
 'use client';
 
 import React, { ReactNode, useEffect } from 'react';
-import { useStoreVal } from './store/hook';
+import { useStoreVal } from './hook';
 
 export const SET_EV_NAME = '__SET_STORE_EVENT';
 export const PUSH_EV_NAME = '__PUSH_STORE_EVENT';
@@ -10,11 +10,11 @@ export const globalStore: Record<string, any> = {};
 type IRecord = string | number | boolean | null | undefined;
 type IStore = IRecord | Record<string, IRecord | Record<string, IRecord>>;
 
-interface IProps {
+export interface IStateRootProps {
   children: ReactNode;
 }
 
-export const StateRoot = ({ children }: IProps) => {
+export const StateRoot = ({ children }: IStateRootProps) => {
   const onTargetEvent = (ev: Event) => {
     const {
       detail: { stroreName, params },
@@ -94,7 +94,7 @@ export const _pushStoreValue = <T,>(stroreName: string, params: T) => {
   document.dispatchEvent(ev);
 };
 
-module.exports = {
-  StateRoot,
-  createState,
-};
+// module.exports = {
+//   StateRoot,
+//   createState,
+// };

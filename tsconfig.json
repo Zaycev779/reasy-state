@@ -1,0 +1,23 @@
+{
+    "compilerOptions": {
+        "outDir": "dist",
+        "removeComments": true,
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "allowSyntheticDefaultImports": true,
+        "target": "es5",
+        "module": "esnext",
+        "sourceMap": true,
+        "baseUrl": "./",
+        "incremental": true,
+        "strictNullChecks": false,
+        "noImplicitAny": false,
+        "strictBindCallApply": false,
+        "jsx": "react-jsx",
+        "declaration": true,
+        "declarationDir": "types",
+        "emitDeclarationOnly": true
+    },
+    // "include": ["."],
+    // "exclude": ["dist", "build", "node_modules"]
+}

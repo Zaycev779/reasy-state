@@ -1,2 +1,5 @@
 .babelrc
 src/
+.rollup.cache
+rollup.config.js
+tsconfig.json
