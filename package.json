@@ -1,20 +1,28 @@
 {
   "name": "reasy-state",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "reasy-state - A state management library for React",
-  "main": "index.js",
-  "scripts": {
-  },
-  "keywords": [],
+  "main": "dist/index.js",
+  "scripts": {},
+  "keywords": [
+    "react",
+    "state",
+    "store",
+    "global",
+    "state manager"
+  ],
   "repository": "https://github.com/Zaycev779/react-easy-state.git",
   "author": "Zaytsev779",
   "license": "ISC",
-  "dependencies": {
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+  "peerDependencies": {
+    "react": "^16.0.0 || ^17.0.0 || ^18.0.0",
+    "react-dom": "^16.0.0 || ^17.0.0 || ^18.0.0"
   },
   "devDependencies": {
-    "@types/node": "^20.14.7",
+    "@babel/cli": "^7.24.7",
+    "@babel/core": "^7.24.7",
+    "@babel/plugin-transform-modules-commonjs": "^7.24.7",
+    "@babel/preset-typescript": "^7.24.7",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0"
   }

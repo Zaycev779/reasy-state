@@ -1,7 +1,7 @@
 'use client';
 
 import React, { ReactNode, useEffect } from 'react';
-import { useStoreVal } from './hook';
+import { useStoreVal } from './store/hook';
 
 export const SET_EV_NAME = '__SET_STORE_EVENT';
 export const PUSH_EV_NAME = '__PUSH_STORE_EVENT';
