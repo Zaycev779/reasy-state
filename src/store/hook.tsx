@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useState } from 'react';
 import { PUSH_EV_NAME } from './index';
 import { getGlobalData } from './global';

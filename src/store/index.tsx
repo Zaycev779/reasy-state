@@ -1,6 +1,6 @@
 import { getGlobalData, globalStore } from './global';
 import { useStoreVal } from './hook';
-import { IGenerate, IStore } from './typing';
+import { Entries, IGenerate, IStore, ValueOf } from './typing';
 import { getUpdatedParams } from './utils';
 
 export const SET_EV_NAME = '__SET_STORE_EVENT';

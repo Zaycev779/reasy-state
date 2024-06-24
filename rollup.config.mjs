@@ -24,4 +24,4 @@ export default [{
     output: [{ file: 'dist/index.d.ts', format: "esm" }],
     external: [/\.css$/],
     plugins: [dts()],
-},];
+}];

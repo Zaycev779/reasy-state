@@ -16,7 +16,7 @@
         "jsx": "react-jsx",
         "declaration": true,
         "declarationDir": "types",
-        "emitDeclarationOnly": true
+        "emitDeclarationOnly": true,
     },
-     "include": ["**/*.ts", "**/*.tsx", "**/*.d.ts", "typing.d.ts"],
+    "include": ["**/*.ts", "**/*.tsx", "**/*.d.ts", "src/typing.d.ts"],
 }
