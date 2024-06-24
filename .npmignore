@@ -3,4 +3,3 @@ src/
 .rollup.cache
 rollup.config.mjs
 tsconfig.json
-package.json
