@@ -1,47 +1,39 @@
-'use client';
-
-import React, { ReactNode, useEffect } from 'react';
+import { getGlobalData, globalStore } from './global';
 import { useStoreVal } from './hook';
+import { getUpdatedParams } from './utils';
 
 export const SET_EV_NAME = '__SET_STORE_EVENT';
 export const PUSH_EV_NAME = '__PUSH_STORE_EVENT';
 
-export const globalStore: Record<string, any> = {};
-type IRecord = string | number | boolean | null | undefined;
-type IStore = IRecord | Record<string, IRecord | Record<string, IRecord>>;
+const generateFunc = <T,>(values: T, prevKey: string[] = []) => {
+  const entries = Object.entries(values as IStore) as Entries<T>;
+  const result: IGenerate<T extends IStore ? IStore : never> = entries.reduce(
+    (result, [key, val]) => {
+      if (!key) return result;
+      const keyName = key.charAt(0).toUpperCase() + key.slice(1);
+      const prevKeyName = prevKey
+        .map((k) => k.charAt(0).toUpperCase() + k.slice(1))
+        .join('');
+      const path = [...prevKey, key];
+      return {
+        ...result,
+        [`set${prevKeyName}${keyName}`]: (
+          val: ValueOf<T> | ((prev: ValueOf<T>) => Partial<ValueOf<T>>)
+        ) => _setStoreValue(path, val),
+        [`use${prevKeyName}${keyName}`]: () => useStoreVal(path),
+        ...(!!val &&
+          typeof val === 'object' &&
+          val instanceof Object &&
+          generateFunc<ValueOf<T> & object>(val, path)),
+      };
+    },
+    {} as IGenerate<T extends IStore ? IStore : never>
+  );
 
-export interface IStateRootProps {
-  children: ReactNode;
-}
-
-export const StateRoot = ({ children }: IStateRootProps) => {
-  const onTargetEvent = (ev: Event) => {
-    const {
-      detail: { stroreName, params },
-    } = ev as CustomEvent<{
-      stroreName: string;
-      params: Partial<IStore> | ((prev: IStore) => Partial<IStore>);
-    }>;
-    if (typeof params === 'function') {
-      globalStore[stroreName] = params(globalStore[stroreName]);
-    } else {
-      globalStore[stroreName] = params;
-    }
-    _pushStoreValue(stroreName, globalStore[stroreName]);
-  };
-  useEffect(() => {
-    document.addEventListener(SET_EV_NAME, onTargetEvent);
-    return () => {
-      document.removeEventListener(SET_EV_NAME, onTargetEvent);
-    };
-  }, []);
-
-  return <>{children}</>;
+  return result;
 };
 
-export const createState = <T extends Record<string, IStore>>(
-  initialValues: T
-) => {
+export const createState = <T extends IStore>(initialValues: T) => {
   const stores = Object.keys(initialValues);
 
   stores.forEach((store) => {
@@ -49,52 +41,43 @@ export const createState = <T extends Record<string, IStore>>(
       globalStore[store] = initialValues?.[store];
     }
   });
-  const functions = () => {
-    return stores.reduce(
-      (result, key) => ({
-        ...result,
-        [`set${key.charAt(0).toUpperCase() + key.slice(1)}`]: (
-          val: T[keyof T] | ((prev: T[keyof T]) => Partial<T[keyof T]>)
-        ) => _setStoreValue(key, val),
-        [`use${key.charAt(0).toUpperCase() + key.slice(1)}`]: () =>
-          useStoreVal<T[keyof T]>(key),
-      }),
-      {} as {
-        [P in keyof T as `set${Capitalize<P & string>}`]: (
-          value: T[P] | ((prev: T[P]) => T[P])
-        ) => void;
-      } & {
-        [P in keyof T as `use${Capitalize<P & string>}`]: () => T[keyof T];
-      }
-    );
-  };
 
-  return functions();
+  return generateFunc(initialValues) as IGenerate<T>;
 };
 
 export const _setStoreValue = <T,>(
-  stroreName: string,
+  path: string[],
   params: Partial<T> | ((prev: T) => Partial<T>)
 ) => {
   const ev = new CustomEvent(SET_EV_NAME, {
     detail: {
-      stroreName,
+      path,
       params,
     },
   });
   document.dispatchEvent(ev);
 };
 
-export const _pushStoreValue = <T,>(stroreName: string, params: T) => {
-  const ev = new CustomEvent(PUSH_EV_NAME + stroreName, {
-    detail: {
-      params,
-    },
-  });
-  document.dispatchEvent(ev);
-};
+export const _pushStoreValue = <T extends IStore>(
+  paths: string[],
+  updatedParams: T,
+  prevValues: T
+) => {
+  const updatedPath = [
+    ...paths,
+    ...getUpdatedParams(updatedParams, prevValues),
+  ];
 
-// module.exports = {
-//   StateRoot,
-//   createState,
-// };
+  updatedPath.reduce((prev, path) => {
+    const pathVal = [...prev, path];
+    const params = getGlobalData(pathVal);
+    const ev = new CustomEvent(PUSH_EV_NAME + pathVal.join(), {
+      detail: {
+        params,
+      },
+    });
+    document.dispatchEvent(ev);
+
+    return pathVal;
+  }, [] as string[]);
+};

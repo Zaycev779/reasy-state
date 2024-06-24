@@ -1,25 +1,26 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { PUSH_EV_NAME, globalStore } from './index';
+import { PUSH_EV_NAME } from './index';
+import { getGlobalData } from './global';
 
-export const useStoreVal = <T,>(stroreName: string) => {
-  const [state, setState] = useState<T>(globalStore[stroreName]);
+export const useStoreVal = (path: string[]) => {
+  const [state, setState] = useState(() => getGlobalData(path));
 
   useEffect(() => {
     const onTargetEvent = (ev: Event) => {
       const {
         detail: { params },
       } = ev as CustomEvent<{
-        params: any;
+        params: IStore;
       }>;
       setState(params);
     };
 
-    document.addEventListener(PUSH_EV_NAME + stroreName, onTargetEvent);
+    document.addEventListener(PUSH_EV_NAME + path.join(), onTargetEvent);
     return () => {
-      document.removeEventListener(PUSH_EV_NAME + stroreName, onTargetEvent);
+      document.removeEventListener(PUSH_EV_NAME + path.join(), onTargetEvent);
     };
-  }, [stroreName]);
+  }, [path]);
   return state;
 };

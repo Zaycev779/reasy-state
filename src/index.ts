@@ -1,1 +1,2 @@
-export { createState, StateRoot } from './store/index';
+export { StateRoot } from './store/root';
+export { createState } from './store/index';
