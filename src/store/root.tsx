@@ -1,6 +1,7 @@
 import { ReactNode, useEffect } from 'react';
 import { SET_EV_NAME, _pushStoreValue } from './index';
 import { getGlobalData, updateGlobalData } from './global';
+import { IStore } from './typing';
 
 interface IProps {
   children: ReactNode;

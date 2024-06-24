@@ -1,3 +1,5 @@
+import { IStore } from './typing';
+
 export const getUpdatedParams = <T extends IStore>(
   updatedParams: T,
   prevValues: T

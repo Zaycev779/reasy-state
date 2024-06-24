@@ -1,7 +1,7 @@
 type IName = string;
-type IRecord = Maybe<string | number | boolean | any> | Array<IStore>;
+export type IRecord = Maybe<string | number | boolean | any> | Array<IStore>;
 
-type IStore = { [k: IName]: IRecord | IStore };
+export type IStore = { [k: IName]: IRecord | IStore };
 
 type ISetFunc<T, N> = {
   [P in keyof T as `set${N extends string
@@ -15,6 +15,6 @@ type IHook<T, N> = {
     : ''}${KeyCapitalize<P>}`]: () => T[P];
 };
 
-type IGenerateFn<T, N> = ISetFunc<T, N> & IHook<T, N>;
+export type IGenerateFn<T, N> = ISetFunc<T, N> & IHook<T, N>;
 
-type IGenerate<T extends IStore> = IGenerateFn<Flatten<T>, ''>;
+export type IGenerate<T extends IStore> = IGenerateFn<Flatten<T>, ''>;

@@ -1,5 +1,6 @@
 import { getGlobalData, globalStore } from './global';
 import { useStoreVal } from './hook';
+import { IGenerate, IStore } from './typing';
 import { getUpdatedParams } from './utils';
 
 export const SET_EV_NAME = '__SET_STORE_EVENT';
@@ -81,3 +82,16 @@ export const _pushStoreValue = <T extends IStore>(
     return pathVal;
   }, [] as string[]);
 };
+
+const countStore = {
+  value: 0,
+  date: new Date(),
+  button: {
+    test: {
+      val: 1,
+    },
+  },
+};
+const {} = createState({
+  countStore,
+});

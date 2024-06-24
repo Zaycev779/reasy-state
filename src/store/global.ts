@@ -1,3 +1,5 @@
+import { IStore } from './typing';
+
 export const globalStore: Record<string, any> = {};
 
 export const updateGlobalData = (
