@@ -18,6 +18,5 @@
         "declarationDir": "types",
         "emitDeclarationOnly": true
     },
-    // "include": ["."],
-    // "exclude": ["dist", "build", "node_modules"]
+     "include": ["**/*.ts", "**/*.tsx"],
 }
