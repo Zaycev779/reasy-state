@@ -1,23 +1,32 @@
-type IName = string;
-export type IRecord = Maybe<string | number | boolean | any> | Array<IStore>;
+export type IRecord = Maybe<string | number | boolean | object>;
 
-export type IStore = { [k: IName]: IRecord | IStore };
-
-type ISetFunc<T, N> = {
-  [P in keyof T as `set${N extends string
-    ? KeyCapitalize<N>
-    : ''}${KeyCapitalize<P>}`]: (value: T[P] | ((prev: T[P]) => T[P])) => void;
+export type IStore<T extends Record<string, any> = Record<string, any>> = {
+  [P in keyof T]: IRecord | IStore<T> | Array<IRecord>; // | (<D extends S = S>(s: S) => void); // | (<D extends S>(s: D) => void);
 };
 
-type IHook<T, N> = {
-  [P in keyof T as `use${N extends string
-    ? KeyCapitalize<N>
-    : ''}${KeyCapitalize<P>}`]: () => T[P];
+type ISetFunc<T> = {
+  [P in keyof T as T[P] extends Function
+    ? `${P & string}`
+    : `set${KeyCapitalize<P>}`]: T[keyof T] extends Function
+    ? null
+    : (value: T[P] | ((prev: T[P]) => T[P])) => void;
 };
 
-export type IGenerateFn<T, N> = ISetFunc<T, N> & IHook<T, N>;
+type IHook<T> = {
+  [P in keyof T as T[P] extends Function
+    ? never
+    : `use${KeyCapitalize<P>}`]: () => T[P];
+};
 
-export type IGenerate<T extends IStore> = IGenerateFn<Flatten<T>, ''>;
+type IGet<T> = {
+  [P in keyof T as T[P] extends Function
+    ? never
+    : `get${KeyCapitalize<P>}`]: () => T[P];
+};
+
+export type IGenerateFn<T> = ISetFunc<T> & IHook<T> & IGet<T>;
+
+export type IGenerate<T> = IGenerateFn<Flatten<T>>;
 
 export type KeyCapitalize<K> = Capitalize<K & string>;
 
@@ -30,22 +39,27 @@ export type Entries<T> = [
   ValueOf<T>
 ][];
 
-export type TIgnored = readonly any[] | Date;
+export type TIgnored = readonly any[] | Function;
 
-export type Flatten<T extends object> = object extends T
-  ? object
+export type Flatten<T> = IStore extends T
+  ? never
   : {
       [K in keyof T]-?: (
         x: NonNullable<T[K]> extends infer V
-          ? V extends object
-            ? V extends TIgnored
+          ? T[K] extends IStore
+            ? T[K] extends TIgnored
               ? Pick<T, K>
               : Flatten<V> extends infer FV
               ? {
-                  [P in keyof FV as `${Extract<
-                    KeyCapitalize<K>,
-                    string | number
-                  >}${Extract<KeyCapitalize<P>, string | number>}`]: FV[P];
+                  [P in keyof FV as FV[P] extends Function
+                    ? `${K & string}${Extract<
+                        KeyCapitalize<P>,
+                        string | number
+                      >}`
+                    : `${Extract<KeyCapitalize<K>, string | number>}${Extract<
+                        KeyCapitalize<P>,
+                        string | number
+                      >}`]: FV[P];
                 } & Pick<T, K>
               : never
             : Pick<T, K>

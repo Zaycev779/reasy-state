@@ -6,45 +6,47 @@ import { getUpdatedParams } from './utils';
 export const SET_EV_NAME = '__SET_STORE_EVENT';
 export const PUSH_EV_NAME = '__PUSH_STORE_EVENT';
 
-const generateFunc = <T,>(values: T, prevKey: string[] = []) => {
-  const entries = Object.entries(values as IStore) as Entries<T>;
-  const result: IGenerate<T extends IStore ? IStore : never> = entries.reduce(
-    (result, [key, val]) => {
-      if (!key) return result;
-      const keyName = key.charAt(0).toUpperCase() + key.slice(1);
-      const prevKeyName = prevKey
-        .map((k) => k.charAt(0).toUpperCase() + k.slice(1))
-        .join('');
-      const path = [...prevKey, key];
-      return {
-        ...result,
-        [`set${prevKeyName}${keyName}`]: (
-          val: ValueOf<T> | ((prev: ValueOf<T>) => Partial<ValueOf<T>>)
-        ) => _setStoreValue(path, val),
-        [`use${prevKeyName}${keyName}`]: () => useStoreVal(path),
-        ...(!!val &&
-          typeof val === 'object' &&
-          val instanceof Object &&
-          generateFunc<ValueOf<T> & object>(val, path)),
-      };
-    },
-    {} as IGenerate<T extends IStore ? IStore : never>
-  );
+const generateFunc = <T extends IStore<T>>(
+  values: T,
+  prevKey: string[] = []
+) => {
+  const entries = Object.entries(values as IStore<T>) as Entries<T>;
+  const result: IGenerate<T> = entries.reduce((result, [key, val]) => {
+    if (!key) return result;
+    const keyName = key.charAt(0).toUpperCase() + key.slice(1);
+    const prevKeyName = prevKey
+      .map((k) => k.charAt(0).toUpperCase() + k.slice(1))
+      .join('');
+    const path = [...prevKey, key];
+    return {
+      ...result,
+      [`set${prevKeyName}${keyName}`]: (
+        val: Partial<ValueOf<T>> | ((prev: ValueOf<T>) => Partial<ValueOf<T>>)
+      ) => _setStoreValue(path, val),
+      [`use${prevKeyName}${keyName}`]: () => useStoreVal(path),
+      [`get${prevKeyName}${keyName}`]: () => getGlobalData(path),
+      ...(!!val &&
+        typeof val === 'object' &&
+        val instanceof Object &&
+        generateFunc<IStore<T>>(val as IStore<T>, path)),
+    };
+  }, {} as IGenerate<T>);
 
   return result;
 };
 
-export const createState = <T extends IStore>(initialValues: T) => {
+export function createState<T extends IStore<T>>(
+  initialValues: T
+): IGenerate<T> {
   const stores = Object.keys(initialValues);
 
   stores.forEach((store) => {
     if (!globalStore[store]) {
-      globalStore[store] = initialValues?.[store];
+      globalStore[store] = (initialValues as Record<string, any>)?.[store];
     }
   });
-
   return generateFunc(initialValues) as IGenerate<T>;
-};
+}
 
 export const _setStoreValue = <T,>(
   path: string[],
@@ -59,7 +61,7 @@ export const _setStoreValue = <T,>(
   document.dispatchEvent(ev);
 };
 
-export const _pushStoreValue = <T extends IStore>(
+export const _pushStoreValue = <T extends IStore<T>>(
   paths: string[],
   updatedParams: T,
   prevValues: T
@@ -82,16 +84,3 @@ export const _pushStoreValue = <T extends IStore>(
     return pathVal;
   }, [] as string[]);
 };
-
-const countStore = {
-  value: 0,
-  date: new Date(),
-  button: {
-    test: {
-      val: 1,
-    },
-  },
-};
-const {} = createState({
-  countStore,
-});

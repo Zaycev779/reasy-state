@@ -4,7 +4,7 @@ export const getUpdatedParams = <T extends IStore>(
   updatedParams: T,
   prevValues: T
 ): string[] => {
-  if (typeof updatedParams !== 'object') return [];
+  if (typeof updatedParams !== 'object' || !updatedParams) return [];
   const entries = Object.entries(updatedParams);
   return entries.reduce((prev, [key, val]) => {
     let childParam: string[] = [];
