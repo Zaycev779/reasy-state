@@ -18,5 +18,5 @@
         "declarationDir": "types",
         "emitDeclarationOnly": true,
     },
-    "include": ["**/*.ts", "**/*.tsx", "**/*.d.ts", "src/typing.d.ts"],
+    "include": ["**/*.ts", "**/*.tsx"],
 }

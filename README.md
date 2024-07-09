@@ -101,3 +101,148 @@ const SettingsNotificationComponent = () => {
   );
 };
 ```
+
+### Mutators
+
+You can use 'mutators' to export functions. You can also use closures and async functions inside mutators.
+Use a "set" function that takes a new value, or a function that takes the old value as a parameter and returns a new value, to change the state of the current object in the state. "set" will return you the new state of the object.
+
+```jsx
+// store.ts
+import { createState, CreateState } from 'reasy-state';
+
+type UserStore = {
+  id: number,
+  data: {
+    rating: number,
+    mutators: {
+      clear: void, // clear function
+      inc: void, // increment function
+      dec: Promise<boolean>, // decrement async function
+      add: (value: number) => void, // add value function with arg
+      remove: (value: number) => Promise<string>, // remove value async function with arg
+    },
+  },
+};
+
+const userStore: CreateState<UserStore> = {
+  id: 1,
+  data: {
+    rating: 0,
+    mutators: {
+      clear: ({ set }) => set({ rating: 0 }),
+      inc: ({ set }) =>
+        set(({ rating }) => {
+          return { rating: rating + 1 };
+        }),
+      dec: async ({ set }) => {
+        await new Promise((f) => setTimeout(f, 1000));
+        set(({ rating }) => {
+          return { rating: rating - 1 };
+        });
+        return true;
+      },
+      add:
+        ({ set }) =>
+        (value) =>
+          set(({ rating }) => {
+            return { rating: rating + value };
+          }),
+      remove:
+        ({ set }) =>
+        async (value) => {
+          await new Promise((f) => setTimeout(f, 1000));
+          set(({ rating }) => {
+            return { rating: rating - value };
+          });
+          return 'success';
+        },
+    },
+  },
+};
+
+export const {
+  userStoreDataClear,
+  userStoreDataInc,
+  userStoreDataDec,
+  userStoreDataAdd,
+  userStoreDataRemove,
+  useUserStoreDataRating,
+} = createState({ userStore });
+```
+
+```jsx
+// rating.tsx
+import {
+  useUserStoreDataRating,
+  userStoreDataAdd,
+  userStoreDataClear,
+  userStoreDataInc,
+  userStoreDataDec,
+  userStoreDataRemove,
+} from './store.ts';
+
+export const UserRating = () => {
+  const rating = useUserStoreDataRating();
+
+  return (
+    <>
+      <div>
+        <button
+          onClick={async () => {
+            const response = await userStoreDataRemove(5);
+            console.log(response); // "success"
+            return response;
+          }}
+        >
+          -5
+        </button>
+        <button
+          onClick={async () => {
+            const response = await userStoreDataDec();
+            console.log(response); // true
+            return response;
+          }}
+        >
+          -
+        </button>
+        <span>{rating}</span>
+        <button onClick={userStoreDataInc}>+</button>
+        <button onClick={() => userStoreDataAdd(5)}>+5</button>
+      </div>
+      <button onClick={userStoreDataClear}>Clear</button>
+    </>
+  );
+};
+```
+
+Also, you can avoid specifying mutator types explicitly by using currying
+
+```jsx
+// store.ts
+import { createState } from 'reasy-state';
+
+type UserStore = {
+  userStore: {
+    id: number;
+    data: {
+      rating: number;
+    };
+  };
+};
+
+export const {
+  userStoreDataClear, // return new rating value
+  useUserStoreDataRating,
+} = createState<UserStore>()({
+  userStore: {
+    id: 1,
+    data: {
+      rating: 0,
+      mutators: {
+        clear: ({ set }) => set({ rating: 0 }).rating,
+      },
+    },
+  },
+});
+```
