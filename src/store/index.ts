@@ -55,10 +55,12 @@ const createMutators = (values: Record<string, Function>, path: string[]) => {
       return getGlobalData(path);
     };
 
+    const get = () => getGlobalData(path);
+
     return {
       ...prev,
       [`${pathName}${keyName}`]: (...args: any) => {
-        const fn = val({ set });
+        const fn = val({ set, get }, getGlobalData(path));
         if (typeof fn === 'function') {
           return fn(...args);
         }

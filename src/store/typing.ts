@@ -1,5 +1,4 @@
 export type IRecord = Maybe<string | number | boolean | object>;
-
 type Mutators = 'mutators';
 
 export type CreateState<T, PT = T, D = PT> = T extends {
@@ -20,14 +19,21 @@ type SetFn<PT> = {
       | Omit<PT, Mutators>
       | ((prev: Omit<PT, Mutators>) => Omit<PT, Mutators>)
   ) => Omit<PT, Mutators> & void;
+  get: () => Omit<PT, Mutators>;
 };
 
 type MutatorsTyping<T, PT> = {
   [K in keyof T]: T[K] extends (...args: infer D) => Promise<void>
-    ? (s: SetFn<PT>) => (...args: D) => ReturnType<T[K]>
+    ? (
+        s: SetFn<PT>,
+        prev: Omit<PT, Mutators>
+      ) => (...args: D) => ReturnType<T[K]>
     : T[K] extends (...args: infer D) => void
-    ? (fn: SetFn<PT>) => (...args: D) => ReturnType<T[K]>
-    : (fn: SetFn<PT>) => T[K];
+    ? (
+        fn: SetFn<PT>,
+        prev: Omit<PT, Mutators>
+      ) => (...args: D) => ReturnType<T[K]>
+    : (fn: SetFn<PT>, prev: Omit<PT, Mutators>) => T[K];
 };
 
 export type WithMutators<T> = T extends {
@@ -39,7 +45,7 @@ export type WithMutators<T> = T extends {
         [K in keyof T]: WithMutators<T[K]>;
       } & {
         mutators?: {
-          [k: string]: (val: SetFn<T>) => any;
+          [k: string]: (val: SetFn<T>, prev: T) => any;
         };
       }
   : T;

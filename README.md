@@ -106,6 +106,13 @@ const SettingsNotificationComponent = () => {
 
 You can use 'mutators' to export functions. You can also use closures and async functions inside mutators.
 Use a "set" function that takes a new value, or a function that takes the old value as a parameter and returns a new value, to change the state of the current object in the state. "set" will return you the new state of the object.
+Use a "get" function for async mutators, for get previous object value, or use second function argument
+
+```jsx
+mutators: {
+  [functionName]: ({set, get}, previousValue) => ...
+}
+```
 
 ```jsx
 // store.ts
@@ -131,10 +138,16 @@ const userStore: CreateState<UserStore> = {
     rating: 0,
     mutators: {
       clear: ({ set }) => set({ rating: 0 }),
-      inc: ({ set }) =>
-        set(({ rating }) => {
-          return { rating: rating + 1 };
-        }),
+      inc: ({ set }, { rating }) => set({ rating: rating + 1 }),
+      /* OR
+      inc: ({ set, get }) => set({ rating: get().rating + 1 }),
+      */
+      dec: async ({ set, get }) => {
+        await new Promise((f) => setTimeout(f, 1000));
+        set({ rating: get().rating - 1 });
+        return true;
+      },
+      /* OR
       dec: async ({ set }) => {
         await new Promise((f) => setTimeout(f, 1000));
         set(({ rating }) => {
@@ -142,19 +155,16 @@ const userStore: CreateState<UserStore> = {
         });
         return true;
       },
+      */
       add:
-        ({ set }) =>
+        ({ set }, { rating }) =>
         (value) =>
-          set(({ rating }) => {
-            return { rating: rating + value };
-          }),
+          set({ rating: rating + value }),
       remove:
-        ({ set }) =>
+        ({ set, get }) =>
         async (value) => {
           await new Promise((f) => setTimeout(f, 1000));
-          set(({ rating }) => {
-            return { rating: rating - value };
-          });
+          set({ rating: get().rating - value });
           return 'success';
         },
     },
