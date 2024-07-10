@@ -1,13 +1,13 @@
-import { ReactNode, useEffect } from 'react';
+import { ReactElement, useEffect } from 'react';
 import { SET_EV_NAME, _pushStoreValue } from './index';
 import { getGlobalData, updateGlobalData } from './global';
 import { IStore } from './typing';
 
 interface IProps {
-  children: ReactNode;
+  children: ReactElement;
 }
 
-export const StateRoot = ({ children }: IProps) => {
+export const StateRoot = ({ children }: IProps): ReactElement => {
   const onTargetEvent = (ev: Event) => {
     const {
       detail: { path, params },
@@ -28,5 +28,5 @@ export const StateRoot = ({ children }: IProps) => {
     };
   }, []);
 
-  return <>{children}</>;
+  return children;
 };

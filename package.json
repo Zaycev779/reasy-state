@@ -13,8 +13,9 @@
     "react",
     "state",
     "store",
-    "global",
-    "state manager"
+    "redux",
+    "manager",
+    "management"
   ],
   "repository": "https://github.com/Zaycev779/react-easy-state.git",
   "author": "Zaytsev779",
