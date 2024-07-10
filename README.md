@@ -2,6 +2,8 @@
 
 Reast Easy State is simple state management for React
 
+Reasy-state allows you to easily work with your state without creating selectors or worrying about re-renders, thanks to the fact that each object element has its own hook for getting the value, get/set functions and mutators
+
 ## Installation
 
 To install the latest stable version, run the following command:
@@ -150,9 +152,7 @@ const userStore: CreateState<UserStore> = {
       /* OR
       dec: async ({ set }) => {
         await new Promise((f) => setTimeout(f, 1000));
-        set(({ rating }) => {
-          return { rating: rating - 1 };
-        });
+        set(({ rating }) => ({ rating: rating - 1 }));
         return true;
       },
       */
