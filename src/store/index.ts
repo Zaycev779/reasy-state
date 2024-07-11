@@ -1,7 +1,8 @@
 import { getGlobalData, globalStore } from './global';
 import { useStoreVal } from './hook';
-import { CreateFunction, Entries, IGenerate, IStore, ValueOf } from './typing';
-import { getUpdatedParams } from './utils';
+import { Entries, ValueOf } from './types/index';
+import { CreateFunction, IGenerate, IStore, UpdateType } from './types/store';
+import { getUpdatePaths, getUpdatedParams } from './utils';
 
 export const SET_EV_NAME = '__SET_STORE_EVENT';
 export const PUSH_EV_NAME = '__PUSH_STORE_EVENT';
@@ -55,12 +56,19 @@ const createMutators = (values: Record<string, Function>, path: string[]) => {
       return getGlobalData(path);
     };
 
+    const patch = (arg: any) => {
+      typeof arg === 'function'
+        ? _setStoreValue(path, arg(getGlobalData(path)), 'patch')
+        : _setStoreValue(path, arg, 'patch');
+      return getGlobalData(path);
+    };
+
     const get = () => getGlobalData(path);
 
     return {
       ...prev,
       [`${pathName}${keyName}`]: (...args: any) => {
-        const fn = val({ set, get }, getGlobalData(path));
+        const fn = val({ set, get, patch }, getGlobalData(path));
         if (typeof fn === 'function') {
           return fn(...args);
         }
@@ -73,7 +81,7 @@ const createMutators = (values: Record<string, Function>, path: string[]) => {
 export const createState: CreateFunction = <T extends IStore<T>>(param?: T) => {
   if (!param) {
     return (<U extends IStore<U>>(param: U) =>
-      createStateFn(param)) as unknown as IGenerate<T>;
+      createStateFn(param)) as unknown as T;
   }
   return createStateFn(param);
 };
@@ -91,12 +99,14 @@ export function createStateFn<T extends IStore<T>>(values: T): IGenerate<T> {
 
 export const _setStoreValue = <T>(
   path: string[],
-  params: Partial<T> | ((prev: T) => Partial<T>)
+  params: Partial<T> | ((prev: T) => Partial<T>),
+  type: UpdateType = 'set'
 ) => {
   const ev = new CustomEvent(SET_EV_NAME, {
     detail: {
       path,
       params,
+      type,
     },
   });
   document.dispatchEvent(ev);
@@ -107,21 +117,16 @@ export const _pushStoreValue = <T extends IStore<T>>(
   updatedParams: T,
   prevValues: T
 ) => {
-  const updatedPath = [
-    ...paths,
-    ...getUpdatedParams(updatedParams, prevValues),
-  ];
-
-  updatedPath.reduce((prev, path) => {
-    const pathVal = [...prev, path];
+  const getUpdatedKeys = getUpdatedParams(updatedParams, prevValues);
+  const updatePaths = getUpdatePaths(getUpdatedKeys, paths);
+  updatePaths.forEach((pathVal) => {
     const params = getGlobalData(pathVal);
+
     const ev = new CustomEvent(PUSH_EV_NAME + pathVal.join(), {
       detail: {
         params,
       },
     });
     document.dispatchEvent(ev);
-
-    return pathVal;
-  }, [] as string[]);
+  });
 };

@@ -1,40 +1,74 @@
+import { KeyCapitalize, Maybe } from './index';
+import { Flatten } from './flatten';
+
+export type UpdateType = 'set' | 'patch';
 export type IRecord = Maybe<string | number | boolean | object>;
+
 type Mutators = 'mutators';
 
 export type CreateState<T, PT = T, D = PT> = T extends {
   [K: string]: unknown;
-} & { mutators?: infer M }
+}
   ? {
       [K in keyof T as K extends Mutators
         ? K & Mutators
         : K]: K extends Mutators
-        ? MutatorsTyping<M, T>
+        ? MutatorsTyping<T>
         : WithMutators<CreateState<T[K], D, T>>;
     }
   : T;
 
+type WithoutMutators<T> = T extends {
+  [K: string]: unknown;
+}
+  ? Omit<
+      {
+        [K in keyof T]: WithoutMutators<T[K]> extends infer R ? R : never;
+      },
+      Mutators
+    >
+  : T;
+
+type PartialObject<T> = Partial<
+  T extends {
+    [K: string]: unknown;
+  }
+    ? {
+        [K in keyof T]: PartialObject<T[K]> extends infer R ? R : never;
+      }
+    : T
+>;
+
 type SetFn<PT> = {
   set: (
     prev:
-      | Omit<PT, Mutators>
-      | ((prev: Omit<PT, Mutators>) => Omit<PT, Mutators>)
-  ) => Omit<PT, Mutators> & void;
-  get: () => Omit<PT, Mutators>;
+      | WithoutMutators<PT>
+      | ((prev: WithoutMutators<PT>) => WithoutMutators<PT>)
+  ) => WithoutMutators<PT> & void;
+  patch: (
+    prev:
+      | WithoutMutators<PartialObject<PT>>
+      | ((prev: WithoutMutators<PT>) => WithoutMutators<PartialObject<PT>>)
+  ) => WithoutMutators<PT> & void;
+
+  get: () => WithoutMutators<PT>;
 };
 
-type MutatorsTyping<T, PT> = {
-  [K in keyof T]: T[K] extends (...args: infer D) => Promise<void>
-    ? (
-        s: SetFn<PT>,
-        prev: Omit<PT, Mutators>
-      ) => (...args: D) => ReturnType<T[K]>
-    : T[K] extends (...args: infer D) => void
-    ? (
-        fn: SetFn<PT>,
-        prev: Omit<PT, Mutators>
-      ) => (...args: D) => ReturnType<T[K]>
-    : (fn: SetFn<PT>, prev: Omit<PT, Mutators>) => T[K];
-};
+type MutatorsTyping<PT> = PT extends { mutators?: infer T }
+  ? {
+      [K in keyof T]: T[K] extends (...args: infer D) => Promise<void>
+        ? (
+            s: SetFn<PT>,
+            prev: WithoutMutators<PT>
+          ) => (...args: D) => ReturnType<T[K]>
+        : T[K] extends (...args: infer D) => void
+        ? (
+            fn: SetFn<PT>,
+            prev: WithoutMutators<PT>
+          ) => (...args: D) => ReturnType<T[K]>
+        : (fn: SetFn<PT>, prev: WithoutMutators<PT>) => T[K];
+    }
+  : never;
 
 export type WithMutators<T> = T extends {
   [K: string]: unknown;
@@ -42,7 +76,11 @@ export type WithMutators<T> = T extends {
   ? T extends { mutators: any }
     ? T
     : {
-        [K in keyof T]: WithMutators<T[K]>;
+        [K in keyof T]: K extends Mutators
+          ? T[K]
+          : WithMutators<T[K]> extends infer Y
+          ? Y
+          : never;
       } & {
         mutators?: {
           [k: string]: (val: SetFn<T>, prev: T) => any;
@@ -62,7 +100,7 @@ type SetMutators<T> = T extends (...args: any) => infer D
       [K: string]: unknown;
     }
   ? {
-      [K in keyof T]: SetMutators<T[K]>;
+      [K in keyof T]: SetMutators<T[K]> extends infer Y ? Y : never;
     }
   : T;
 
@@ -77,7 +115,7 @@ type PickMutators<T> = T extends {
     >
   : T;
 
-type CreateFunctionResult<T> = PickMutators<SetMutators<T>>;
+export type CreateFunctionResult<T> = PickMutators<SetMutators<T>>;
 
 export type CreateFunction = {
   <T, U extends CreateFunctionResult<T>>(params: T): IGenerate<U>;
@@ -118,45 +156,3 @@ type IFn<T> = {
 export type IGenerateFn<T> = ISetFunc<T> & IHook<T> & IGet<T> & IFn<T>;
 
 export type IGenerate<T> = IGenerateFn<Flatten<T>>;
-
-export type KeyCapitalize<K> = Capitalize<K & string>;
-
-export type Maybe<T> = T | undefined | null;
-
-export type ValueOf<T> = T[keyof T];
-
-export type Entries<T> = [
-  keyof T extends string ? string : undefined,
-  ValueOf<T>
-][];
-
-export type TIgnored = readonly any[];
-
-export type Flatten<T> = {
-  [K: string]: unknown;
-} extends T
-  ? never
-  : {
-      [K in keyof T]-?: (
-        x: NonNullable<T[K]> extends infer V
-          ? T[K] extends {
-              [K: string]: unknown;
-            }
-            ? T[K] extends TIgnored
-              ? Pick<T, K>
-              : Flatten<V> extends infer FV
-              ? {
-                  [P in keyof FV as `${Extract<
-                    KeyCapitalize<K>,
-                    string | number
-                  >}${Extract<KeyCapitalize<P>, string | number>}`]: FV[P];
-                } & Pick<T, K>
-              : never
-            : Pick<T, K>
-          : never
-      ) => void;
-    } extends Record<keyof T, (y: infer O) => void>
-  ? O extends infer U
-    ? { [K in keyof O]: O[K] }
-    : never
-  : never;

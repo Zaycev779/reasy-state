@@ -1,4 +1,4 @@
-import { IStore } from './typing';
+import { IStore } from './types/store';
 
 export const globalStore: Record<string, any> = {};
 

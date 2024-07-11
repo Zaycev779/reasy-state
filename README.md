@@ -107,12 +107,12 @@ const SettingsNotificationComponent = () => {
 ### Mutators
 
 You can use 'mutators' to export functions. You can also use closures and async functions inside mutators.
-Use a "set" function that takes a new value, or a function that takes the old value as a parameter and returns a new value, to change the state of the current object in the state. "set" will return you the new state of the object.
+Use a "set" or "patch" function that takes a new value, or a function that takes the old value as a parameter and returns a new value, to change the state of the current object in the state. "set" / "patch" will return you the new state of the object.
 Use a "get" function for async mutators, for get previous object value, or use second function argument
 
 ```jsx
 mutators: {
-  [functionName]: ({set, get}, previousValue) => ...
+  [functionName]: ({set, patch, get}, previousValue) => ...
 }
 ```
 
@@ -124,6 +124,7 @@ type UserStore = {
   id: number,
   data: {
     rating: number,
+    other: number,
     mutators: {
       clear: void, // clear function
       inc: void, // increment function
@@ -132,42 +133,55 @@ type UserStore = {
       remove: (value: number) => Promise<string>, // remove value async function with arg
     },
   },
+  mutators: {
+    ratingInc: void,
+    changeId: void,
+  },
 };
 
 const userStore: CreateState<UserStore> = {
   id: 1,
   data: {
     rating: 0,
+    other: 1,
     mutators: {
-      clear: ({ set }) => set({ rating: 0 }),
-      inc: ({ set }, { rating }) => set({ rating: rating + 1 }),
+      clear: ({ set }) => set({ rating: 0, other: 0 }),
+      inc: ({ patch }, { rating }) => patch({ rating: rating + 1 }),
       /* OR
-      inc: ({ set, get }) => set({ rating: get().rating + 1 }),
+      inc: ({ patch, get }) => patch({ rating: get().rating + 1 }),
       */
-      dec: async ({ set, get }) => {
+      dec: async ({ patch, get }) => {
         await new Promise((f) => setTimeout(f, 1000));
-        set({ rating: get().rating - 1 });
+        patch({ rating: get().rating - 1 });
         return true;
       },
       /* OR
-      dec: async ({ set }) => {
+      dec: async ({ patch }) => {
         await new Promise((f) => setTimeout(f, 1000));
-        set(({ rating }) => ({ rating: rating - 1 }));
+        patch(({ rating }) => ({ rating: rating - 1 }));
         return true;
       },
       */
       add:
-        ({ set }, { rating }) =>
+        ({ patch }, { rating }) =>
         (value) =>
-          set({ rating: rating + value }),
+          patch({ rating: rating + value }),
       remove:
-        ({ set, get }) =>
+        ({ patch, get }) =>
         async (value) => {
           await new Promise((f) => setTimeout(f, 1000));
-          set({ rating: get().rating - value });
+          patch({ rating: get().rating - value });
           return 'success';
         },
     },
+  },
+  mutators: {
+    // hooks useUserStoreData, useUserStoreDataRating, useUserStoreDataOther will not be called
+    changeId: ({ patch }) => patch({ id: 2 }),
+
+    // some data.mutators.inc, hooks useUserStoreId and useUserStoreDataOther will not be called
+    ratingInc: ({ patch }, { data: { rating } }) =>
+      patch({ data: { rating: rating + 1 } }),
   },
 };
 

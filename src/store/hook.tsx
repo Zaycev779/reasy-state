@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { PUSH_EV_NAME } from './index';
 import { getGlobalData } from './global';
-import { IStore } from './typing';
+import { IStore } from './types/store';
 
 export const useStoreVal = (path: string[]) => {
   const [state, setState] = useState(() => getGlobalData(path));
