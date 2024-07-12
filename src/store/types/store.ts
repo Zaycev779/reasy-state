@@ -130,27 +130,47 @@ export type IStore<T extends Record<string, any> = Record<string, any>> = {
 
 type ISetFunc<T> = {
   [P in keyof T as T[P] extends Function
-    ? never
-    : `set${KeyCapitalize<P>}`]: T[keyof T] extends Function
+    ? P extends `${infer Y}[]`
+      ? `set${KeyCapitalize<Y>}`
+      : never
+    : `set${KeyCapitalize<P>}`]: P extends `${infer Y}[]`
+    ? T[P] extends (arg: infer A) => infer D
+      ? (arg: A, v: D) => D[]
+      : never
+    : T[keyof T] extends Function
     ? never
     : (value: T[P] | ((prev: T[P]) => T[P])) => void;
 };
 
 type IHook<T> = {
   [P in keyof T as T[P] extends Function
-    ? never
-    : `use${KeyCapitalize<P>}`]: () => T[P];
+    ? P extends `${infer Y}[]`
+      ? `use${KeyCapitalize<Y>}`
+      : never
+    : `use${KeyCapitalize<P>}`]: P extends `${infer Y}[]`
+    ? T[P] extends (arg: infer A) => infer D
+      ? (arg?: A) => D[]
+      : never
+    : () => T[P];
 };
 
 type IGet<T> = {
   [P in keyof T as T[P] extends Function
-    ? never
-    : `get${KeyCapitalize<P>}`]: () => T[P];
+    ? P extends `${infer Y}[]`
+      ? `get${KeyCapitalize<Y>}`
+      : never
+    : `get${KeyCapitalize<P>}`]: P extends `${infer Y}[]`
+    ? T[P] extends (arg: infer A) => infer D
+      ? (arg?: A) => D[]
+      : never
+    : () => T[P];
 };
 
 type IFn<T> = {
   [P in keyof T as T[P] extends Function
-    ? Uncapitalize<P & string>
+    ? P extends `${infer Y}[]`
+      ? never
+      : Uncapitalize<P & string>
     : never]: T[P];
 };
 export type IGenerateFn<T> = ISetFunc<T> & IHook<T> & IGet<T> & IFn<T>;

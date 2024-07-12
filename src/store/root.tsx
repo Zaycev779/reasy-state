@@ -1,14 +1,14 @@
-import { ReactElement, useEffect } from 'react';
+import { useEffect } from 'react';
 import { SET_EV_NAME, _pushStoreValue } from './index';
 import { getGlobalData, updateGlobalData } from './global';
 import { IStore, UpdateType } from './types/store';
 import { mergeDeep } from './utils';
 
-interface IProps {
-  children: ReactElement;
+interface IProps<T> {
+  children: T;
 }
 
-export const StateRoot = ({ children }: IProps): ReactElement => {
+export const StateRoot = <T,>({ children }: IProps<T>): T => {
   const onTargetEvent = (ev: Event) => {
     const {
       detail: { path, params, type },

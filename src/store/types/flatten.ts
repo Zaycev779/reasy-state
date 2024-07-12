@@ -10,12 +10,28 @@ type ExcludedTypes = Set<unknown> | Map<unknown, unknown>;
 type ArrayEncoder = `[${bigint}]`;
 
 type EscapeArrayKey<TKey extends string> =
-  TKey extends `${infer TKeyBefore}.${ArrayEncoder}${infer TKeyAfter}`
-    ? EscapeArrayKey<`${TKeyBefore}${KeyCapitalize<ArrayEncoder>}${KeyCapitalize<TKeyAfter>}`>
+  TKey extends `${infer TKeyBefore}[${bigint}]${infer TKeyAfter}`
+    ? never //EscapeArrayKey<`${TKeyBefore}${TKeyAfter}[]`>
     : TKey;
 
+type EscapeArrayValue<
+  E,
+  TKey extends string,
+  TValue
+> = TKey extends `${string}[${bigint}]`
+  ? TValue
+  : TKey extends `${infer TKeyBefore}[${bigint}]${infer TKeyAfter}`
+  ? E extends { key: `${TKeyBefore}[${bigint}]${TKeyAfter}`; value: infer V }
+    ? (f?: (v: V) => boolean) => TValue
+    : never
+  : TValue;
+
 type CollapseEntries<TEntry extends Entry> = {
-  [E in TEntry as EscapeArrayKey<E['key']>]: E['value'];
+  [E in TEntry as EscapeArrayKey<E['key']>]: EscapeArrayValue<
+    TEntry,
+    E['key'],
+    E['value']
+  >;
 };
 
 type CreateArrayEntry<TValue, TValueInitial> = OmitItself<

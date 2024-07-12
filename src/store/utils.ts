@@ -6,7 +6,12 @@ export const getUpdatedParams = <T extends IStore>(
   updatedParams: T,
   prevValues: T
 ): updatedParams[] => {
-  if (typeof updatedParams !== 'object' || !updatedParams) return [];
+  if (
+    typeof updatedParams !== 'object' ||
+    !updatedParams ||
+    Array.isArray(updatedParams)
+  )
+    return [];
   const entries = Object.entries(updatedParams);
   return entries.reduce((prev, [key, val]) => {
     if (key === 'mutators') return prev;
