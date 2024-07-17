@@ -1,23 +1,22 @@
+import { globalStoreMap } from './global';
 import { IStore } from './types/store';
 
 export type updatedParams = string | updatedParams[];
 
 export const getUpdatedParams = <T extends IStore>(
   updatedParams: T,
-  prevValues: T
+  prevValues: T,
+  paths: string[]
 ): updatedParams[] => {
-  if (
-    typeof updatedParams !== 'object' ||
-    !updatedParams ||
-    Array.isArray(updatedParams)
-  )
-    return [];
+  if (!isObject(updatedParams)) return [];
   const entries = Object.entries(updatedParams);
   return entries.reduce((prev, [key, val]) => {
     if (key === 'mutators') return prev;
     let childParam: updatedParams[] = [];
-    if (typeof val === 'object' && val instanceof Object) {
-      childParam = [getUpdatedParams(val as IStore, prevValues[key] as IStore)];
+    if (isObject(val)) {
+      childParam = [
+        getUpdatedParams(val as IStore, prevValues[key] as IStore, paths),
+      ];
     }
     if (val !== prevValues[key]) {
       return [...prev, childParam.length ? [key, ...childParam] : [key]];
@@ -26,19 +25,23 @@ export const getUpdatedParams = <T extends IStore>(
   }, [] as updatedParams[]);
 };
 
-export const getUpdatePaths = (keys: updatedParams[], path: string[]) => {
+export const getUpdatePaths = (keys: updatedParams[], paths: string[]) => {
   const updatePaths: string[][] = [];
-  if (path) {
-    updatePaths.push(path);
+  if (paths) {
+    const pathsArr = paths.reduce((prev, val, idx) => {
+      return [...prev, [...(prev?.[idx - 1] || []), val]];
+    }, [] as string[][]);
+    updatePaths.push(...pathsArr);
   }
-  const flatten = (
+
+  const flattenPaths = (
     keys: updatedParams[],
     prevPaths: string[],
     basePath: string[]
   ) => {
     keys.forEach((val) => {
       if (Array.isArray(val)) {
-        flatten(
+        flattenPaths(
           val,
           [
             ...prevPaths,
@@ -51,7 +54,7 @@ export const getUpdatePaths = (keys: updatedParams[], path: string[]) => {
       }
     });
   };
-  flatten(keys, [], path);
+  flattenPaths(keys, [], paths);
   return updatePaths;
 };
 
@@ -76,3 +79,63 @@ export function mergeDeep(target: any, ...sources: any): any {
 
   return mergeDeep(target, ...sources);
 }
+
+export const getAdditionalPaths = (paths: string[]) => {
+  const storeMap = Object.values(globalStoreMap) as string[][];
+  return paths
+    .reduce((prev, path, idx) => {
+      const curVal = prev.filter(
+        (curVal) => curVal?.[idx] === path && curVal.length > paths.length
+      );
+      return curVal;
+    }, storeMap)
+    .filter((v) => v.includes('[]'));
+};
+
+export const createNewArrayValues = (
+  keys: string[],
+  prev: any,
+  newValue: any,
+  filterFunc?: Function
+) => {
+  if (Array.isArray(prev)) {
+    return prev.map((prevVal) => {
+      if (typeof filterFunc === 'function' && !filterFunc(prevVal)) {
+        return prevVal;
+      }
+      const targetObj = keys?.reduce((prev, key, idx) => {
+        return idx === keys?.length - 1 ? prev : prev[key];
+      }, prevVal);
+      if (targetObj) {
+        targetObj[keys?.[keys.length - 1]] =
+          typeof newValue === 'function'
+            ? newValue(targetObj[keys?.[keys.length - 1]])
+            : newValue;
+      }
+      return { ...prevVal };
+    });
+  }
+};
+
+export const getAdditionalMapKeys = (paths: string[]) => {
+  const storeMap = Object.keys(globalStoreMap) as string[];
+  return paths
+    .reduce((prevName, path, idx) => {
+      const curVal = prevName.filter(
+        (curVal) =>
+          globalStoreMap?.[curVal]?.[idx] === path &&
+          globalStoreMap?.[curVal]?.length > paths.length
+      );
+      return curVal;
+    }, storeMap)
+    .filter((val) => val.includes('$'));
+};
+
+export const diffValues = (prevObject: any, newObject: any) =>
+  diffValuesBoolean(prevObject, newObject) ? newObject : prevObject;
+
+export const diffValuesBoolean = (prevObject: any, newObject: any) =>
+  JSON.stringify(prevObject) !== JSON.stringify(newObject);
+
+export const capitalizeName = (name: string) =>
+  name.charAt(0).toUpperCase() + name.slice(1);

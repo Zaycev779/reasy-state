@@ -3,7 +3,11 @@ import { Flatten } from './flatten';
 
 export type UpdateType = 'set' | 'patch';
 export type IRecord = Maybe<string | number | boolean | object>;
-
+export enum GeneratedType {
+  GET = 'get',
+  SET = 'set',
+  USE = 'use',
+}
 type Mutators = 'mutators';
 
 export type CreateState<T, PT = T, D = PT> = T extends {
@@ -130,12 +134,12 @@ export type IStore<T extends Record<string, any> = Record<string, any>> = {
 
 type ISetFunc<T> = {
   [P in keyof T as T[P] extends Function
-    ? P extends `${infer Y}[]`
-      ? `set${KeyCapitalize<Y>}`
+    ? P extends `${infer X}[]${infer Y}`
+      ? `${GeneratedType.SET}${KeyCapitalize<X>}${KeyCapitalize<Y>}`
       : never
-    : `set${KeyCapitalize<P>}`]: P extends `${infer Y}[]`
+    : `${GeneratedType.SET}${KeyCapitalize<P>}`]: P extends `${infer X}[]${infer Y}`
     ? T[P] extends (arg: infer A) => infer D
-      ? (arg: A, v: D) => D[]
+      ? (arg: A, v: D | ((prev: D) => D)) => void
       : never
     : T[keyof T] extends Function
     ? never
@@ -144,10 +148,10 @@ type ISetFunc<T> = {
 
 type IHook<T> = {
   [P in keyof T as T[P] extends Function
-    ? P extends `${infer Y}[]`
-      ? `use${KeyCapitalize<Y>}`
+    ? P extends `${infer X}[]${infer Y}`
+      ? `${GeneratedType.USE}${KeyCapitalize<X>}${KeyCapitalize<Y>}`
       : never
-    : `use${KeyCapitalize<P>}`]: P extends `${infer Y}[]`
+    : `${GeneratedType.USE}${KeyCapitalize<P>}`]: P extends `${infer X}[]${infer Y}`
     ? T[P] extends (arg: infer A) => infer D
       ? (arg?: A) => D[]
       : never
@@ -156,10 +160,10 @@ type IHook<T> = {
 
 type IGet<T> = {
   [P in keyof T as T[P] extends Function
-    ? P extends `${infer Y}[]`
-      ? `get${KeyCapitalize<Y>}`
+    ? P extends `${infer X}[]${infer Y}`
+      ? `${GeneratedType.GET}${KeyCapitalize<X>}${KeyCapitalize<Y>}`
       : never
-    : `get${KeyCapitalize<P>}`]: P extends `${infer Y}[]`
+    : `${GeneratedType.GET}${KeyCapitalize<P>}`]: P extends `${infer X}[]${infer Y}`
     ? T[P] extends (arg: infer A) => infer D
       ? (arg?: A) => D[]
       : never
@@ -168,11 +172,12 @@ type IGet<T> = {
 
 type IFn<T> = {
   [P in keyof T as T[P] extends Function
-    ? P extends `${infer Y}[]`
+    ? P extends `${infer X}[]${infer Y}`
       ? never
       : Uncapitalize<P & string>
     : never]: T[P];
 };
+
 export type IGenerateFn<T> = ISetFunc<T> & IHook<T> & IGet<T> & IFn<T>;
 
 export type IGenerate<T> = IGenerateFn<Flatten<T>>;

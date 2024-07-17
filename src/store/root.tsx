@@ -1,8 +1,18 @@
 import { useEffect } from 'react';
-import { SET_EV_NAME, _pushStoreValue } from './index';
-import { getGlobalData, updateGlobalData } from './global';
+import {
+  getGlobalData,
+  globalStoreMap,
+  patchToGlobalMap,
+  updateGlobalData,
+} from './global';
 import { IStore, UpdateType } from './types/store';
-import { mergeDeep } from './utils';
+import {
+  diffValuesBoolean,
+  getAdditionalMapKeys,
+  isObject,
+  mergeDeep,
+} from './utils';
+import { SET_EV_NAME, _pushStoreValueEvent, _updatePathEvent } from './events';
 
 interface IProps<T> {
   children: T;
@@ -22,13 +32,21 @@ export const StateRoot = <T,>({ children }: IProps<T>): T => {
     const updatedParams = isFn ? params(prevValues) : params;
     updateGlobalData(
       path,
-      type === 'patch' &&
-        typeof updatedParams === 'object' &&
-        typeof prevValues === 'object'
+      type === 'patch' && isObject(updatedParams) && isObject(prevValues)
         ? mergeDeep({}, prevValues, updatedParams)
         : updatedParams
     );
-    _pushStoreValue(path, updatedParams, prevValues);
+
+    const updatePathMaps = getAdditionalMapKeys(path);
+
+    updatePathMaps.forEach((mapKey) => {
+      const prevPath = globalStoreMap[mapKey];
+      patchToGlobalMap(mapKey);
+      if (diffValuesBoolean(prevPath, globalStoreMap[mapKey])) {
+        _updatePathEvent(mapKey, globalStoreMap[mapKey]);
+      }
+    });
+    _pushStoreValueEvent(path, updatedParams, prevValues);
   };
   useEffect(() => {
     document.addEventListener(SET_EV_NAME, onTargetEvent);

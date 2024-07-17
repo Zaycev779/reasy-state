@@ -270,3 +270,81 @@ export const {
   },
 });
 ```
+
+### Undefined params
+
+You can use functions for undefined parameters using the $ sign
+
+```jsx
+// store.ts
+type UserStore = {
+  id: number,
+  data?: {
+    rating: number,
+  },
+};
+const userStore: CreateState<UserStore> = {
+  id: 1,
+};
+
+export const { useUserStore$data$rating } = createState({ userStore });
+```
+
+### Arrays
+
+You can use arrys parameters functions using the $ sign
+
+For array element "set", "get" and "use" functions, you can use a filter to specify which elements you need to change
+
+```jsx
+get`[...functionName]`(filterFunction?);
+use`[...functionName]`(filterFunction?);
+set`[...functionName]`(filterFunction, newValue);
+```
+
+```jsx
+// store.ts
+
+type UserStore = {
+  id: number,
+  subscribers: {
+    id: number,
+    rating: number,
+  }[],
+};
+
+const userStore: CreateState<UserStore> = {
+  id: 1,
+  subscribers: [
+    { id: 2, rating: 10 },
+    { id: 3, rating: 12 },
+  ],
+};
+
+export const {
+  useUserStoreSubscribers$rating,
+  setUserStoreSubscribers$rating,
+} = createState({ userStore });
+```
+
+```jsx
+export const Ratings = () => {
+  const ratings = useUserStoreSubscribers$rating(({ rating }) => rating);
+
+  const add = () =>
+    setUserStoreSubscribers$rating(
+      ({ id }) => id === 2,
+      (prev) => prev + 1
+    );
+
+  const clear = () => setUserStoreSubscribers$rating(() => true, 0);
+
+  return (
+    <div>
+      <p>Positive ratings = {ratings.join(',')}</p>
+      <button onClick={add}>Add rating for id 2</button>
+      <button onClick={clear}>Clear rating for all</button>
+    </div>
+  );
+};
+```

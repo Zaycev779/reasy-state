@@ -7,11 +7,14 @@ export type Flatten<TValue> = CollapseEntries<
 type Entry = { key: string; value: unknown };
 type EmptyEntry<TValue> = { key: ''; value: TValue };
 type ExcludedTypes = Set<unknown> | Map<unknown, unknown>;
-type ArrayEncoder = `[${bigint}]`;
 
 type EscapeArrayKey<TKey extends string> =
-  TKey extends `${infer TKeyBefore}[${bigint}]${infer TKeyAfter}`
-    ? never //EscapeArrayKey<`${TKeyBefore}${TKeyAfter}[]`>
+  TKey extends `${infer TKeyBefore}[${bigint}]`
+    ? never
+    : TKey extends `${infer TKeyBefore}$[${bigint}]${infer TKeyAfter}`
+    ? TKeyBefore extends `${infer X}[]${infer Y}`
+      ? never // TODO flatten arrays
+      : EscapeArrayKey<`${TKeyBefore}[]${TKeyAfter}`>
     : TKey;
 
 type EscapeArrayValue<
@@ -20,9 +23,9 @@ type EscapeArrayValue<
   TValue
 > = TKey extends `${string}[${bigint}]`
   ? TValue
-  : TKey extends `${infer TKeyBefore}[${bigint}]${infer TKeyAfter}`
-  ? E extends { key: `${TKeyBefore}[${bigint}]${TKeyAfter}`; value: infer V }
-    ? (f?: (v: V) => boolean) => TValue
+  : TKey extends `${infer TKeyBefore}$[${bigint}]${infer TKeyAfter}`
+  ? E extends { key: `${TKeyBefore}`; value?: infer V extends any[] }
+    ? (f?: (v: V[number]) => any | boolean) => TValue
     : never
   : TValue;
 
@@ -34,41 +37,80 @@ type CollapseEntries<TEntry extends Entry> = {
   >;
 };
 
-type CreateArrayEntry<TValue, TValueInitial> = OmitItself<
-  TValue extends unknown[] ? { [k: ArrayEncoder]: TValue[number] } : TValue,
-  TValueInitial
+type CreateArrayEntry<TValue, TValueInitial, TPrevKey> = OmitItself<
+  TValue extends unknown[] ? { [k: `[${bigint}]`]: TValue[number] } : TValue,
+  TValueInitial,
+  TPrevKey
 >;
 
-type OmitItself<TValue, TValueInitial> = TValue extends TValueInitial
+type OmitItself<TValue, TValueInitial, TPrevKey> = TValue extends TValueInitial
   ? EmptyEntry<TValue>
-  : OmitExcludedTypes<TValue, TValueInitial>;
+  : OmitExcludedTypes<TValue, TValueInitial, TPrevKey>;
 
-type OmitExcludedTypes<TValue, TValueInitial> = TValue extends ExcludedTypes
-  ? EmptyEntry<TValue>
-  : CreateObjectEntries<TValue, TValueInitial>;
+type OmitExcludedTypes<TValue, TValueInitial, TPrevKey> =
+  TValue extends ExcludedTypes
+    ? EmptyEntry<TValue>
+    : CreateObjectEntries<TValue, TValueInitial, TPrevKey>;
 
-type CreateObjectEntries<TValue, TValueInitial> = TValue extends {
+type TKeyName<TKey extends string> = `$${TKey extends `$${infer Y}`
+  ? Y
+  : TKey}`;
+
+type TNestedKeyName<TKey extends string> = `$${TKey extends `$${infer Y}`
+  ? Y
+  : TKey}`;
+
+type CreateObjectEntries<
+  TValue,
+  TValueInitial,
+  TPrevKey = ''
+> = TValue extends {
   [K: string]: infer U;
 }
   ? {
       [TKey in keyof TValue]-?: TKey extends string
         ? CreateArrayEntry<
             TValue[TKey],
-            TValueInitial
+            TValueInitial,
+            TPrevKey extends `$`
+              ? TPrevKey
+              : undefined extends TValue[TKey]
+              ? `$`
+              : [] extends TValue[TKey]
+              ? `$`
+              : TKey
           > extends infer TNestedValue
           ? TNestedValue extends Entry
             ? TNestedValue['key'] extends ''
               ? {
-                  key: TKey;
+                  key: `${undefined extends TValue[TKey]
+                    ? TKeyName<TKey>
+                    : TPrevKey extends `$`
+                    ? TKeyName<TKey>
+                    : TKey}`;
                   value: TNestedValue['value'];
                 }
               :
                   | {
-                      key: `${TKey}${KeyCapitalize<TNestedValue['key']>}`;
+                      key: `${undefined extends TValue[TKey]
+                        ? TKeyName<TKey>
+                        : TPrevKey extends `$`
+                        ? TKeyName<TKey>
+                        : TKey extends `$${infer Y}`
+                        ? Y
+                        : TKey}${undefined extends TValue[TKey]
+                        ? TNestedKeyName<TNestedValue['key']>
+                        : TPrevKey extends `$`
+                        ? TNestedKeyName<TNestedValue['key']>
+                        : KeyCapitalize<TNestedValue['key']>}`;
                       value: TNestedValue['value'];
                     }
                   | {
-                      key: TKey;
+                      key: `${undefined extends TValue[TKey]
+                        ? TKeyName<TKey>
+                        : TPrevKey extends `$`
+                        ? TKeyName<TKey>
+                        : TKey}`;
                       value: TValue[TKey];
                     }
             : never
