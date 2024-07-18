@@ -19,7 +19,9 @@ export const getUpdatedParams = <T extends IStore>(
       ];
     }
     if (val !== prevValues[key]) {
-      return [...prev, childParam.length ? [key, ...childParam] : [key]];
+      return prev.concat(
+        ([key] as updatedParams[]).concat(childParam.length ? childParam : [])
+      );
     }
     return prev;
   }, [] as updatedParams[]);
@@ -28,9 +30,10 @@ export const getUpdatedParams = <T extends IStore>(
 export const getUpdatePaths = (keys: updatedParams[], paths: string[]) => {
   const updatePaths: string[][] = [];
   if (paths) {
-    const pathsArr = paths.reduce((prev, val, idx) => {
-      return [...prev, [...(prev?.[idx - 1] || []), val]];
-    }, [] as string[][]);
+    const pathsArr = paths.reduce(
+      (prev, val, idx) => prev.concat([(prev?.[idx - 1] || []).concat(val)]),
+      [] as string[][]
+    );
     updatePaths.push(...pathsArr);
   }
 
@@ -43,14 +46,13 @@ export const getUpdatePaths = (keys: updatedParams[], paths: string[]) => {
       if (Array.isArray(val)) {
         flattenPaths(
           val,
-          [
-            ...prevPaths,
-            ...(keys.filter((v) => typeof v === 'string') as string[]),
-          ],
+          prevPaths.concat(
+            keys.filter((v) => typeof v === 'string') as string[]
+          ),
           basePath
         );
       } else {
-        updatePaths.push([...(basePath || []), ...prevPaths, val]);
+        updatePaths.push((basePath || []).concat(prevPaths, val));
       }
     });
   };
@@ -100,19 +102,18 @@ export const createNewArrayValues = (
 ) => {
   if (Array.isArray(prev)) {
     return prev.map((prevVal) => {
-      if (typeof filterFunc === 'function' && !filterFunc(prevVal)) {
+      if (isAFunction(filterFunc) && !filterFunc?.(prevVal)) {
         return prevVal;
       }
       const targetObj = keys?.reduce((prev, key, idx) => {
         return idx === keys?.length - 1 ? prev : prev[key];
       }, prevVal);
       if (targetObj) {
-        targetObj[keys?.[keys.length - 1]] =
-          typeof newValue === 'function'
-            ? newValue(targetObj[keys?.[keys.length - 1]])
-            : newValue;
+        targetObj[keys?.[keys.length - 1]] = isAFunction(newValue)
+          ? newValue(targetObj[keys?.[keys.length - 1]])
+          : newValue;
       }
-      return { ...prevVal };
+      return Object.assign({}, prevVal);
     });
   }
 };
@@ -130,6 +131,8 @@ export const getAdditionalMapKeys = (paths: string[]) => {
     }, storeMap)
     .filter((val) => val.includes('$'));
 };
+
+export const isAFunction = (value: any) => typeof value === 'function';
 
 export const diffValues = (prevObject: any, newObject: any) =>
   diffValuesBoolean(prevObject, newObject) ? newObject : prevObject;

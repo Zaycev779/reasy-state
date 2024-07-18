@@ -8,28 +8,26 @@ export enum GeneratedType {
   SET = 'set',
   USE = 'use',
 }
-type Mutators = 'mutators';
+type M = 'mutators';
 
 export type CreateState<T, PT = T, D = PT> = T extends {
   [K: string]: unknown;
 }
   ? {
-      [K in keyof T as K extends Mutators
-        ? K & Mutators
-        : K]: K extends Mutators
-        ? MutatorsTyping<T>
-        : WithMutators<CreateState<T[K], D, T>>;
+      [K in keyof T as K extends M ? K & M : K]: K extends M
+        ? MTyping<T>
+        : WithM<CreateState<T[K], D, T>>;
     }
   : T;
 
-type WithoutMutators<T> = T extends {
+type WithoutM<T> = T extends {
   [K: string]: unknown;
 }
   ? Omit<
       {
-        [K in keyof T]: WithoutMutators<T[K]> extends infer R ? R : never;
+        [K in keyof T]: WithoutM<T[K]> extends infer R ? R : never;
       },
-      Mutators
+      M
     >
   : T;
 
@@ -44,45 +42,32 @@ type PartialObject<T> = Partial<
 >;
 
 type SetFn<PT> = {
-  set: (
-    prev:
-      | WithoutMutators<PT>
-      | ((prev: WithoutMutators<PT>) => WithoutMutators<PT>)
-  ) => WithoutMutators<PT> & void;
-  patch: (
-    prev:
-      | WithoutMutators<PartialObject<PT>>
-      | ((prev: WithoutMutators<PT>) => WithoutMutators<PartialObject<PT>>)
-  ) => WithoutMutators<PT> & void;
-
-  get: () => WithoutMutators<PT>;
+  set: (prev: Param<PT>) => PT & void;
+  patch: (prev: Param<PT, PartialObject<PT>>) => PT & void;
+  get: () => PT;
 };
 
-type MutatorsTyping<PT> = PT extends { mutators?: infer T }
+type MTyping<PT, WPT = WithoutM<PT>> = PT extends {
+  mutators?: infer T;
+}
   ? {
       [K in keyof T]: T[K] extends (...args: infer D) => Promise<void>
-        ? (
-            s: SetFn<PT>,
-            prev: WithoutMutators<PT>
-          ) => (...args: D) => ReturnType<T[K]>
+        ? (s: SetFn<WPT>, prev: WPT) => (...args: D) => ReturnType<T[K]>
         : T[K] extends (...args: infer D) => void
-        ? (
-            fn: SetFn<PT>,
-            prev: WithoutMutators<PT>
-          ) => (...args: D) => ReturnType<T[K]>
-        : (fn: SetFn<PT>, prev: WithoutMutators<PT>) => T[K];
+        ? (fn: SetFn<WPT>, prev: WPT) => (...args: D) => ReturnType<T[K]>
+        : (fn: SetFn<WPT>, prev: WPT) => T[K];
     }
   : never;
 
-export type WithMutators<T> = T extends {
+export type WithM<T> = T extends {
   [K: string]: unknown;
 }
   ? T extends { mutators: any }
     ? T
     : {
-        [K in keyof T]: K extends Mutators
+        [K in keyof T]: K extends M
           ? T[K]
-          : WithMutators<T[K]> extends infer Y
+          : WithM<T[K]> extends infer Y
           ? Y
           : never;
       } & {
@@ -92,7 +77,7 @@ export type WithMutators<T> = T extends {
       }
   : T;
 
-type SetMutators<T> = T extends (...args: any) => infer D
+type SetM<T> = T extends (...args: any) => infer D
   ? D extends Promise<infer S>
     ? S extends Function
       ? S
@@ -104,26 +89,26 @@ type SetMutators<T> = T extends (...args: any) => infer D
       [K: string]: unknown;
     }
   ? {
-      [K in keyof T]: SetMutators<T[K]> extends infer Y ? Y : never;
+      [K in keyof T]: SetM<T[K]> extends infer Y ? Y : never;
     }
   : T;
 
-type PickMutators<T> = T extends {
+type PickM<T> = T extends {
   [K: string]: unknown;
 } & { mutators?: any }
   ? Omit<
       {
-        [K in keyof T]: PickMutators<T[K]>;
-      } & T[Mutators],
-      Mutators
+        [K in keyof T]: PickM<T[K]>;
+      } & T[M],
+      M
     >
   : T;
 
-export type CreateFunctionResult<T> = PickMutators<SetMutators<T>>;
+export type CreateFunctionResult<T> = PickM<SetM<T>>;
 
 export type CreateFunction = {
   <T, U extends CreateFunctionResult<T>>(params: T): IGenerate<U>;
-  <T>(): <U extends WithMutators<CreateState<T>>>(
+  <T>(): <U extends WithM<CreateState<T>>>(
     params: U
   ) => IGenerate<CreateFunctionResult<U>>;
 };
@@ -132,51 +117,50 @@ export type IStore<T extends Record<string, any> = Record<string, any>> = {
   [P in keyof T]: IRecord | IStore<T> | Array<IRecord>;
 };
 
-type ISetFunc<T> = {
-  [P in keyof T as T[P] extends Function
-    ? P extends `${infer X}[]${infer Y}`
-      ? `${GeneratedType.SET}${KeyCapitalize<X>}${KeyCapitalize<Y>}`
-      : never
-    : `${GeneratedType.SET}${KeyCapitalize<P>}`]: P extends `${infer X}[]${infer Y}`
-    ? T[P] extends (arg: infer A) => infer D
-      ? (arg: A, v: D | ((prev: D) => D)) => void
-      : never
-    : T[keyof T] extends Function
-    ? never
-    : (value: T[P] | ((prev: T[P]) => T[P])) => void;
-};
+type ISetFunc<T> = IStaticFunc<T, GeneratedType.SET>;
 
-type IHook<T> = {
-  [P in keyof T as T[P] extends Function
-    ? P extends `${infer X}[]${infer Y}`
-      ? `${GeneratedType.USE}${KeyCapitalize<X>}${KeyCapitalize<Y>}`
-      : never
-    : `${GeneratedType.USE}${KeyCapitalize<P>}`]: P extends `${infer X}[]${infer Y}`
-    ? T[P] extends (arg: infer A) => infer D
-      ? (arg?: A) => D[]
-      : never
-    : () => T[P];
-};
+type IHook<T> = IStaticFunc<T, GeneratedType.USE>;
 
-type IGet<T> = {
-  [P in keyof T as T[P] extends Function
-    ? P extends `${infer X}[]${infer Y}`
-      ? `${GeneratedType.GET}${KeyCapitalize<X>}${KeyCapitalize<Y>}`
-      : never
-    : `${GeneratedType.GET}${KeyCapitalize<P>}`]: P extends `${infer X}[]${infer Y}`
-    ? T[P] extends (arg: infer A) => infer D
-      ? (arg?: A) => D[]
-      : never
-    : () => T[P];
+type IGet<T> = IStaticFunc<T, GeneratedType.GET>;
+
+type IStaticFunc<T, N extends GeneratedType> = {
+  [P in keyof T as FuncName<T, P, N>]: N extends GeneratedType.SET
+    ? FuncSet<T, P>
+    : FuncGet<T, P>;
 };
 
 type IFn<T> = {
   [P in keyof T as T[P] extends Function
-    ? P extends `${infer X}[]${infer Y}`
-      ? never
-      : Uncapitalize<P & string>
+    ? IsArray<P, never, Uncapitalize<P & string>>
     : never]: T[P];
 };
+
+type FuncName<
+  T,
+  P extends keyof T,
+  N extends GeneratedType
+> = T[P] extends Function
+  ? P extends `${infer X}[]${infer Y}`
+    ? `${N}${KeyCapitalize<X>}${KeyCapitalize<Y>}`
+    : never
+  : `${N}${KeyCapitalize<P>}`;
+
+type FuncGet<T, P extends keyof T> = IsArray<
+  P,
+  T[P] extends (arg: infer A) => infer D ? (arg?: A) => D[] : never,
+  () => T[P]
+>;
+
+type FuncSet<T, P extends keyof T> = IsArray<
+  P,
+  T[P] extends (arg: infer A) => infer D
+    ? (arg: A, v: Param<D>) => void
+    : never,
+  T[keyof T] extends Function ? never : (value: Param<T[P]>) => void
+>;
+type Param<T, D = T> = D | ((prev: T) => D);
+
+type IsArray<P, T1, T2> = P extends `${infer X}[]${infer Y}` ? T1 : T2;
 
 export type IGenerateFn<T> = ISetFunc<T> & IHook<T> & IGet<T> & IFn<T>;
 

@@ -292,9 +292,9 @@ export const { useUserStore$data$rating } = createState({ userStore });
 
 ### Arrays
 
-You can use arrys parameters functions using the $ sign
+You can use arrays parameters functions using the $ sign
 
-For array element "set", "get" and "use" functions, you can use a filter to specify which elements you need to change
+For array element "set", "get" and "use" functions, you can use a filter to specify which elements you need to get or change
 
 ```jsx
 get`[...functionName]`(filterFunction?);

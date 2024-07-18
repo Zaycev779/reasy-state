@@ -20,8 +20,9 @@ export const updateGlobalData = (
   return updateGlobalData(rest, data, src[path]);
 };
 
-export const getGlobalDataWithFunction = (
+export const getGlobalData = (
   path?: string[],
+  forArray?: boolean,
   filterFunc?: Function
 ) =>
   path?.reduce(
@@ -30,27 +31,16 @@ export const getGlobalDataWithFunction = (
         return { value, skip };
       }
       if (v.includes('[]') || Array.isArray(value)) {
-        const additionalPaths = path.slice(idx + 1, path.length);
-        const filterValue = filterFunc ? value?.filter(filterFunc) : value;
-        return {
-          value: filterValue?.map((v: any) =>
-            additionalPaths?.reduce((prev, key) => prev?.[key], v)
-          ),
-          skip: true,
-        };
-      }
-      return { value: value?.[v] };
-    },
-    { value: globalStore } as { value?: Record<string, any>; skip?: boolean }
-  ).value as Partial<IStore>;
-
-export const getGlobalData = (path?: string[]) =>
-  path?.reduce(
-    ({ value, skip }, v) => {
-      if (skip) {
-        return { value, skip };
-      }
-      if (v.includes('[]') || Array.isArray(value)) {
+        if (forArray) {
+          const additionalPaths = path.slice(idx + 1, path.length);
+          const filterValue = filterFunc ? value?.filter(filterFunc) : value;
+          return {
+            value: filterValue?.map((v: any) =>
+              additionalPaths?.reduce((prev, key) => prev?.[key], v)
+            ),
+            skip: true,
+          };
+        }
         return {
           value,
           skip: true,
@@ -74,7 +64,7 @@ export const generateStaticPathsMap = (
       const keyName = capitalizeName(name);
       if (keyName !== 'Mutators' && !keyName.includes('_')) {
         globalStoreMap[pathName + keyName] = prevPath;
-        generateStaticPathsMap(val, pathName + keyName, [...prevPath, name]);
+        generateStaticPathsMap(val, pathName + keyName, prevPath.concat(name));
       }
     });
   }
@@ -93,28 +83,24 @@ export const patchToGlobalMap = (
   const [staticName, firstKey, ...additionalKeys] =
     mapKey?.split(/[\s$]+/) ?? [];
   const staticFromMap = staticPath || globalStoreMap[staticName];
-  const baseRequiredData = getGlobalData([
-    ...staticFromMap,
-    ...(prevPath || []),
-  ]);
+  const baseRequiredData = getGlobalData(staticFromMap.concat(prevPath || []));
 
   if (Array.isArray(baseRequiredData)) {
-    globalStoreMap[baseMap] = [
-      ...staticFromMap,
-      ...(prevPath || []),
+    globalStoreMap[baseMap] = staticFromMap.concat(
+      prevPath || [],
       '[]',
       firstKey,
-      ...(additionalKeys.length ? [...additionalKeys] : []),
-    ];
+      additionalKeys.length ? additionalKeys : []
+    );
     return;
   }
-  globalStoreMap[baseMap] = [...staticFromMap, ...(prevPath || []), firstKey];
+  globalStoreMap[baseMap] = staticFromMap.concat(prevPath || [], firstKey);
   if (additionalKeys.length) {
     patchToGlobalMap(
       `$${additionalKeys.join('$')}`,
       baseMap || mapKey,
       staticFromMap,
-      [...(prevPath || []), firstKey]
+      (prevPath || []).concat(firstKey)
     );
   }
 };

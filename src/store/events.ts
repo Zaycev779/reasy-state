@@ -10,25 +10,15 @@ export const _setStoreValueEvent = <T>(
   path: string[],
   params?: Partial<T> | ((prev: T) => Partial<T>),
   type: UpdateType = 'set'
-) => {
-  const ev = new CustomEvent(SET_EV_NAME, {
-    detail: {
-      path,
-      params,
-      type,
-    },
+) =>
+  sendEvent(SET_EV_NAME, {
+    path,
+    params,
+    type,
   });
-  document.dispatchEvent(ev);
-};
 
-export const _updatePathEvent = (pathMap: string, path: string[]) => {
-  const ev = new CustomEvent(PATH_MAP_EV_NAME + pathMap, {
-    detail: {
-      path,
-    },
-  });
-  document.dispatchEvent(ev);
-};
+export const _updatePathEvent = (pathMap: string, path: string[]) =>
+  sendEvent(PATH_MAP_EV_NAME + pathMap, { path });
 
 export const _pushStoreValueEvent = <T extends IStore<T>>(
   paths: string[],
@@ -42,11 +32,13 @@ export const _pushStoreValueEvent = <T extends IStore<T>>(
 
   updatePaths.forEach((pathVal) => {
     const params = getGlobalData(pathVal);
-    const ev = new CustomEvent(PUSH_EV_NAME + pathVal.join(), {
-      detail: {
-        params,
-      },
-    });
-    document.dispatchEvent(ev);
+    sendEvent(PUSH_EV_NAME + pathVal.join(), { params });
   });
+};
+
+const sendEvent = (route: string, detail: any) => {
+  const ev = new CustomEvent(route, {
+    detail,
+  });
+  document.dispatchEvent(ev);
 };

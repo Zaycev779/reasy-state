@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { getGlobalDataWithFunction, globalStoreMap } from './global';
+import { getGlobalData, globalStoreMap } from './global';
 import { IStore } from './types/store';
-import { diffValues, isObject } from './utils';
+import { diffValues, isAFunction, isObject } from './utils';
 import { PATH_MAP_EV_NAME, PUSH_EV_NAME } from './events';
 
 interface IProps {
@@ -11,26 +11,20 @@ interface IProps {
 
 export const useStoreVal = ({ filterFunc, mapKey }: IProps) => {
   const [path, setPath] = useState<string[]>(globalStoreMap[mapKey]);
-  const [state, setState] = useState(
-    getGlobalDataWithFunction(path, filterFunc)
-  );
+  const [state, setState] = useState(getGlobalData(path, true, filterFunc));
 
-  useEffect(() => {
-    const onTargetEvent = (ev: Event) => {
-      const {
-        detail: { params },
-      } = ev as CustomEvent<{
-        params: IStore;
-      }>;
-
+  useEvent<{
+    params: IStore;
+  }>({
+    type: path ? PUSH_EV_NAME + path.join() : undefined,
+    onChange({ params }) {
       const arrrIdx = path?.findIndex((val) => val === '[]') ?? -1;
       if (arrrIdx >= 0 && path) {
         if (!Array.isArray(params)) return setState(params);
         const additionalPaths = path.slice(arrrIdx + 1, path.length);
-        const filteredValue =
-          typeof filterFunc === 'function'
-            ? params?.filter(filterFunc)
-            : params;
+        const filteredValue = isAFunction(filterFunc)
+          ? params?.filter(filterFunc)
+          : params;
         const vals = additionalPaths.reduce(
           (prev, key) => prev.map((val) => val[key]),
           filteredValue
@@ -39,41 +33,55 @@ export const useStoreVal = ({ filterFunc, mapKey }: IProps) => {
         setState((prev) => diffValues(prev, vals));
         return;
       }
+      setState(isObject(params) ? Object.assign({}, params) : params);
+    },
+    onStartEvent() {
+      setState(getGlobalData(path, true, filterFunc));
+    },
+  });
 
-      setState(isObject(params) ? { ...params } : params);
-    };
-    if (path) {
-      setState(getGlobalDataWithFunction(path, filterFunc));
-      document.addEventListener(PUSH_EV_NAME + path.join(), onTargetEvent);
-    }
-    return () => {
-      if (path) {
-        document.removeEventListener(PUSH_EV_NAME + path.join(), onTargetEvent);
-      }
-    };
-  }, [path]);
-
-  useEffect(() => {
-    const onTargetEvent = (ev: Event) => {
-      const {
-        detail: { path },
-      } = ev as CustomEvent<{
-        path: string[];
-      }>;
+  useEvent<{
+    path: string[];
+  }>({
+    type: mapKey ? PATH_MAP_EV_NAME + mapKey : undefined,
+    onChange({ path }) {
       if (path) {
         setPath(path);
-        setState(getGlobalDataWithFunction(path, filterFunc));
+        setState(getGlobalData(path, true, filterFunc));
       }
-    };
-    if (mapKey) {
-      document.addEventListener(PATH_MAP_EV_NAME + mapKey, onTargetEvent);
-    }
-    return () => {
-      if (mapKey) {
-        document.removeEventListener(PATH_MAP_EV_NAME + mapKey, onTargetEvent);
-      }
-    };
-  }, [mapKey]);
+    },
+  });
 
   return state;
+};
+
+interface IUseEvent<T> {
+  type?: string;
+  onStartEvent?: () => void;
+  onChange: (values: T) => void;
+}
+
+export const useEvent = <T,>({
+  type,
+  onStartEvent,
+  onChange,
+}: IUseEvent<T>) => {
+  useEffect(() => {
+    const onTargetEvent = (ev: Event) => {
+      const { detail } = ev as CustomEvent<T>;
+      onChange(detail);
+    };
+
+    if (type) {
+      if (onStartEvent) {
+        onStartEvent();
+      }
+      document.addEventListener(type, onTargetEvent);
+    }
+    return () => {
+      if (type) {
+        document.removeEventListener(type, onTargetEvent);
+      }
+    };
+  }, [type]);
 };

@@ -1,12 +1,10 @@
 import { KeyCapitalize } from './index';
 
-export type Flatten<TValue> = CollapseEntries<
-  CreateObjectEntries<TValue, TValue>
->;
+export type Flatten<TValue> = CollapseEntries<CreateEntries<TValue, TValue>>;
 
 type Entry = { key: string; value: unknown };
 type EmptyEntry<TValue> = { key: ''; value: TValue };
-type ExcludedTypes = Set<unknown> | Map<unknown, unknown>;
+type ExcTypes = Set<unknown> | Map<unknown, unknown>;
 
 type EscapeArrayKey<TKey extends string> =
   TKey extends `${infer TKeyBefore}[${bigint}]`
@@ -17,7 +15,7 @@ type EscapeArrayKey<TKey extends string> =
       : EscapeArrayKey<`${TKeyBefore}[]${TKeyAfter}`>
     : TKey;
 
-type EscapeArrayValue<
+type EscapeArray<
   E,
   TKey extends string,
   TValue
@@ -30,89 +28,85 @@ type EscapeArrayValue<
   : TValue;
 
 type CollapseEntries<TEntry extends Entry> = {
-  [E in TEntry as EscapeArrayKey<E['key']>]: EscapeArrayValue<
+  [E in TEntry as EscapeArrayKey<E['key']>]: EscapeArray<
     TEntry,
     E['key'],
     E['value']
   >;
 };
 
-type CreateArrayEntry<TValue, TValueInitial, TPrevKey> = OmitItself<
+type CreateEntry<TValue, TInit, TPrevKey> = OmitItself<
   TValue extends unknown[] ? { [k: `[${bigint}]`]: TValue[number] } : TValue,
-  TValueInitial,
+  TInit,
   TPrevKey
 >;
 
-type OmitItself<TValue, TValueInitial, TPrevKey> = TValue extends TValueInitial
+type OmitItself<TValue, TInit, TPrevKey> = TValue extends TInit
   ? EmptyEntry<TValue>
-  : OmitExcludedTypes<TValue, TValueInitial, TPrevKey>;
+  : OmitExcTypes<TValue, TInit, TPrevKey>;
 
-type OmitExcludedTypes<TValue, TValueInitial, TPrevKey> =
-  TValue extends ExcludedTypes
-    ? EmptyEntry<TValue>
-    : CreateObjectEntries<TValue, TValueInitial, TPrevKey>;
+type OmitExcTypes<TValue, TInit, TPrevKey> = TValue extends ExcTypes
+  ? EmptyEntry<TValue>
+  : CreateEntries<TValue, TInit, TPrevKey>;
 
-type TKeyName<TKey extends string> = `$${TKey extends `$${infer Y}`
-  ? Y
-  : TKey}`;
-
-type TNestedKeyName<TKey extends string> = `$${TKey extends `$${infer Y}`
-  ? Y
-  : TKey}`;
-
-type CreateObjectEntries<
+type TKeyName<
   TValue,
-  TValueInitial,
-  TPrevKey = ''
-> = TValue extends {
+  TKey extends keyof TValue & string,
+  TPrevKey,
+  V = TKey
+> = undefined extends TValue[TKey]
+  ? TKeyNameParse<TKey>
+  : THas$<TPrevKey, TKeyNameParse<TKey>, V>;
+
+type THas$<K, T1, T2> = K extends `$` ? T1 : T2;
+
+type TKeyNameParse<TKey extends string> = `$${TKey extends `$${infer Y}`
+  ? Y
+  : TKey}`;
+
+type CreateVal<K, V> = {
+  key: K;
+  value: V;
+};
+
+type CreateEntries<TValue, TInit, TPrevKey = ''> = TValue extends {
   [K: string]: infer U;
 }
   ? {
       [TKey in keyof TValue]-?: TKey extends string
-        ? CreateArrayEntry<
+        ? CreateEntry<
             TValue[TKey],
-            TValueInitial,
-            TPrevKey extends `$`
-              ? TPrevKey
-              : undefined extends TValue[TKey]
-              ? `$`
-              : [] extends TValue[TKey]
-              ? `$`
-              : TKey
-          > extends infer TNestedValue
-          ? TNestedValue extends Entry
-            ? TNestedValue['key'] extends ''
-              ? {
-                  key: `${undefined extends TValue[TKey]
-                    ? TKeyName<TKey>
-                    : TPrevKey extends `$`
-                    ? TKeyName<TKey>
-                    : TKey}`;
-                  value: TNestedValue['value'];
-                }
+            TInit,
+            THas$<
+              TPrevKey,
+              TPrevKey,
+              undefined extends TValue[TKey]
+                ? `$`
+                : [] extends TValue[TKey]
+                ? `$`
+                : TKey
+            >
+          > extends infer TNested
+          ? TNested extends Entry
+            ? TNested['key'] extends ''
+              ? CreateVal<TKeyName<TValue, TKey, TPrevKey>, TNested['value']>
               :
-                  | {
-                      key: `${undefined extends TValue[TKey]
-                        ? TKeyName<TKey>
-                        : TPrevKey extends `$`
-                        ? TKeyName<TKey>
-                        : TKey extends `$${infer Y}`
-                        ? Y
-                        : TKey}${undefined extends TValue[TKey]
-                        ? TNestedKeyName<TNestedValue['key']>
-                        : TPrevKey extends `$`
-                        ? TNestedKeyName<TNestedValue['key']>
-                        : KeyCapitalize<TNestedValue['key']>}`;
-                      value: TNestedValue['value'];
-                    }
-                  | {
-                      key: `${undefined extends TValue[TKey]
-                        ? TKeyName<TKey>
-                        : TPrevKey extends `$`
-                        ? TKeyName<TKey>
-                        : TKey}`;
-                      value: TValue[TKey];
-                    }
+                  | CreateVal<
+                      `${TKeyName<
+                        TValue,
+                        TKey,
+                        TPrevKey,
+                        TKey extends `$${infer Y}` ? Y : TKey
+                      >}${undefined extends TValue[TKey]
+                        ? TKeyNameParse<TNested['key']>
+                        : THas$<
+                            TPrevKey,
+                            TKeyNameParse<TNested['key']>,
+                            KeyCapitalize<TNested['key']>
+                          >}`,
+                      TNested['value']
+                    >
+                  | CreateVal<TKeyName<TValue, TKey, TPrevKey>, TValue[TKey]>
             : never
           : never
         : never;
