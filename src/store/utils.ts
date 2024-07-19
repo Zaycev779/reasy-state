@@ -100,39 +100,44 @@ export const createNewArrayValues = (
   newValue: any,
   filterFunc?: Function
 ) => {
-  if (Array.isArray(prev)) {
+  const l = keys.length - 1;
+  if (Array.isArray(prev) && l >= 0) {
     return prev.map((prevVal) => {
       if (isAFunction(filterFunc) && !filterFunc?.(prevVal)) {
         return prevVal;
       }
-      const targetObj = keys?.reduce((prev, key, idx) => {
-        return idx === keys?.length - 1 ? prev : prev[key];
-      }, prevVal);
+      const e = keys[l],
+        targetObj = keys.reduce((prev, key, idx) => {
+          return idx === l ? prev : prev[key];
+        }, prevVal);
+
       if (targetObj) {
-        targetObj[keys?.[keys.length - 1]] = isAFunction(newValue)
-          ? newValue(targetObj[keys?.[keys.length - 1]])
-          : newValue;
+        targetObj[e] = getParams(newValue, targetObj[e]);
       }
       return Object.assign({}, prevVal);
     });
   }
+  return prev;
 };
 
 export const getAdditionalMapKeys = (paths: string[]) => {
-  const storeMap = Object.keys(globalStoreMap) as string[];
+  const storeMap = Object.keys(globalStoreMap) as string[],
+    l = paths.length;
+
   return paths
     .reduce((prevName, path, idx) => {
-      const curVal = prevName.filter(
-        (curVal) =>
-          globalStoreMap?.[curVal]?.[idx] === path &&
-          globalStoreMap?.[curVal]?.length > paths.length
-      );
+      const curVal = prevName.filter((val) => {
+        const pathMap = globalStoreMap[val];
+        return pathMap[idx] === path && pathMap.length > l;
+      });
       return curVal;
     }, storeMap)
     .filter((val) => val.includes('$'));
 };
 
 export const isAFunction = (value: any) => typeof value === 'function';
+export const getParams = (params: any, prev: any) =>
+  isAFunction(params) ? params(prev) : params;
 
 export const diffValues = (prevObject: any, newObject: any) =>
   diffValuesBoolean(prevObject, newObject) ? newObject : prevObject;
@@ -142,3 +147,6 @@ export const diffValuesBoolean = (prevObject: any, newObject: any) =>
 
 export const capitalizeName = (name: string) =>
   name.charAt(0).toUpperCase() + name.slice(1);
+
+export const capitalizeKeysToString = (arr: string[], ignoreFirst?: boolean) =>
+  arr.map((k, i) => (!i && ignoreFirst ? k : capitalizeName(k))).join('');

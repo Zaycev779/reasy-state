@@ -16,7 +16,7 @@ npm install reasy-state
 
 ### Root
 
-Components that use recoil state need RecoilRoot to appear somewhere in the parent tree. A good place to put this is in your root component:
+Components that use reasy-state need StateRoot to appear somewhere in the parent tree. A good place to put this is in your root component:
 
 ```jsx
 import React from 'react';

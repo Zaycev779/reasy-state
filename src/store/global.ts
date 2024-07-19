@@ -2,7 +2,7 @@ import { IStore } from './types/store';
 import { capitalizeName, isObject } from './utils';
 
 export const globalStore: Record<string, any> = {};
-export const globalStoreMap: Record<string, any> = {};
+export const globalStoreMap: Record<string, string[]> = {};
 
 export const updateGlobalData = (
   paths: string[],
@@ -54,7 +54,7 @@ export const getGlobalData = (
 export const generateStaticPathsMap = (
   data: any,
   path: string,
-  prevPath: string[]
+  prevPath: string[] = [path]
 ): any => {
   const pathName = capitalizeName(path);
   if (isObject(data)) {
@@ -77,30 +77,31 @@ export const patchToGlobalMap = (
   mapKey: string,
   baseMap: string = mapKey,
   staticPath?: string[],
-  prevPath?: string[]
+  prevPath: string[] = []
 ) => {
   if (!mapKey.includes('$')) return;
   const [staticName, firstKey, ...additionalKeys] =
     mapKey?.split(/[\s$]+/) ?? [];
   const staticFromMap = staticPath || globalStoreMap[staticName];
-  const baseRequiredData = getGlobalData(staticFromMap.concat(prevPath || []));
+  const baseRequiredData = getGlobalData(staticFromMap.concat(prevPath));
 
   if (Array.isArray(baseRequiredData)) {
     globalStoreMap[baseMap] = staticFromMap.concat(
-      prevPath || [],
+      prevPath,
       '[]',
       firstKey,
       additionalKeys.length ? additionalKeys : []
     );
     return;
   }
-  globalStoreMap[baseMap] = staticFromMap.concat(prevPath || [], firstKey);
+  globalStoreMap[baseMap] = staticFromMap.concat(prevPath, firstKey);
+
   if (additionalKeys.length) {
     patchToGlobalMap(
-      `$${additionalKeys.join('$')}`,
+      '$'.concat(additionalKeys.join('$')),
       baseMap || mapKey,
       staticFromMap,
-      (prevPath || []).concat(firstKey)
+      prevPath.concat(firstKey)
     );
   }
 };

@@ -17,8 +17,10 @@ import {
   UpdateType,
 } from './types/store';
 import {
+  capitalizeKeysToString,
   capitalizeName,
   createNewArrayValues,
+  getParams,
   isAFunction,
   isObject,
 } from './utils';
@@ -31,7 +33,7 @@ const generateFunc = <T extends IStore<T>>(
   const result: IGenerate<T> = entries.reduce((result, [key, val]) => {
     if (!key) return result;
     const keyName = capitalizeName(key);
-    const prevKeyName = prevKey.map((k) => capitalizeName(k)).join('');
+    const prevKeyName = capitalizeKeysToString(prevKey);
     const path = prevKey.concat(key);
     const mapKey = `${prevKeyName}${keyName}`;
     return Object.assign(
@@ -59,19 +61,14 @@ const generateFunc = <T extends IStore<T>>(
 };
 
 const createMutators = (values: Record<string, Function>, path: string[]) => {
-  const pathName =
-    path[0] +
-    path
-      .slice(1)
-      .map((k) => capitalizeName(k))
-      .join('');
+  const pathName = path[0] + capitalizeKeysToString(path.slice(1));
+
   const entries = Object.entries(values);
   return entries.reduce((prev, [key, val]) => {
     const keyName = capitalizeName(key);
     const set = (arg: any, type: UpdateType = 'set') => {
-      isAFunction(arg)
-        ? _setStoreValueEvent(path, arg(getGlobalData(path)), type)
-        : _setStoreValueEvent(path, arg, type);
+      const params = getParams(arg, getGlobalData(path));
+      _setStoreValueEvent(path, params, type);
       return getGlobalData(path);
     };
 
@@ -105,9 +102,7 @@ export function createStateFn<T extends IStore<T>>(values: T): IGenerate<T> {
   stores.forEach((store) => {
     if (!globalStore[store]) {
       updateGlobalData([store], (values as Record<string, any>)?.[store]);
-      const prevKeyName = [store].map((k) => capitalizeName(k)).join('');
-      globalStoreMap[prevKeyName] = [store];
-      generateStaticPathsMap(globalStore[store], prevKeyName, [store]);
+      generateStaticPathsMap(globalStore[store], store);
     }
   });
   const gen = generateFunc(values);
@@ -118,23 +113,17 @@ export function createStateFn<T extends IStore<T>>(values: T): IGenerate<T> {
       }
       const [type, ...functionName] = name.split(/(?=[A-Z])/);
       const mapKey = functionName.join('');
-      const splitName = name
-        .split(/[\s$]+/)
-        .map((val, idx) => (idx ? capitalizeName(val) : val))
-        .join('');
+      const splitName = capitalizeKeysToString(name.split(/[\s$]+/), true);
 
-      if (target.hasOwnProperty(splitName)) {
-        if (isAFunction(target[splitName])) {
-          return (...args: any[]) => target[splitName](...args);
-        }
+      if (target.hasOwnProperty(splitName) && isAFunction(target[splitName])) {
+        return (...args: any[]) => target[splitName](...args);
       }
+
       const isGenerated = Object.values(GeneratedType).some((val) =>
         val.includes(type)
       );
-      if (isGenerated) {
-        if (mapKey) {
-          patchToGlobalMap(mapKey);
-        }
+      if (isGenerated && mapKey) {
+        patchToGlobalMap(mapKey);
       }
 
       switch (type) {

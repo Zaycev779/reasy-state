@@ -11,8 +11,8 @@ interface IProps {
 
 export const useStoreVal = ({ filterFunc, mapKey }: IProps) => {
   const [path, setPath] = useState<string[]>(globalStoreMap[mapKey]);
-  const [state, setState] = useState(getGlobalData(path, true, filterFunc));
-
+  const getState = () => getGlobalData(path, true, filterFunc);
+  const [state, setState] = useState(getState());
   useEvent<{
     params: IStore;
   }>({
@@ -23,12 +23,12 @@ export const useStoreVal = ({ filterFunc, mapKey }: IProps) => {
         if (!Array.isArray(params)) return setState(params);
         const additionalPaths = path.slice(arrrIdx + 1, path.length);
         const filteredValue = isAFunction(filterFunc)
-          ? params?.filter(filterFunc)
+          ? params.filter(filterFunc)
           : params;
         const vals = additionalPaths.reduce(
           (prev, key) => prev.map((val) => val[key]),
           filteredValue
-        ) as any;
+        );
 
         setState((prev) => diffValues(prev, vals));
         return;
@@ -36,7 +36,7 @@ export const useStoreVal = ({ filterFunc, mapKey }: IProps) => {
       setState(isObject(params) ? Object.assign({}, params) : params);
     },
     onStartEvent() {
-      setState(getGlobalData(path, true, filterFunc));
+      setState(getState());
     },
   });
 
@@ -47,7 +47,7 @@ export const useStoreVal = ({ filterFunc, mapKey }: IProps) => {
     onChange({ path }) {
       if (path) {
         setPath(path);
-        setState(getGlobalData(path, true, filterFunc));
+        setState(getState());
       }
     },
   });
@@ -61,11 +61,7 @@ interface IUseEvent<T> {
   onChange: (values: T) => void;
 }
 
-export const useEvent = <T,>({
-  type,
-  onStartEvent,
-  onChange,
-}: IUseEvent<T>) => {
+export const useEvent = <T,>({ type, onStartEvent, onChange }: IUseEvent<T>) =>
   useEffect(() => {
     const onTargetEvent = (ev: Event) => {
       const { detail } = ev as CustomEvent<T>;
@@ -84,4 +80,3 @@ export const useEvent = <T,>({
       }
     };
   }, [type]);
-};

@@ -8,7 +8,7 @@ import { IStore, UpdateType } from './types/store';
 import {
   diffValuesBoolean,
   getAdditionalMapKeys,
-  isAFunction,
+  getParams,
   isObject,
   mergeDeep,
 } from './utils';
@@ -29,9 +29,7 @@ export const StateRoot = <T,>({ children }: IProps<T>): T => {
     onChange({ path, type, params }) {
       const prevValues = getGlobalData(path);
 
-      const updatedParams = isAFunction(params)
-        ? (params as Function)(prevValues)
-        : params;
+      const updatedParams = getParams(params, prevValues);
       updateGlobalData(
         path,
         type === 'patch' && isObject(updatedParams) && isObject(prevValues)
