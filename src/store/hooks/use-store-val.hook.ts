@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
-import { getGlobalData, globalStoreMap } from './global';
-import { IStore } from './types/store';
-import { diffValues, isAFunction, isObject } from './utils';
-import { PATH_MAP_EV_NAME, PUSH_EV_NAME } from './events';
+import { useState } from 'react';
+import { getGlobalData, globalStoreMap } from '../global';
+import { IStore } from '../types/store';
+import { PATH_MAP_EV_NAME, PUSH_EV_NAME } from '../events';
+import { diffValues, isAFunction, isObject } from '../utils';
+import { useEvent } from './use-event.hook';
 
 interface IProps {
   mapKey: string;
@@ -54,29 +55,3 @@ export const useStoreVal = ({ filterFunc, mapKey }: IProps) => {
 
   return state;
 };
-
-interface IUseEvent<T> {
-  type?: string;
-  onStartEvent?: () => void;
-  onChange: (values: T) => void;
-}
-
-export const useEvent = <T,>({ type, onStartEvent, onChange }: IUseEvent<T>) =>
-  useEffect(() => {
-    const onTargetEvent = (ev: Event) => {
-      const { detail } = ev as CustomEvent<T>;
-      onChange(detail);
-    };
-
-    if (type) {
-      if (onStartEvent) {
-        onStartEvent();
-      }
-      document.addEventListener(type, onTargetEvent);
-    }
-    return () => {
-      if (type) {
-        document.removeEventListener(type, onTargetEvent);
-      }
-    };
-  }, [type]);

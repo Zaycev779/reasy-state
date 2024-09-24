@@ -7,6 +7,7 @@ export enum GeneratedType {
   GET = 'get',
   SET = 'set',
   USE = 'use',
+  RESET = 'reset',
 }
 type M = 'mutators';
 
@@ -104,24 +105,18 @@ type PickM<T> = T extends {
     >
   : T;
 
-export type CreateFunctionResult<T> = PickM<SetM<T>>;
+export type CreateResult<T> = PickM<SetM<T>>;
 
-export type CreateFunction = {
-  <T, U extends CreateFunctionResult<T>>(params: T): IGenerate<U>;
+export type Create = {
+  <T, U extends CreateResult<T>>(params: T): IGenerate<U>;
   <T>(): <U extends WithM<CreateState<T>>>(
     params: U
-  ) => IGenerate<CreateFunctionResult<U>>;
+  ) => IGenerate<CreateResult<U>>;
 };
 
 export type IStore<T extends Record<string, any> = Record<string, any>> = {
   [P in keyof T]: IRecord | IStore<T> | Array<IRecord>;
 };
-
-type ISetFunc<T> = IStaticFunc<T, GeneratedType.SET>;
-
-type IHook<T> = IStaticFunc<T, GeneratedType.USE>;
-
-type IGet<T> = IStaticFunc<T, GeneratedType.GET>;
 
 type IStaticFunc<T, N extends GeneratedType> = {
   [P in keyof T as FuncName<T, P, N>]: N extends GeneratedType.SET
@@ -162,6 +157,13 @@ type Param<T, D = T> = D | ((prev: T) => D);
 
 type IsArray<P, T1, T2> = P extends `${infer X}[]${infer Y}` ? T1 : T2;
 
-export type IGenerateFn<T> = ISetFunc<T> & IHook<T> & IGet<T> & IFn<T>;
+type IResetFunc<T> = {
+  [P in keyof T as FuncName<T, P, GeneratedType.RESET>]: () => void;
+};
 
-export type IGenerate<T> = IGenerateFn<Flatten<T>>;
+export type IGenerateFn<T> = IStaticFunc<T, GeneratedType.GET> &
+  IStaticFunc<T, GeneratedType.SET> &
+  IStaticFunc<T, GeneratedType.USE> &
+  IFn<T>;
+
+export type IGenerate<T> = IGenerateFn<Flatten<T>> & IResetFunc<T>;

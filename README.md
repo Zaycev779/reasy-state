@@ -14,29 +14,11 @@ npm install reasy-state
 
 ## Usage example
 
-### Root
-
-Components that use reasy-state need StateRoot to appear somewhere in the parent tree. A good place to put this is in your root component:
-
-```jsx
-import React from 'react';
-import { StateRoot } from 'reasy-state';
-
-function App() {
-  return (
-    <StateRoot>
-      <Components />
-      ...
-    </StateRoot>
-  );
-}
-```
-
 ### Create a state
 
 Create state and export necessary functions
 
-The function names will be generated automatically, depending on your object. ( get*, set* and use\*)
+The function names will be generated automatically, depending on your object. ( get*, set*, use* and reset*storageName\*)
 The storage name must have a unique name
 
 ```jsx
@@ -59,6 +41,7 @@ export const {
   useUserStoreName,
   useUserStoreSettingsNotificationMessage,
   setUserStoreSettingsNotificationMessage,
+  resetUserStore,
 } = createState({ userStore });
 ```
 
@@ -76,6 +59,7 @@ const UserComponent = () => {
       <p onClick={() => console.log('User ID:', getUserStoreId())}>
         {userName}
       </p>
+      <button onClick={resetUserStore}>Reset store</button>
     </div>
   );
 };

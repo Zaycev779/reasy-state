@@ -1,8 +1,80 @@
-import { IStore } from './types/store';
-import { capitalizeName, isObject } from './utils';
+import { _pushStoreValueEvent, _updatePathEvent, SET_EV_NAME } from './events';
+import { IStore, UpdateType } from './types/store';
+import {
+  capitalizeName,
+  diffValuesBoolean,
+  getAdditionalMapKeys,
+  getParams,
+  isObject,
+  mergeDeep,
+} from './utils';
 
-export const globalStore: Record<string, any> = {};
-export const globalStoreMap: Record<string, string[]> = {};
+declare global {
+  interface Window {
+    easyStorage: EasyStorage;
+  }
+}
+
+declare interface EasyStorage {
+  globalStore: Record<string, any>;
+  globalStoreMap: Record<string, string[]>;
+  setGlobalStore: (value: Record<string, any>) => void;
+  setGlobalStoreMap: (value: Record<string, string[]>) => void;
+}
+
+export const isClient = window && typeof window !== 'undefined';
+
+if (isClient && !window?.easyStorage) {
+  window.easyStorage = {
+    globalStore: {},
+    globalStoreMap: {},
+    setGlobalStore: (value) => {
+      window.easyStorage.globalStore = value;
+    },
+    setGlobalStoreMap: (value) => {
+      window.easyStorage.globalStore = value;
+    },
+  };
+  window.addEventListener('DOMContentLoaded', () => {
+    const onTargetEvent = (ev: Event) => {
+      const { detail } = ev as CustomEvent<{
+        path: string[];
+        params: Partial<IStore> | ((prev: IStore) => Partial<IStore>);
+        type: UpdateType;
+      }>;
+      const { params, path, type } = detail;
+      const prevValues = getGlobalData(path);
+
+      const updatedParams = getParams(params, prevValues);
+      updateGlobalData(
+        path,
+        type === 'patch' && isObject(updatedParams) && isObject(prevValues)
+          ? mergeDeep({}, prevValues, updatedParams)
+          : updatedParams
+      );
+
+      const updatePathMaps = getAdditionalMapKeys(path);
+
+      updatePathMaps.forEach((mapKey) => {
+        const prevPath = globalStoreMap[mapKey];
+        patchToGlobalMap(mapKey);
+        if (diffValuesBoolean(prevPath, globalStoreMap[mapKey])) {
+          _updatePathEvent(mapKey, globalStoreMap[mapKey]);
+        }
+      });
+      _pushStoreValueEvent(path, updatedParams, prevValues);
+    };
+
+    document.addEventListener(SET_EV_NAME, onTargetEvent);
+  });
+}
+
+export const globalStore: Record<string, any> = isClient
+  ? window?.easyStorage?.globalStore ?? {}
+  : {};
+export const globalStoreMap: Record<string, string[]> = isClient
+  ? window?.easyStorage?.globalStoreMap ?? {}
+  : {};
 
 export const updateGlobalData = (
   paths: string[],
@@ -12,10 +84,13 @@ export const updateGlobalData = (
   const [path, ...rest] = paths;
   if (!rest.length) {
     src[path] = data;
+
+    window.easyStorage.setGlobalStore(globalStore);
     return true;
   }
   if (!src[path]) {
     src[path] = {};
+    window.easyStorage.setGlobalStore(globalStore);
   }
   return updateGlobalData(rest, data, src[path]);
 };
@@ -23,7 +98,8 @@ export const updateGlobalData = (
 export const getGlobalData = (
   path?: string[],
   forArray?: boolean,
-  filterFunc?: Function
+  filterFunc?: Function,
+  src = globalStore
 ) =>
   path?.reduce(
     ({ value, skip }, v, idx) => {
@@ -48,7 +124,7 @@ export const getGlobalData = (
       }
       return { value: value?.[v] };
     },
-    { value: globalStore } as { value?: Record<string, any>; skip?: boolean }
+    { value: src } as { value?: Record<string, any>; skip?: boolean }
   ).value as Partial<IStore>;
 
 export const generateStaticPathsMap = (
@@ -69,6 +145,7 @@ export const generateStaticPathsMap = (
     });
   }
   globalStoreMap[pathName] = prevPath;
+  window.easyStorage.setGlobalStoreMap(globalStoreMap);
 
   return data;
 };

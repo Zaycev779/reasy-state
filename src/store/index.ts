@@ -4,13 +4,14 @@ import {
   getGlobalData,
   globalStore,
   globalStoreMap,
+  isClient,
   patchToGlobalMap,
   updateGlobalData,
 } from './global';
-import { useStoreVal } from './hook';
+import { useStoreVal } from './hooks/use-store-val.hook';
 import { Entries, ValueOf } from './types/index';
 import {
-  CreateFunction,
+  Create,
   GeneratedType,
   IGenerate,
   IStore,
@@ -88,7 +89,7 @@ const createMutators = (values: Record<string, Function>, path: string[]) => {
   }, {});
 };
 
-export const createState: CreateFunction = <T extends IStore<T>>(param?: T) => {
+export const createState: Create = <T extends IStore<T>>(param?: T) => {
   if (!param) {
     return (<U extends IStore<U>>(param: U) =>
       createStateFn(param)) as unknown as T;
@@ -98,6 +99,9 @@ export const createState: CreateFunction = <T extends IStore<T>>(param?: T) => {
 
 export function createStateFn<T extends IStore<T>>(values: T): IGenerate<T> {
   const stores = Object.keys(values);
+  const initialStore: Record<string, IStore<T>> = JSON.parse(
+    JSON.stringify(values)
+  );
 
   stores.forEach((store) => {
     if (!globalStore[store]) {
@@ -124,6 +128,9 @@ export function createStateFn<T extends IStore<T>>(values: T): IGenerate<T> {
       );
       if (isGenerated && mapKey) {
         patchToGlobalMap(mapKey);
+        if (isClient) {
+          window.easyStorage.setGlobalStoreMap(globalStoreMap);
+        }
       }
 
       switch (type) {
@@ -166,6 +173,15 @@ export function createStateFn<T extends IStore<T>>(values: T): IGenerate<T> {
               }
               return _setStoreValueEvent(basePath, filterFunc);
             }
+          };
+
+        case GeneratedType.RESET:
+          return () => {
+            const basePath = globalStoreMap[mapKey] as string[];
+            return _setStoreValueEvent(
+              basePath,
+              getGlobalData(basePath, true, undefined, initialStore)
+            );
           };
 
         default:

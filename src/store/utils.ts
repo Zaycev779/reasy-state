@@ -3,61 +3,41 @@ import { IStore } from './types/store';
 
 export type updatedParams = string | updatedParams[];
 
-export const getUpdatedParams = <T extends IStore>(
+export const getRootPaths = (paths: string[]) =>
+  paths.reduce(
+    (prev, val, idx) => prev.concat([(prev?.[idx - 1] || []).concat(val)]),
+    [] as string[][]
+  );
+
+export const getUpdatedPaths = <T extends IStore>(
   updatedParams: T,
   prevValues: T,
-  paths: string[]
-): updatedParams[] => {
-  if (!isObject(updatedParams)) return [];
-  const entries = Object.entries(updatedParams);
-  return entries.reduce((prev, [key, val]) => {
-    if (key === 'mutators') return prev;
-    let childParam: updatedParams[] = [];
-    if (isObject(val)) {
-      childParam = [
-        getUpdatedParams(val as IStore, prevValues[key] as IStore, paths),
-      ];
-    }
-    if (val !== prevValues[key]) {
-      return prev.concat(
-        ([key] as updatedParams[]).concat(childParam.length ? childParam : [])
-      );
-    }
-    return prev;
-  }, [] as updatedParams[]);
-};
-
-export const getUpdatePaths = (keys: updatedParams[], paths: string[]) => {
-  const updatePaths: string[][] = [];
-  if (paths) {
-    const pathsArr = paths.reduce(
-      (prev, val, idx) => prev.concat([(prev?.[idx - 1] || []).concat(val)]),
-      [] as string[][]
-    );
-    updatePaths.push(...pathsArr);
-  }
-
-  const flattenPaths = (
-    keys: updatedParams[],
-    prevPaths: string[],
-    basePath: string[]
-  ) => {
-    keys.forEach((val) => {
-      if (Array.isArray(val)) {
-        flattenPaths(
-          val,
-          prevPaths.concat(
-            keys.filter((v) => typeof v === 'string') as string[]
-          ),
-          basePath
-        );
+  paths: string[],
+  res: string[][] = []
+) => {
+  if (isObject(updatedParams)) {
+    for (const key in Object.assign({}, prevValues || {}, updatedParams)) {
+      const propName = paths ? [...paths, key] : [key];
+      if (key === 'mutators') continue;
+      if (isObject(updatedParams[key])) {
+        const updated = Object.assign({}, updatedParams[key] as IStore);
+        const prev = Object.assign({}, (prevValues[key] as IStore) || {});
+        if (updated !== prev) {
+          res.push(propName);
+        }
+        getUpdatedPaths(updated, prev, propName, res);
       } else {
-        updatePaths.push((basePath || []).concat(prevPaths, val));
+        if (prevValues[key] !== updatedParams[key]) {
+          res.push(propName);
+        }
       }
-    });
-  };
-  flattenPaths(keys, [], paths);
-  return updatePaths;
+    }
+    return [paths, ...res];
+  }
+  if (prevValues !== updatedParams) {
+    return [paths];
+  }
+  return [];
 };
 
 export function isObject(item: any) {
