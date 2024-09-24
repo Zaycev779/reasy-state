@@ -2,7 +2,6 @@ import { _setStoreValueEvent } from './events';
 import {
   generateStaticPathsMap,
   getGlobalData,
-  isClient,
   patchToGlobalMap,
   updateGlobalData,
 } from './global';
@@ -102,15 +101,12 @@ export function createStateFn<T extends IStore<T>>(
   const stores = Object.keys(initialValues);
 
   stores.forEach((store) => {
-    if (!window?.easyStorage.getGlobalStore()?.[store]) {
+    if (!window?.eStore.get()?.[store]) {
       updateGlobalData(
         [store],
         (initialValues as Record<string, any>)?.[store]
       );
-      generateStaticPathsMap(
-        window?.easyStorage.getGlobalStore()?.[store],
-        store
-      );
+      generateStaticPathsMap(window?.eStore.get()?.[store], store);
     }
   });
   const gen = generateFunc(initialValues);
@@ -137,11 +133,7 @@ export function createStateFn<T extends IStore<T>>(
       switch (type) {
         case GeneratedType.GET:
           return (filterFunc?: Function) =>
-            getGlobalData(
-              window.easyStorage.getGlobalStoreMapByKey(mapKey),
-              true,
-              filterFunc
-            );
+            getGlobalData(window.eStore.getMapByKey(mapKey), true, filterFunc);
 
         case GeneratedType.USE:
           return (filterFunc?: Function) =>
@@ -153,7 +145,7 @@ export function createStateFn<T extends IStore<T>>(
         case GeneratedType.SET:
           return (...args: [Function] | [Function, any]) => {
             const [filterFunc, arrValue] = args;
-            const basePath = window.easyStorage.getGlobalStoreMapByKey(mapKey);
+            const basePath = window.eStore.getMapByKey(mapKey);
             if (basePath) {
               if (args.length > 1) {
                 const arrrIdx =
@@ -182,7 +174,7 @@ export function createStateFn<T extends IStore<T>>(
 
         case GeneratedType.RESET:
           return () => {
-            const basePath = window.easyStorage.getGlobalStoreMapByKey(mapKey);
+            const basePath = window.eStore.getMapByKey(mapKey);
             return _setStoreValueEvent(
               basePath,
               getGlobalData(basePath, true, undefined, initialValues)

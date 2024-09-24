@@ -11,9 +11,7 @@ interface IProps {
 }
 
 export const useStoreVal = ({ filterFunc, mapKey }: IProps) => {
-  const [path, setPath] = useState<string[]>(
-    window.easyStorage.getGlobalStoreMapByKey(mapKey)
-  );
+  const [path, setPath] = useState<string[]>(window.eStore.getMapByKey(mapKey));
   const getState = () => getGlobalData(path, true, filterFunc);
   const [state, setState] = useState(getState());
   useEvent<{

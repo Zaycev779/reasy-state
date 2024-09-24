@@ -11,35 +11,34 @@ import {
 
 declare global {
   interface Window {
-    easyStorage: EasyStorage;
+    eStore: EasyStorage;
   }
 }
 
 declare interface EasyStorage {
-  globalStore: Record<string, any>;
-  globalStoreMap: Record<string, string[]>;
-  getGlobalStore: () => Record<string, any>;
-  getGlobalStoreMap: () => Record<string, string[]>;
-  getGlobalStoreMapByKey: (keyName: string) => string[];
-  setGlobalStore: (value: Record<string, any>) => void;
-  setGlobalStoreMap: (value: Record<string, string[]>) => void;
+  store: Record<string, any>;
+  map: Record<string, string[]>;
+  get: () => Record<string, any>;
+  getMap: () => Record<string, string[]>;
+  getMapByKey: (keyName: string) => string[];
+  set: (value: Record<string, any>) => void;
+  setMap: (value: Record<string, string[]>) => void;
 }
 
 export const isClient = window && typeof window !== 'undefined';
 
-if (isClient && !window?.easyStorage) {
-  window.easyStorage = {
-    globalStore: {},
-    getGlobalStore: () => window.easyStorage.globalStore,
-    globalStoreMap: {},
-    getGlobalStoreMap: () => window.easyStorage.globalStore,
-    getGlobalStoreMapByKey: (keyName: string) =>
-      window.easyStorage.globalStore[keyName],
-    setGlobalStore: (value) => {
-      window.easyStorage.globalStore = value;
+if (isClient && !window?.eStore) {
+  window.eStore = {
+    store: {},
+    map: {},
+    get: () => window.eStore.store,
+    getMap: () => window.eStore.map,
+    getMapByKey: (keyName: string) => window.eStore.map[keyName],
+    set: (value) => {
+      window.eStore.store = value;
     },
-    setGlobalStoreMap: (value) => {
-      window.easyStorage.globalStore = value;
+    setMap: (value) => {
+      window.eStore.map = value;
     },
   };
   window.addEventListener('DOMContentLoaded', () => {
@@ -63,18 +62,10 @@ if (isClient && !window?.easyStorage) {
       const updatePathMaps = getAdditionalMapKeys(path);
 
       updatePathMaps.forEach((mapKey) => {
-        const prevPath = window.easyStorage.getGlobalStoreMapByKey(mapKey);
+        const prevPath = window.eStore.getMapByKey(mapKey);
         patchToGlobalMap(mapKey);
-        if (
-          diffValuesBoolean(
-            prevPath,
-            window.easyStorage.getGlobalStoreMapByKey(mapKey)
-          )
-        ) {
-          _updatePathEvent(
-            mapKey,
-            window.easyStorage.getGlobalStoreMapByKey(mapKey)
-          );
+        if (diffValuesBoolean(prevPath, window.eStore.getMapByKey(mapKey))) {
+          _updatePathEvent(mapKey, window.eStore.getMapByKey(mapKey));
         }
       });
       _pushStoreValueEvent(path, updatedParams, prevValues);
@@ -87,7 +78,7 @@ if (isClient && !window?.easyStorage) {
 export const updateGlobalData = (
   paths: string[],
   data: Partial<IStore>,
-  src: Record<string, any> = window?.easyStorage.getGlobalStore()
+  src: Record<string, any> = window?.eStore.get()
 ): boolean => {
   const [path, ...rest] = paths;
   if (!rest.length) {
@@ -106,7 +97,7 @@ export const getGlobalData = (
   path?: string[],
   forArray?: boolean,
   filterFunc?: Function,
-  src = window?.easyStorage.getGlobalStore()
+  src = window?.eStore.get()
 ) =>
   path?.reduce(
     ({ value, skip }, v, idx) => {
@@ -141,16 +132,16 @@ export const generateStaticPathsMap = (
 ): any => {
   const pathName = capitalizeName(path);
   if (isObject(data)) {
-    window.easyStorage.setGlobalStoreMap({
-      ...window.easyStorage.getGlobalStoreMap(),
+    window.eStore.setMap({
+      ...window.eStore.getMap(),
       [pathName]: prevPath,
     });
     const entries = Object.entries(data);
     entries.forEach(([name, val]) => {
       const keyName = capitalizeName(name);
       if (keyName !== 'Mutators' && !keyName.includes('_')) {
-        window.easyStorage.setGlobalStoreMap({
-          ...window.easyStorage.getGlobalStoreMap(),
+        window.eStore.setMap({
+          ...window.eStore.getMap(),
           [pathName + keyName]: prevPath,
         });
 
@@ -159,8 +150,8 @@ export const generateStaticPathsMap = (
     });
   }
 
-  window.easyStorage.setGlobalStoreMap({
-    ...window.easyStorage.getGlobalStoreMap(),
+  window.eStore.setMap({
+    ...window.eStore.getMap(),
     [pathName]: prevPath,
   });
   return data;
@@ -175,13 +166,12 @@ export const patchToGlobalMap = (
   if (!mapKey.includes('$')) return;
   const [staticName, firstKey, ...additionalKeys] =
     mapKey?.split(/[\s$]+/) ?? [];
-  const staticFromMap =
-    staticPath || window.easyStorage.getGlobalStoreMap()?.[staticName];
+  const staticFromMap = staticPath || window.eStore.getMap()?.[staticName];
   const baseRequiredData = getGlobalData(staticFromMap.concat(prevPath));
 
   if (Array.isArray(baseRequiredData)) {
-    window.easyStorage.setGlobalStoreMap({
-      ...window.easyStorage.getGlobalStoreMap(),
+    window.eStore.setMap({
+      ...window.eStore.getMap(),
       [baseMap]: staticFromMap.concat(
         prevPath,
         '[]',
@@ -191,8 +181,8 @@ export const patchToGlobalMap = (
     });
     return;
   }
-  window.easyStorage.setGlobalStoreMap({
-    ...window.easyStorage.getGlobalStoreMap(),
+  window.eStore.setMap({
+    ...window.eStore.getMap(),
     [baseMap]: staticFromMap.concat(prevPath, firstKey),
   });
 

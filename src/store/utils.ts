@@ -62,9 +62,7 @@ export function mergeDeep(target: any, ...sources: any): any {
 }
 
 export const getAdditionalPaths = (paths: string[]) => {
-  const storeMap = Object.values(
-    window.easyStorage.getGlobalStoreMap()
-  ) as string[][];
+  const storeMap = Object.values(window.eStore.getMap()) as string[][];
   return paths
     .reduce((prev, path, idx) => {
       const curVal = prev.filter(
@@ -102,15 +100,13 @@ export const createNewArrayValues = (
 };
 
 export const getAdditionalMapKeys = (paths: string[]) => {
-  const storeMap = Object.keys(
-      window.easyStorage.getGlobalStoreMap()
-    ) as string[],
+  const storeMap = Object.keys(window.eStore.getMap()) as string[],
     l = paths.length;
 
   return paths
     .reduce((prevName, path, idx) => {
       const curVal = prevName.filter((val) => {
-        const pathMap = window.easyStorage.getGlobalStoreMapByKey(val);
+        const pathMap = window.eStore.getMapByKey(val);
         return pathMap[idx] === path && pathMap.length > l;
       });
       return curVal;
