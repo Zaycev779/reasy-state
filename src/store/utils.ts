@@ -1,4 +1,3 @@
-import { globalStoreMap } from './global';
 import { IStore } from './types/store';
 
 export type updatedParams = string | updatedParams[];
@@ -63,7 +62,9 @@ export function mergeDeep(target: any, ...sources: any): any {
 }
 
 export const getAdditionalPaths = (paths: string[]) => {
-  const storeMap = Object.values(globalStoreMap) as string[][];
+  const storeMap = Object.values(
+    window.easyStorage.getGlobalStoreMap()
+  ) as string[][];
   return paths
     .reduce((prev, path, idx) => {
       const curVal = prev.filter(
@@ -101,13 +102,15 @@ export const createNewArrayValues = (
 };
 
 export const getAdditionalMapKeys = (paths: string[]) => {
-  const storeMap = Object.keys(globalStoreMap) as string[],
+  const storeMap = Object.keys(
+      window.easyStorage.getGlobalStoreMap()
+    ) as string[],
     l = paths.length;
 
   return paths
     .reduce((prevName, path, idx) => {
       const curVal = prevName.filter((val) => {
-        const pathMap = globalStoreMap[val];
+        const pathMap = window.easyStorage.getGlobalStoreMapByKey(val);
         return pathMap[idx] === path && pathMap.length > l;
       });
       return curVal;

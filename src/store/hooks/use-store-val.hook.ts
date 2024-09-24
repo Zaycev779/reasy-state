@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { getGlobalData, globalStoreMap } from '../global';
+import { getGlobalData } from '../global';
 import { IStore } from '../types/store';
 import { PATH_MAP_EV_NAME, PUSH_EV_NAME } from '../events';
 import { diffValues, isAFunction, isObject } from '../utils';
@@ -11,7 +11,9 @@ interface IProps {
 }
 
 export const useStoreVal = ({ filterFunc, mapKey }: IProps) => {
-  const [path, setPath] = useState<string[]>(globalStoreMap[mapKey]);
+  const [path, setPath] = useState<string[]>(
+    window.easyStorage.getGlobalStoreMapByKey(mapKey)
+  );
   const getState = () => getGlobalData(path, true, filterFunc);
   const [state, setState] = useState(getState());
   useEvent<{
