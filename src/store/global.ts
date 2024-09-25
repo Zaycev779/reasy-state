@@ -3,42 +3,39 @@ import { IStore, UpdateType } from './types/store';
 import {
   capitalizeName,
   diffValuesBoolean,
+  entries,
   getAdditionalMapKeys,
   getParams,
+  isNotMutator,
   isObject,
   mergeDeep,
 } from './utils';
 
 declare global {
-  interface Window {
-    eStore: EasyStorage;
+  namespace EStorage {
+    let store: Record<string, any>;
+    let map: Record<string, string[]>;
+    function get(): Record<string, any>;
+    function getMap(): Record<string, string[]>;
+    function getMapByKey(keyName: string): string[];
+    function set(value: Record<string, any>): void;
+    function setMap(value: Record<string, string[]>): void;
   }
 }
-
-declare interface EasyStorage {
-  store: Record<string, any>;
-  map: Record<string, string[]>;
-  get: () => Record<string, any>;
-  getMap: () => Record<string, string[]>;
-  getMapByKey: (keyName: string) => string[];
-  set: (value: Record<string, any>) => void;
-  setMap: (value: Record<string, string[]>) => void;
-}
-
 export const isClient = window && typeof window !== 'undefined';
 
-if (isClient && !window?.eStore) {
-  window.eStore = {
+if (!('EStorage' in globalThis) && isClient) {
+  globalThis.EStorage = {
     store: {},
     map: {},
-    get: () => window.eStore.store,
-    getMap: () => window.eStore.map,
-    getMapByKey: (keyName: string) => window.eStore.map[keyName],
+    get: () => EStorage.store,
+    getMap: () => EStorage.map,
+    getMapByKey: (keyName: string) => EStorage.map[keyName],
     set: (value) => {
-      window.eStore.store = value;
+      EStorage.store = value;
     },
     setMap: (value) => {
-      window.eStore.map = value;
+      EStorage.map = value;
     },
   };
   window.addEventListener('DOMContentLoaded', () => {
@@ -62,10 +59,10 @@ if (isClient && !window?.eStore) {
       const updatePathMaps = getAdditionalMapKeys(path);
 
       updatePathMaps.forEach((mapKey) => {
-        const prevPath = window.eStore.getMapByKey(mapKey);
+        const prevPath = EStorage.getMapByKey(mapKey);
         patchToGlobalMap(mapKey);
-        if (diffValuesBoolean(prevPath, window.eStore.getMapByKey(mapKey))) {
-          _updatePathEvent(mapKey, window.eStore.getMapByKey(mapKey));
+        if (diffValuesBoolean(prevPath, EStorage.getMapByKey(mapKey))) {
+          _updatePathEvent(mapKey, EStorage.getMapByKey(mapKey));
         }
       });
       _pushStoreValueEvent(path, updatedParams, prevValues);
@@ -78,13 +75,16 @@ if (isClient && !window?.eStore) {
 export const updateGlobalData = (
   paths: string[],
   data: Partial<IStore>,
-  src: Record<string, any> = window?.eStore.get()
+  src: Record<string, any> = EStorage.get()
 ): boolean => {
   const [path, ...rest] = paths;
   if (!rest.length) {
-    const cloneData = JSON.parse(JSON.stringify(data));
-    src[path] = cloneData;
-
+    try {
+      const cloneData = isObject(data) ? mergeDeep({}, data) : data;
+      src[path] = cloneData;
+    } catch {
+      src[path] = data;
+    }
     return true;
   }
   if (!src[path]) {
@@ -97,7 +97,7 @@ export const getGlobalData = (
   path?: string[],
   forArray?: boolean,
   filterFunc?: Function,
-  src = window?.eStore.get()
+  src = EStorage.get()
 ) =>
   path?.reduce(
     ({ value, skip }, v, idx) => {
@@ -132,16 +132,15 @@ export const generateStaticPathsMap = (
 ): any => {
   const pathName = capitalizeName(path);
   if (isObject(data)) {
-    window.eStore.setMap({
-      ...window.eStore.getMap(),
+    EStorage.setMap({
+      ...EStorage.getMap(),
       [pathName]: prevPath,
     });
-    const entries = Object.entries(data);
-    entries.forEach(([name, val]) => {
+    entries(data).forEach(([name, val]) => {
       const keyName = capitalizeName(name);
-      if (keyName !== 'Mutators' && !keyName.includes('_')) {
-        window.eStore.setMap({
-          ...window.eStore.getMap(),
+      if (isNotMutator(keyName) && !keyName.includes('_')) {
+        EStorage.setMap({
+          ...EStorage.getMap(),
           [pathName + keyName]: prevPath,
         });
 
@@ -150,8 +149,8 @@ export const generateStaticPathsMap = (
     });
   }
 
-  window.eStore.setMap({
-    ...window.eStore.getMap(),
+  EStorage.setMap({
+    ...EStorage.getMap(),
     [pathName]: prevPath,
   });
   return data;
@@ -166,12 +165,12 @@ export const patchToGlobalMap = (
   if (!mapKey.includes('$')) return;
   const [staticName, firstKey, ...additionalKeys] =
     mapKey?.split(/[\s$]+/) ?? [];
-  const staticFromMap = staticPath || window.eStore.getMap()?.[staticName];
+  const staticFromMap = staticPath || EStorage.getMap()?.[staticName];
   const baseRequiredData = getGlobalData(staticFromMap.concat(prevPath));
 
   if (Array.isArray(baseRequiredData)) {
-    window.eStore.setMap({
-      ...window.eStore.getMap(),
+    EStorage.setMap({
+      ...EStorage.getMap(),
       [baseMap]: staticFromMap.concat(
         prevPath,
         '[]',
@@ -181,8 +180,8 @@ export const patchToGlobalMap = (
     });
     return;
   }
-  window.eStore.setMap({
-    ...window.eStore.getMap(),
+  EStorage.setMap({
+    ...EStorage.getMap(),
     [baseMap]: staticFromMap.concat(prevPath, firstKey),
   });
 

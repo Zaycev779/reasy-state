@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { getGlobalData } from '../global';
 import { IStore } from '../types/store';
 import { PATH_MAP_EV_NAME, PUSH_EV_NAME } from '../events';
-import { diffValues, isAFunction, isObject } from '../utils';
+import { assign, diffValues, isAFunction, isDefaultObject } from '../utils';
 import { useEvent } from './use-event.hook';
 
 interface IProps {
@@ -11,7 +11,7 @@ interface IProps {
 }
 
 export const useStoreVal = ({ filterFunc, mapKey }: IProps) => {
-  const [path, setPath] = useState<string[]>(window.eStore.getMapByKey(mapKey));
+  const [path, setPath] = useState<string[]>(EStorage.getMapByKey(mapKey));
   const getState = () => getGlobalData(path, true, filterFunc);
   const [state, setState] = useState(getState());
   useEvent<{
@@ -34,7 +34,7 @@ export const useStoreVal = ({ filterFunc, mapKey }: IProps) => {
         setState((prev) => diffValues(prev, vals));
         return;
       }
-      setState(isObject(params) ? Object.assign({}, params) : params);
+      setState(isDefaultObject(params) ? assign({}, params) : params);
     },
     onStartEvent() {
       setState(getState());

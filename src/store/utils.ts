@@ -1,6 +1,7 @@
 import { IStore } from './types/store';
 
 export type updatedParams = string | updatedParams[];
+export const Mutators = 'mutators';
 
 export const getRootPaths = (paths: string[]) =>
   paths.reduce(
@@ -15,12 +16,12 @@ export const getUpdatedPaths = <T extends IStore>(
   res: string[][] = []
 ) => {
   if (isObject(updatedParams)) {
-    for (const key in Object.assign({}, prevValues || {}, updatedParams)) {
+    for (const key in assign({}, prevValues || {}, updatedParams)) {
       const propName = paths ? [...paths, key] : [key];
-      if (key === 'mutators') continue;
+      if (key === Mutators) continue;
       if (isObject(updatedParams[key])) {
-        const updated = Object.assign({}, updatedParams[key] as IStore);
-        const prev = Object.assign({}, (prevValues[key] as IStore) || {});
+        const updated = assign({}, (updatedParams[key] as IStore) || {});
+        const prev = assign({}, (prevValues[key] as IStore) || {});
         if (updated !== prev) {
           res.push(propName);
         }
@@ -39,8 +40,13 @@ export const getUpdatedPaths = <T extends IStore>(
   return [];
 };
 
-export function isObject(item: any) {
-  return item && typeof item === 'object' && !Array.isArray(item);
+export function isObject(value: any) {
+  return value && typeof value === 'object' && !Array.isArray(value);
+}
+export const defaultObjectProto = Object.getPrototypeOf({});
+
+export function isDefaultObject(value: any) {
+  return isObject(value) && defaultObjectProto === Object.getPrototypeOf(value);
 }
 
 export function mergeDeep(target: any, ...sources: any): any {
@@ -50,10 +56,14 @@ export function mergeDeep(target: any, ...sources: any): any {
   if (isObject(target) && isObject(source)) {
     for (const key in source) {
       if (isObject(source[key])) {
-        if (!target[key]) Object.assign(target, { [key]: {} });
-        mergeDeep(target[key], source[key]);
+        if (!target[key]) assign(target, { [key]: {} });
+        if (!isDefaultObject(source[key])) {
+          target[key] = source[key];
+        } else {
+          mergeDeep(target[key], source[key]);
+        }
       } else {
-        Object.assign(target, { [key]: source[key] });
+        assign(target, { [key]: source[key] });
       }
     }
   }
@@ -62,7 +72,7 @@ export function mergeDeep(target: any, ...sources: any): any {
 }
 
 export const getAdditionalPaths = (paths: string[]) => {
-  const storeMap = Object.values(window.eStore.getMap()) as string[][];
+  const storeMap = Object.values(EStorage.getMap()) as string[][];
   return paths
     .reduce((prev, path, idx) => {
       const curVal = prev.filter(
@@ -93,20 +103,20 @@ export const createNewArrayValues = (
       if (targetObj) {
         targetObj[e] = getParams(newValue, targetObj[e]);
       }
-      return Object.assign({}, prevVal);
+      return assign({}, prevVal);
     });
   }
   return prev;
 };
 
 export const getAdditionalMapKeys = (paths: string[]) => {
-  const storeMap = Object.keys(window.eStore.getMap()) as string[],
+  const storeMap = Object.keys(EStorage.getMap()) as string[],
     l = paths.length;
 
   return paths
     .reduce((prevName, path, idx) => {
       const curVal = prevName.filter((val) => {
-        const pathMap = window.eStore.getMapByKey(val);
+        const pathMap = EStorage.getMapByKey(val);
         return pathMap[idx] === path && pathMap.length > l;
       });
       return curVal;
@@ -129,3 +139,14 @@ export const capitalizeName = (name: string) =>
 
 export const capitalizeKeysToString = (arr: string[], ignoreFirst?: boolean) =>
   arr.map((k, i) => (!i && ignoreFirst ? k : capitalizeName(k))).join('');
+
+export const assign = <T extends {}, U, V>(
+  target: T,
+  source: U,
+  source2?: V
+): T & U & V => Object.assign(target, source, source2);
+
+export const entries = (value: object) => Object.entries(value);
+
+export const isNotMutator = (keyName: string) =>
+  keyName !== capitalizeName(Mutators);
