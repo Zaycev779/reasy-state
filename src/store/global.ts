@@ -1,4 +1,5 @@
 import { _pushStoreValueEvent, _updatePathEvent, SET_EV_NAME } from './events';
+import { getGlobalData } from './get-global';
 import { IStore, UpdateType } from './types/store';
 import {
   capitalizeName,
@@ -6,6 +7,7 @@ import {
   entries,
   getAdditionalMapKeys,
   getParams,
+  isClient,
   isNotMutator,
   isObject,
   mergeDeep,
@@ -22,9 +24,8 @@ declare global {
     function setMap(value: Record<string, string[]>): void;
   }
 }
-export const isClient = window && typeof window !== 'undefined';
 
-if (!('EStorage' in globalThis) && isClient) {
+if (!('EStorage' in globalThis)) {
   globalThis.EStorage = {
     store: {},
     map: {},
@@ -38,38 +39,45 @@ if (!('EStorage' in globalThis) && isClient) {
       EStorage.map = value;
     },
   };
-  window.addEventListener('DOMContentLoaded', () => {
-    const onTargetEvent = (ev: Event) => {
-      const { detail } = ev as CustomEvent<{
-        path: string[];
-        params: Partial<IStore> | ((prev: IStore) => Partial<IStore>);
-        type: UpdateType;
-      }>;
-      const { params, path, type } = detail;
-      const prevValues = getGlobalData(path);
+  if (isClient) {
+    const onLoad = () => {
+      const onTargetEvent = (ev: Event) => {
+        const { detail } = ev as CustomEvent<{
+          path: string[];
+          params: Partial<IStore> | ((prev: IStore) => Partial<IStore>);
+          type: UpdateType;
+        }>;
+        const { params, path, type } = detail;
+        const prevValues = getGlobalData(path);
 
-      const updatedParams = getParams(params, prevValues);
-      updateGlobalData(
-        path,
-        type === 'patch' && isObject(updatedParams) && isObject(prevValues)
-          ? mergeDeep({}, prevValues, updatedParams)
-          : updatedParams
-      );
+        const updatedParams = getParams(params, prevValues);
+        updateGlobalData(
+          path,
+          type === 'patch' && isObject(updatedParams) && isObject(prevValues)
+            ? mergeDeep({}, prevValues, updatedParams)
+            : updatedParams
+        );
 
-      const updatePathMaps = getAdditionalMapKeys(path);
+        const updatePathMaps = getAdditionalMapKeys(path);
 
-      updatePathMaps.forEach((mapKey) => {
-        const prevPath = EStorage.getMapByKey(mapKey);
-        patchToGlobalMap(mapKey);
-        if (diffValuesBoolean(prevPath, EStorage.getMapByKey(mapKey))) {
-          _updatePathEvent(mapKey, EStorage.getMapByKey(mapKey));
-        }
-      });
-      _pushStoreValueEvent(path, updatedParams, prevValues);
+        updatePathMaps.forEach((mapKey) => {
+          const prevPath = EStorage.getMapByKey(mapKey);
+          patchToGlobalMap(mapKey);
+          if (diffValuesBoolean(prevPath, EStorage.getMapByKey(mapKey))) {
+            _updatePathEvent(mapKey, EStorage.getMapByKey(mapKey));
+          }
+        });
+        _pushStoreValueEvent(path, updatedParams, prevValues);
+      };
+
+      document.addEventListener(SET_EV_NAME, onTargetEvent);
     };
-
-    document.addEventListener(SET_EV_NAME, onTargetEvent);
-  });
+    if (document.readyState !== 'loading') {
+      onLoad();
+    } else {
+      window.addEventListener('DOMContentLoaded', () => onLoad);
+    }
+  }
 }
 
 export const updateGlobalData = (
@@ -92,38 +100,6 @@ export const updateGlobalData = (
   }
   return updateGlobalData(rest, data, src[path]);
 };
-
-export const getGlobalData = (
-  path?: string[],
-  forArray?: boolean,
-  filterFunc?: Function,
-  src = EStorage.get()
-) =>
-  path?.reduce(
-    ({ value, skip }, v, idx) => {
-      if (skip) {
-        return { value, skip };
-      }
-      if (v.includes('[]') || Array.isArray(value)) {
-        if (forArray) {
-          const additionalPaths = path.slice(idx + 1, path.length);
-          const filterValue = filterFunc ? value?.filter(filterFunc) : value;
-          return {
-            value: filterValue?.map((v: any) =>
-              additionalPaths?.reduce((prev, key) => prev?.[key], v)
-            ),
-            skip: true,
-          };
-        }
-        return {
-          value,
-          skip: true,
-        };
-      }
-      return { value: value?.[v] };
-    },
-    { value: src } as { value?: Record<string, any>; skip?: boolean }
-  ).value as Partial<IStore>;
 
 export const generateStaticPathsMap = (
   data: any,
