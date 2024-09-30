@@ -1,3 +1,4 @@
+//import { CreateState } from 'reasy-state';
 import { _setStoreValueEvent } from "./events";
 import { getGlobalData } from "./get-global";
 import {
@@ -8,11 +9,13 @@ import {
 import { useStoreVal } from "./hooks/use-store-val.hook";
 import { Entries, ValueOf } from "./types/index";
 import {
-    Create,
+    CreateResult,
+    CreateState,
     GeneratedType,
     IGenerate,
     IStore,
     UpdateType,
+    WithM,
 } from "./types/store";
 import {
     assign,
@@ -97,17 +100,29 @@ const createMutators = (values: Record<string, Function>, path: string[]) => {
     }, {});
 };
 
-export const createState: Create = <T extends IStore<T>>(param?: T) => {
-    if (!param) {
-        return (<U extends IStore<U>>(param: U) =>
-            createStateFn(param)) as unknown as T;
-    }
-    return createStateFn(param);
+export function createState<T extends IStore<T>>(
+    params: T,
+): IGenerate<CreateResult<T>>;
+export function createState<T extends IStore<T>>(): {
+    <U extends WithM<CreateState<T>>>(params: U): IGenerate<
+        CreateResult<U>,
+        CreateResult<T>
+    >;
 };
+export function createState<T extends IStore<T>>(params?: T) {
+    if (params && typeof params !== "undefined") {
+        return createStateFn(params);
+    }
+    return <U extends WithM<CreateState<T>>>(params: U) =>
+        createStateFn(params as unknown as T) as IGenerate<
+            CreateResult<U>,
+            CreateResult<T>
+        >;
+}
 
 export function createStateFn<T extends IStore<T>>(
     initialValues: T,
-): IGenerate<T> {
+): IGenerate<CreateResult<T>> {
     const stores = Object.keys(initialValues);
 
     stores.forEach((store) => {
