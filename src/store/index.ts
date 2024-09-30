@@ -114,7 +114,7 @@ export function createState<T extends IStore<T>>(params?: T) {
         return createStateFn(params);
     }
     return <U extends WithM<CreateState<T>>>(params: U) =>
-        createStateFn(params as unknown as T) as IGenerate<
+        createStateFn(params as unknown as T) as unknown as IGenerate<
             CreateResult<U>,
             CreateResult<T>
         >;
@@ -140,13 +140,12 @@ export function createStateFn<T extends IStore<T>>(
             if (name in target) {
                 return target[name];
             }
-            const [type, ...functionName] = name.split(/(?=[A-Z])/);
+            const [type, ...functionName] = name.split(/(?=[A-Z$])/);
             const mapKey = functionName.join("");
             const splitName = capitalizeKeysToString(
                 name.split(/[\s$]+/),
                 true,
             );
-
             if (splitName in target && isAFunction(target[splitName])) {
                 return (...args: any[]) => target[splitName](...args);
             }
@@ -154,6 +153,7 @@ export function createStateFn<T extends IStore<T>>(
             const isGenerated = Object.values(GeneratedType).some((val) =>
                 val.includes(type),
             );
+
             if (isGenerated && mapKey) {
                 patchToGlobalMap(mapKey);
             }
@@ -180,6 +180,7 @@ export function createStateFn<T extends IStore<T>>(
                     return (...args: [Function] | [Function, any]) => {
                         const [filterFunc, arrValue] = args;
                         const basePath = EStorage.getMapByKey(mapKey);
+
                         if (basePath) {
                             if (args.length > 1) {
                                 const arrrIdx =

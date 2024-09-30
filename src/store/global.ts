@@ -158,7 +158,8 @@ export const patchToGlobalMap = (
     if (!mapKey.includes("$")) return;
     const [staticName, firstKey, ...additionalKeys] =
         mapKey?.split(/[\s$]+/) ?? [];
-    const staticFromMap = staticPath || EStorage.getMap()?.[staticName];
+
+    const staticFromMap = staticPath || EStorage.getMap()?.[staticName] || [];
     const baseRequiredData = getGlobalData(staticFromMap.concat(prevPath));
 
     if (Array.isArray(baseRequiredData)) {
