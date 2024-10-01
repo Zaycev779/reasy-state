@@ -40,12 +40,8 @@ if (!("EStorage" in globalThis)) {
         },
     };
     if (isClient) {
-        console.log("TEST1", globalThis.EStorage, document.readyState);
-
         const onLoad = () => {
-            console.log("DOMContentLoaded");
             const onTargetEvent = (ev: Event) => {
-                console.log("EV=", ev);
                 const { detail } = ev as CustomEvent<{
                     path: string[];
                     params:

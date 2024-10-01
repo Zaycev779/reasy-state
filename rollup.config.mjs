@@ -20,8 +20,9 @@ export default [{
                     module: true,
                     toplevel: true,
                     unsafe_arrows: true,
+                    drop_console: true,
                 },
-                output: { quote_style: 1 }
+                output: { quote_style: 1 },
                 }),
             ] 
         },
@@ -37,6 +38,7 @@ export default [{
                     module: true,
                     toplevel: true,
                     unsafe_arrows: true,
+                    drop_console: true,
                 },
                 output: { quote_style: 1 }
                 })
