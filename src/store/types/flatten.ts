@@ -7,6 +7,7 @@ export type Flatten<TValue> = CollapseEntries<
 type Entry = { key: string; value: unknown };
 type EmptyEntry<TValue> = { key: ""; value: TValue };
 type ExcTypes = Set<unknown> | Map<unknown, unknown>;
+type ArrItem<T extends any> = T extends (infer E)[] ? E : never;
 
 type EscapeArrayKey<TKey extends string> =
     TKey extends `${infer TKeyBefore}[${bigint}]`
@@ -24,8 +25,10 @@ type EscapeArray<
 > = TKey extends `${string}[${bigint}]`
     ? TValue
     : TKey extends `${infer TKeyBefore}$[${bigint}]${infer TKeyAfter}`
-    ? E extends { key: `${TKeyBefore}`; value?: infer V extends any[] }
-        ? (f?: (v: V[number]) => any | boolean) => TValue
+    ? TValue extends any
+        ? E extends { key: `${TKeyBefore}`; value?: infer V extends any[] }
+            ? (f?: (v: ArrItem<E["value"]>) => any | boolean) => TValue
+            : never
         : never
     : TValue;
 
@@ -56,9 +59,12 @@ type TKeyName<
     TKey extends keyof TValue & string,
     TPrevKey,
     V = TKey,
-> = undefined extends TValue[TKey]
-    ? TKeyNameParse<TKey>
-    : THas$<TPrevKey, TKeyNameParse<TKey>, V>;
+> = IsUndefined<
+    TValue,
+    TKey,
+    TKeyNameParse<TKey>,
+    THas$<TPrevKey, TKeyNameParse<TKey>, V>
+>;
 
 type THas$<K, T1, T2> = K extends `$` ? T1 : T2;
 
@@ -71,6 +77,12 @@ type CreateVal<K, V> = {
     value: V;
 };
 
+type IsUndefined<V, P extends keyof V, R1, R2> = {
+    [S in keyof Pick<V, P>]: V[P];
+} extends Record<P, V[P]>
+    ? R2
+    : R1;
+
 type CreateEntries<TValue, TInit, TPrevKey = ""> = TValue extends {
     [K: string]: infer U;
 }
@@ -82,11 +94,12 @@ type CreateEntries<TValue, TInit, TPrevKey = ""> = TValue extends {
                     THas$<
                         TPrevKey,
                         TPrevKey,
-                        undefined extends TValue[TKey]
-                            ? `$`
-                            : [] extends TValue[TKey]
-                            ? `$`
-                            : TKey
+                        IsUndefined<
+                            TValue,
+                            TKey,
+                            `$`,
+                            TValue[TKey] extends Array<unknown> ? `$` : TKey
+                        >
                     >
                 > extends infer TNested
                   ? TNested extends Entry
@@ -102,13 +115,16 @@ type CreateEntries<TValue, TInit, TPrevKey = ""> = TValue extends {
                                           TKey,
                                           TPrevKey,
                                           TKey extends `$${infer Y}` ? Y : TKey
-                                      >}${undefined extends TValue[TKey]
-                                          ? TKeyNameParse<TNested["key"]>
-                                          : THas$<
-                                                TPrevKey,
-                                                TKeyNameParse<TNested["key"]>,
-                                                KeyCapitalize<TNested["key"]>
-                                            >}`,
+                                      >}${IsUndefined<
+                                          TValue,
+                                          TKey,
+                                          TKeyNameParse<TNested["key"]>,
+                                          THas$<
+                                              TPrevKey,
+                                              TKeyNameParse<TNested["key"]>,
+                                              KeyCapitalize<TNested["key"]>
+                                          >
+                                      >}`,
                                       TNested["value"]
                                   >
                                 | CreateVal<

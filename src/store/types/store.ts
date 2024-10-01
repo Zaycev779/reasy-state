@@ -110,13 +110,6 @@ type PickM<T> = T extends {
 
 export type CreateResult<T> = PickM<SetM<T>>;
 
-export type Create = {
-    <T, U extends CreateResult<T>>(params: T): IGenerate<U>;
-    <T>(): <U extends WithM<CreateState<T>>>(
-        params: U,
-    ) => IGenerate<CreateResult<U>>;
-};
-
 export type IStore<T extends Record<string, any> = Record<string, any>> = {
     [P in keyof T]: IRecord | IStore<T> | Array<IRecord>;
 };
@@ -139,17 +132,26 @@ type IStaticRes<
     N extends GeneratedType,
 > = N extends GeneratedType.SET ? FuncSet<T, P> : FuncGet<T, P>;
 
-type IFn<T> = {
+type IFn<T, U> = {
     [P in keyof T as T[P] extends Function
-        ? IsArray<P, never, Uncapitalize<P & string>>
+        ? keyof U extends `$${P extends string ? string : never}`
+            ? T extends U
+                ? IsArray<P, never, Uncapitalize<P & string>>
+                : never
+            : IsArray<P, never, Uncapitalize<P & string>>
         : never]: T[P];
+} & {
+    [P in keyof U as P extends `${string | ""}$${string}`
+        ? U[P] extends void
+            ? IsArray<P, never, Uncapitalize<P & string>>
+            : never
+        : never]: () => U[P];
 };
 
-type FuncName<
-    T,
-    P extends keyof T,
-    N extends GeneratedType,
-> = T[P] extends Function
+type FuncName<T, P extends keyof T, N extends GeneratedType> = T[P] extends
+    | Function
+    | void
+    | ((...args: any) => any)
     ? P extends `${infer X}[]${infer Y}`
         ? `${N}${KeyCapitalize<X>}${KeyCapitalize<Y>}`
         : never
@@ -179,7 +181,7 @@ type IResetFunc<T> = {
 export type IGenerateFn<T, U> = IStaticFunc<T, U, GeneratedType.GET> &
     IStaticFunc<T, U, GeneratedType.SET> &
     IStaticFunc<T, U, GeneratedType.USE> &
-    IFn<T>;
+    IFn<T, U>;
 
 export type IGenerate<T, U = unknown> = IGenerateFn<Flatten<T>, Flatten<U>> &
     IResetFunc<T>;

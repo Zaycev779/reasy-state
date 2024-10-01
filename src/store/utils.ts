@@ -134,6 +134,7 @@ export const getAdditionalMapKeys = (paths: string[]) => {
 };
 
 export const isAFunction = (value: any) => typeof value === "function";
+
 export const getParams = (params: any, prev: any) =>
     isAFunction(params) ? params(prev) : params;
 

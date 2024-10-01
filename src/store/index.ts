@@ -1,4 +1,3 @@
-//import { CreateState } from 'reasy-state';
 import { _setStoreValueEvent } from "./events";
 import { getGlobalData } from "./get-global";
 import {
@@ -7,7 +6,7 @@ import {
     updateGlobalData,
 } from "./global";
 import { useStoreVal } from "./hooks/use-store-val.hook";
-import { Entries, ValueOf } from "./types/index";
+import { ValueOf } from "./types/index";
 import {
     CreateResult,
     CreateState,
@@ -40,7 +39,7 @@ const generateFunc = <T extends IStore<T>>(
             const keyName = capitalizeName(key);
             const prevKeyName = capitalizeKeysToString(prevKey);
             const path = prevKey.concat(key);
-            const mapKey = `${prevKeyName}${keyName}`;
+            const mapKey = prevKeyName.concat(keyName);
             return assign(
                 result,
                 isNotMutator(keyName)
@@ -143,7 +142,7 @@ export function createStateFn<T extends IStore<T>>(
             const [type, ...functionName] = name.split(/(?=[A-Z$])/);
             const mapKey = functionName.join("");
             const splitName = capitalizeKeysToString(
-                name.split(/[\s$]+/),
+                name.slice(name[0] === "$" ? 1 : 0).split(/[\s$]+/),
                 true,
             );
             if (splitName in target && isAFunction(target[splitName])) {
