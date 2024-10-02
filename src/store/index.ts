@@ -21,11 +21,12 @@ import {
     capitalizeName,
     createNewArrayValues,
     entries,
+    findPathArrayIndex,
     generateId,
     isAFunction,
     isClient,
+    isDefaultObject,
     isNotMutator,
-    isObject,
     SignRegExp,
     values,
 } from "./utils";
@@ -47,28 +48,25 @@ const generateFunc = <T extends IStore<T>>(
         return assign(
             result,
             isNotMutator(keyName)
-                ? !keyName.includes("_") &&
-                      assign(
-                          {
-                              [GeneratedType.SET.concat(mapKey)]: (
-                                  val:
-                                      | Partial<ValueOf<T>>
-                                      | ((
-                                            prev: ValueOf<T>,
-                                        ) => Partial<ValueOf<T>>),
-                              ) => _setStoreValueEvent(storePath, val),
-                              [GeneratedType.USE.concat(mapKey)]: () =>
-                                  isClient
-                                      ? useStoreVal({
-                                            mapKey: storeId.concat(mapKey),
-                                        })
-                                      : null,
-                              [GeneratedType.GET.concat(mapKey)]: () =>
-                                  getGlobalData(storePath),
-                          },
-                          isObject(val) &&
-                              generateFunc<IStore<T>>(storeId, val, path),
-                      )
+                ? assign(
+                      {
+                          [GeneratedType.SET.concat(mapKey)]: (
+                              val:
+                                  | Partial<ValueOf<T>>
+                                  | ((prev: ValueOf<T>) => Partial<ValueOf<T>>),
+                          ) => _setStoreValueEvent(storePath, val),
+                          [GeneratedType.USE.concat(mapKey)]: () =>
+                              isClient
+                                  ? useStoreVal({
+                                        mapKey: storeId.concat(mapKey),
+                                    })
+                                  : null,
+                          [GeneratedType.GET.concat(mapKey)]: () =>
+                              getGlobalData(storePath),
+                      },
+                      isDefaultObject(val) &&
+                          generateFunc<IStore<T>>(storeId, val, path),
+                  )
                 : createMutators(
                       val as any,
                       prevKey,
@@ -148,21 +146,17 @@ export function createStateFn<T extends IStore<T>>(
                         const [filterFunc, arrValue] = args;
                         const basePath = getMapByKey(mapKey);
                         if (basePath) {
-                            console.log(basePath, args);
-
                             if (args.length > 1) {
-                                const arrrIdx =
-                                    basePath?.findIndex(
-                                        (val) => val === "[]",
-                                    ) ?? -1;
-                                if (arrrIdx >= 0 && basePath) {
+                                const sliceIdx = findPathArrayIndex(basePath);
+
+                                if (sliceIdx >= 0 && basePath) {
                                     const additionalPaths = basePath.slice(
-                                        arrrIdx + 1,
+                                        sliceIdx + 1,
                                         basePath.length,
                                     );
                                     const arrRootPath = basePath.slice(
                                         0,
-                                        arrrIdx,
+                                        sliceIdx,
                                     );
                                     const prev = getGlobalData(arrRootPath);
                                     const value = createNewArrayValues(

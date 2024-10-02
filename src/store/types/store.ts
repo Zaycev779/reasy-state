@@ -187,5 +187,6 @@ export type IGenerate<T, U = unknown> = IGenerateFn<Flatten<T>, Flatten<U>> &
     IResetFunc<T>;
 
 export type Options = {
+    /** Unique store key */
     key?: string;
 };

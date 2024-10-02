@@ -4,7 +4,13 @@ import { useState } from "react";
 import { getGlobalData } from "../get-global";
 import { IStore } from "../types/store";
 import { PATH_MAP_EV_NAME, PUSH_EV_NAME } from "../events";
-import { assign, diffValues, isAFunction, isDefaultObject } from "../utils";
+import {
+    assign,
+    diffValues,
+    findPathArrayIndex,
+    isAFunction,
+    isDefaultObject,
+} from "../utils";
 import { useEvent } from "./use-event.hook";
 
 interface IProps {
@@ -21,10 +27,10 @@ export const useStoreVal = ({ filterFunc, mapKey }: IProps) => {
     }>({
         type: path ? PUSH_EV_NAME + path.join() : undefined,
         onChange({ params }) {
-            const arrrIdx = path?.findIndex((val) => val === "[]") ?? -1;
-            if (arrrIdx >= 0 && path) {
+            const sliceIdx = findPathArrayIndex(path);
+            if (sliceIdx >= 0 && path) {
                 if (!Array.isArray(params)) return setState(params);
-                const additionalPaths = path.slice(arrrIdx + 1, path.length);
+                const additionalPaths = path.slice(sliceIdx + 1, path.length);
                 const filteredValue = isAFunction(filterFunc)
                     ? params.filter(filterFunc)
                     : params;

@@ -88,7 +88,7 @@ export const getAdditionalPaths = (paths: string[]) => {
             );
             return curVal;
         }, storeMap)
-        .filter((v) => v.includes("[]"));
+        .filter((v) => isArrayPathName(v));
 };
 
 export const createNewArrayValues = (
@@ -133,6 +133,9 @@ export const getAdditionalMapKeys = (paths: string[]) => {
         .filter((val) => val.includes("$"));
 };
 
+export const findPathArrayIndex = (array?: string[]) =>
+    array?.findIndex((val) => val === "[]") ?? -1;
+
 export const isAFunction = (value: any) => typeof value === "function";
 
 export const getParams = (params: any, prev: any) =>
@@ -162,6 +165,8 @@ export const values = (value: object) => Object.values(value);
 
 export const isNotMutator = (keyName: string) =>
     keyName !== capitalizeName(Mutators);
+
+export const isArrayPathName = (name: string | string[]) => name.includes("[]");
 
 export const generateId = (object: any) => {
     const { mapId } = EStorage;

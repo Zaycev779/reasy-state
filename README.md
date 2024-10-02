@@ -2,7 +2,8 @@
 
 Reast Easy State is simple state management for React
 
-Reasy-state allows you to easily work with your state without creating selectors or worrying about re-renders, thanks to the fact that each object element has its own hook for getting the value, get/set functions and mutators
+Reasy-state allows you to easily work with your state without creating selectors or worrying about re-renders,
+by having each object element have its own hook for getting the value, get/set functions and mutators
 
 ## Installation
 
@@ -19,29 +20,28 @@ npm install reasy-state
 Create state and export necessary functions
 
 The function names will be generated automatically, depending on your object. ( get*, set*, use* and reset*storageName\*)
-The storage name must have a unique name
 
 ```jsx
 // store.ts
 
-import { createState } from 'reasy-state';
+import { createState } from "reasy-state";
 
 const userStore = {
-  id: 1,
-  name: 'User Name',
-  settings: {
-    notification: {
-      message: true,
+    id: 1,
+    name: "User Name",
+    settings: {
+        notification: {
+            message: true,
+        },
     },
-  },
 };
 
 export const {
-  getUserStoreId,
-  useUserStoreName,
-  useUserStoreSettingsNotificationMessage,
-  setUserStoreSettingsNotificationMessage,
-  resetUserStore,
+    getUserStoreId,
+    useUserStoreName,
+    useUserStoreSettingsNotificationMessage,
+    setUserStoreSettingsNotificationMessage,
+    resetUserStore,
 } = createState({ userStore });
 ```
 
@@ -50,18 +50,18 @@ export const {
 ```jsx
 // user.tsx
 
-import { getUserStoreId, useUserStoreName } from './store';
+import { getUserStoreId, useUserStoreName } from "./store";
 
 const UserComponent = () => {
-  const userName = useUserStoreName();
-  return (
-    <div>
-      <p onClick={() => console.log('User ID:', getUserStoreId())}>
-        {userName}
-      </p>
-      <button onClick={resetUserStore}>Reset store</button>
-    </div>
-  );
+    const userName = useUserStoreName();
+    return (
+        <div>
+            <p onClick={() => console.log("User ID:", getUserStoreId())}>
+                {userName}
+            </p>
+            <button onClick={resetUserStore}>Reset store</button>
+        </div>
+    );
 };
 ```
 
@@ -69,22 +69,22 @@ const UserComponent = () => {
 // setting.tsx
 
 import {
-  setUserStoreSettingsNotificationMessage,
-  useUserStoreSettingsNotificationMessage,
-} from './store';
+    setUserStoreSettingsNotificationMessage,
+    useUserStoreSettingsNotificationMessage,
+} from "./store";
 
 const SettingsNotificationComponent = () => {
-  const checked = useUserStoreSettingsNotificationMessage();
+    const checked = useUserStoreSettingsNotificationMessage();
 
-  const onChange = () =>
-    setUserStoreSettingsNotificationMessage((prev) => !prev);
+    const onChange = () =>
+        setUserStoreSettingsNotificationMessage((prev) => !prev);
 
-  return (
-    <>
-      <span>Notification</span>
-      <input type='checkbox' checked={checked} onChange={onChange} />
-    </>
-  );
+    return (
+        <>
+            <span>Notification</span>
+            <input type="checkbox" checked={checked} onChange={onChange} />
+        </>
+    );
 };
 ```
 
@@ -102,125 +102,125 @@ mutators: {
 
 ```jsx
 // store.ts
-import { createState, CreateState } from 'reasy-state';
+import { createState, CreateState } from "reasy-state";
 
 type UserStore = {
-  id: number,
-  data: {
-    rating: number,
-    other: number,
-    mutators: {
-      clear: void, // clear function
-      inc: void, // increment function
-      dec: Promise<boolean>, // decrement async function
-      add: (value: number) => void, // add value function with arg
-      remove: (value: number) => Promise<string>, // remove value async function with arg
+    id: number,
+    data: {
+        rating: number,
+        other: number,
+        mutators: {
+            clear: void, // clear function
+            inc: void, // increment function
+            dec: Promise<boolean>, // decrement async function
+            add: (value: number) => void, // add value function with arg
+            remove: (value: number) => Promise<string>, // remove value async function with arg
+        },
     },
-  },
-  mutators: {
-    ratingInc: void,
-    changeId: void,
-  },
+    mutators: {
+        ratingInc: void,
+        changeId: void,
+    },
 };
 
 const userStore: CreateState<UserStore> = {
-  id: 1,
-  data: {
-    rating: 0,
-    other: 1,
-    mutators: {
-      clear: ({ set }) => set({ rating: 0, other: 0 }),
-      inc: ({ patch }, { rating }) => patch({ rating: rating + 1 }),
-      /* OR
+    id: 1,
+    data: {
+        rating: 0,
+        other: 1,
+        mutators: {
+            clear: ({ set }) => set({ rating: 0, other: 0 }),
+            inc: ({ patch }, { rating }) => patch({ rating: rating + 1 }),
+            /* OR
       inc: ({ patch, get }) => patch({ rating: get().rating + 1 }),
       */
-      dec: async ({ patch, get }) => {
-        await new Promise((f) => setTimeout(f, 1000));
-        patch({ rating: get().rating - 1 });
-        return true;
-      },
-      /* OR
+            dec: async ({ patch, get }) => {
+                await new Promise((f) => setTimeout(f, 1000));
+                patch({ rating: get().rating - 1 });
+                return true;
+            },
+            /* OR
       dec: async ({ patch }) => {
         await new Promise((f) => setTimeout(f, 1000));
         patch(({ rating }) => ({ rating: rating - 1 }));
         return true;
       },
       */
-      add:
-        ({ patch }, { rating }) =>
-        (value) =>
-          patch({ rating: rating + value }),
-      remove:
-        ({ patch, get }) =>
-        async (value) => {
-          await new Promise((f) => setTimeout(f, 1000));
-          patch({ rating: get().rating - value });
-          return 'success';
+            add:
+                ({ patch }, { rating }) =>
+                (value) =>
+                    patch({ rating: rating + value }),
+            remove:
+                ({ patch, get }) =>
+                async (value) => {
+                    await new Promise((f) => setTimeout(f, 1000));
+                    patch({ rating: get().rating - value });
+                    return "success";
+                },
         },
     },
-  },
-  mutators: {
-    // hooks useUserStoreData, useUserStoreDataRating, useUserStoreDataOther will not be called
-    changeId: ({ patch }) => patch({ id: 2 }),
+    mutators: {
+        // hooks useUserStoreData, useUserStoreDataRating, useUserStoreDataOther will not be called
+        changeId: ({ patch }) => patch({ id: 2 }),
 
-    // some data.mutators.inc, hooks useUserStoreId and useUserStoreDataOther will not be called
-    ratingInc: ({ patch }, { data: { rating } }) =>
-      patch({ data: { rating: rating + 1 } }),
-  },
+        // some data.mutators.inc, hooks useUserStoreId and useUserStoreDataOther will not be called
+        ratingInc: ({ patch }, { data: { rating } }) =>
+            patch({ data: { rating: rating + 1 } }),
+    },
 };
 
 export const {
-  userStoreDataClear,
-  userStoreDataInc,
-  userStoreDataDec,
-  userStoreDataAdd,
-  userStoreDataRemove,
-  useUserStoreDataRating,
+    userStoreDataClear,
+    userStoreDataInc,
+    userStoreDataDec,
+    userStoreDataAdd,
+    userStoreDataRemove,
+    useUserStoreDataRating,
 } = createState({ userStore });
 ```
 
 ```jsx
 // rating.tsx
 import {
-  useUserStoreDataRating,
-  userStoreDataAdd,
-  userStoreDataClear,
-  userStoreDataInc,
-  userStoreDataDec,
-  userStoreDataRemove,
-} from './store.ts';
+    useUserStoreDataRating,
+    userStoreDataAdd,
+    userStoreDataClear,
+    userStoreDataInc,
+    userStoreDataDec,
+    userStoreDataRemove,
+} from "./store.ts";
 
 export const UserRating = () => {
-  const rating = useUserStoreDataRating();
+    const rating = useUserStoreDataRating();
 
-  return (
-    <>
-      <div>
-        <button
-          onClick={async () => {
-            const response = await userStoreDataRemove(5);
-            console.log(response); // "success"
-            return response;
-          }}
-        >
-          -5
-        </button>
-        <button
-          onClick={async () => {
-            const response = await userStoreDataDec();
-            console.log(response); // true
-            return response;
-          }}
-        >
-          -
-        </button>
-        <span>{rating}</span>
-        <button onClick={userStoreDataInc}>+</button>
-        <button onClick={() => userStoreDataAdd(5)}>+5</button>
-      </div>
-      <button onClick={userStoreDataClear}>Clear</button>
-    </>
-  );
+    return (
+        <>
+            <div>
+                <button
+                    onClick={async () => {
+                        const response = await userStoreDataRemove(5);
+                        console.log(response); // "success"
+                        return response;
+                    }}
+                >
+                    -5
+                </button>
+                <button
+                    onClick={async () => {
+                        const response = await userStoreDataDec();
+                        console.log(response); // true
+                        return response;
+                    }}
+                >
+                    -
+                </button>
+                <span>{rating}</span>
+                <button onClick={userStoreDataInc}>+</button>
+                <button onClick={() => userStoreDataAdd(5)}>+5</button>
+            </div>
+            <button onClick={userStoreDataClear}>Clear</button>
+        </>
+    );
 };
 ```
 
@@ -262,13 +262,13 @@ You can use functions for undefined parameters using the $ sign
 ```jsx
 // store.ts
 type UserStore = {
-  id: number,
-  data?: {
-    rating: number,
-  },
+    id: number,
+    data?: {
+        rating: number,
+    },
 };
 const userStore: CreateState<UserStore> = {
-  id: 1,
+    id: 1,
 };
 
 export const { useUserStore$data$rating } = createState({ userStore });
@@ -290,45 +290,53 @@ set`[...functionName]`(filterFunction, newValue);
 // store.ts
 
 type UserStore = {
-  id: number,
-  subscribers: {
     id: number,
-    rating: number,
-  }[],
+    subscribers: {
+        id: number,
+        rating: number,
+    }[],
 };
 
 const userStore: CreateState<UserStore> = {
-  id: 1,
-  subscribers: [
-    { id: 2, rating: 10 },
-    { id: 3, rating: 12 },
-  ],
+    id: 1,
+    subscribers: [
+        { id: 2, rating: 10 },
+        { id: 3, rating: 12 },
+    ],
 };
 
 export const {
-  useUserStoreSubscribers$rating,
-  setUserStoreSubscribers$rating,
+    useUserStoreSubscribers$rating,
+    setUserStoreSubscribers$rating,
 } = createState({ userStore });
 ```
 
 ```jsx
 export const Ratings = () => {
-  const ratings = useUserStoreSubscribers$rating(({ rating }) => rating);
+    const ratings = useUserStoreSubscribers$rating(({ rating }) => rating);
 
-  const add = () =>
-    setUserStoreSubscribers$rating(
-      ({ id }) => id === 2,
-      (prev) => prev + 1
+    const add = () =>
+        setUserStoreSubscribers$rating(
+            ({ id }) => id === 2,
+            (prev) => prev + 1,
+        );
+
+    const clear = () => setUserStoreSubscribers$rating(() => true, 0);
+
+    return (
+        <div>
+            <p>Positive ratings = {ratings.join(",")}</p>
+            <button onClick={add}>Add rating for id 2</button>
+            <button onClick={clear}>Clear rating for all</button>
+        </div>
     );
-
-  const clear = () => setUserStoreSubscribers$rating(() => true, 0);
-
-  return (
-    <div>
-      <p>Positive ratings = {ratings.join(',')}</p>
-      <button onClick={add}>Add rating for id 2</button>
-      <button onClick={clear}>Clear rating for all</button>
-    </div>
-  );
 };
+```
+
+### Options
+
+You must specify the key if you use multiple states with the same initialization parameters.
+
+```jsx
+  const {...} = createState({ stateName }, { key?: "state_1" });
 ```

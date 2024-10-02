@@ -1,4 +1,5 @@
 import { IStore } from "./types/store";
+import { isArrayPathName } from "./utils";
 
 export const getGlobalData = (
     path?: string[],
@@ -11,7 +12,7 @@ export const getGlobalData = (
             if (skip) {
                 return { value, skip };
             }
-            if (v.includes("[]") || Array.isArray(value)) {
+            if (isArrayPathName(v) || Array.isArray(value)) {
                 if (forArray) {
                     const additionalPaths = path.slice(idx + 1, path.length);
                     const filterValue = filterFunc
