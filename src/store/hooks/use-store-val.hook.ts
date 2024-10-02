@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { getGlobalData } from "../get-global";
 import { IStore } from "../types/store";
 import { PATH_MAP_EV_NAME, PUSH_EV_NAME } from "../events";
@@ -12,6 +12,7 @@ import {
     isDefaultObject,
 } from "../utils";
 import { useEvent } from "./use-event.hook";
+import { getMapByKey } from "../maps/utils";
 
 interface IProps {
     mapKey: string;
@@ -19,9 +20,14 @@ interface IProps {
 }
 
 export const useStoreVal = ({ filterFunc, mapKey }: IProps) => {
-    const [path, setPath] = useState<string[]>(EStorage.getMapByKey(mapKey));
+    const [path, setPath] = useState<string[]>(getMapByKey(mapKey));
     const getState = () => getGlobalData(path, true, filterFunc);
     const [state, setState] = useState(getState());
+
+    useEffect(() => {
+        setPath(getMapByKey(mapKey));
+    }, [mapKey]);
+
     useEvent<{
         params: IStore;
     }>({
