@@ -1,8 +1,10 @@
+import { getMap } from "./maps/utils";
 import { IStore } from "./types/store";
 
 export type updatedParams = string | updatedParams[];
 export const Mutators = "mutators";
 export const isClient = typeof window !== "undefined" && window;
+export const SignRegExp = /[\s$]+/;
 
 export const getRootPaths = (paths: string[]) =>
     paths.reduce(
@@ -40,22 +42,19 @@ export const getUpdatedPaths = <T extends IStore>(
         }
         return [paths, ...res];
     }
-    if (prevValues !== updatedParams) {
-        return [paths];
-    }
-    return [];
+
+    return prevValues !== updatedParams ? [paths] : [];
 };
 
-export function isObject(value: any) {
-    return value && typeof value === "object" && !Array.isArray(value);
-}
-export const defaultObjectProto = Object.getPrototypeOf({});
+export const isObject = (value: any) =>
+    value && typeof value === "object" && !Array.isArray(value);
 
-export function isDefaultObject(value: any) {
-    return (
-        isObject(value) && defaultObjectProto === Object.getPrototypeOf(value)
-    );
-}
+const getPrototypeOf = (value: object) => Object.getPrototypeOf(value);
+
+export const defaultObjectProto = getPrototypeOf({});
+
+export const isDefaultObject = (value: any) =>
+    isObject(value) && defaultObjectProto === getPrototypeOf(value);
 
 export function mergeDeep(target: any, ...sources: any): any {
     if (!sources.length) return target;
@@ -80,7 +79,7 @@ export function mergeDeep(target: any, ...sources: any): any {
 }
 
 export const getAdditionalPaths = (paths: string[]) => {
-    const storeMap = Object.values(EStorage.getMap()) as string[][];
+    const storeMap = values(getMap()) as string[][];
     return paths
         .reduce((prev, path, idx) => {
             const curVal = prev.filter(
@@ -105,9 +104,10 @@ export const createNewArrayValues = (
                 return prevVal;
             }
             const e = keys[l],
-                targetObj = keys.reduce((prev, key, idx) => {
-                    return idx === l ? prev : prev[key];
-                }, prevVal);
+                targetObj = keys.reduce(
+                    (prev, key, idx) => (idx === l ? prev : prev[key]),
+                    prevVal,
+                );
 
             if (targetObj) {
                 targetObj[e] = getParams(newValue, targetObj[e]);
@@ -119,7 +119,7 @@ export const createNewArrayValues = (
 };
 
 export const getAdditionalMapKeys = (paths: string[]) => {
-    const storeMap = Object.keys(EStorage.getMap()) as string[],
+    const storeMap = Object.keys(getMap()) as string[],
         l = paths.length;
 
     return paths
@@ -158,5 +158,15 @@ export const assign = <T extends {}, U, V>(
 
 export const entries = (value: object) => Object.entries(value);
 
+export const values = (value: object) => Object.values(value);
+
 export const isNotMutator = (keyName: string) =>
     keyName !== capitalizeName(Mutators);
+
+export const generateId = (object: any) => {
+    const { mapId } = EStorage;
+    if (!mapId.has(object)) {
+        mapId.set(object, ++EStorage.storeId);
+    }
+    return "#".concat(String(mapId.get(object)));
+};

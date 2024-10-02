@@ -185,3 +185,7 @@ export type IGenerateFn<T, U> = IStaticFunc<T, U, GeneratedType.GET> &
 
 export type IGenerate<T, U = unknown> = IGenerateFn<Flatten<T>, Flatten<U>> &
     IResetFunc<T>;
+
+export type Options = {
+    key?: string;
+};

@@ -1,11 +1,10 @@
 import { _setStoreValueEvent } from "./events";
 import { getGlobalData } from "./get-global";
-import {
-    generateStaticPathsMap,
-    patchToGlobalMap,
-    updateGlobalData,
-} from "./global";
+import { updateGlobalData } from "./global";
 import { useStoreVal } from "./hooks/use-store-val.hook";
+import { generateStaticPathsMap, patchToGlobalMap } from "./maps/maps";
+import { getMapByKey } from "./maps/utils";
+import { createMutators } from "./mutators";
 import { ValueOf } from "./types/index";
 import {
     CreateResult,
@@ -13,7 +12,7 @@ import {
     GeneratedType,
     IGenerate,
     IStore,
-    UpdateType,
+    Options,
     WithM,
 } from "./types/store";
 import {
@@ -22,134 +21,107 @@ import {
     capitalizeName,
     createNewArrayValues,
     entries,
-    getParams,
+    generateId,
     isAFunction,
     isClient,
     isNotMutator,
     isObject,
+    SignRegExp,
+    values,
 } from "./utils";
 
+const generatedTypes = values(GeneratedType);
+
 const generateFunc = <T extends IStore<T>>(
+    storeId: string,
     values: T,
     prevKey: string[] = [],
-) => {
-    const result: IGenerate<T> = entries(values as IStore<T>).reduce(
-        (result, [key, val]) => {
-            if (!key) return result;
-            const keyName = capitalizeName(key);
-            const prevKeyName = capitalizeKeysToString(prevKey);
-            const path = prevKey.concat(key);
-            const mapKey = prevKeyName.concat(keyName);
-            return assign(
-                result,
-                isNotMutator(keyName)
-                    ? !keyName.includes("_") &&
-                          assign(
-                              {
-                                  [GeneratedType.SET.concat(mapKey)]: (
-                                      val:
-                                          | Partial<ValueOf<T>>
-                                          | ((
-                                                prev: ValueOf<T>,
-                                            ) => Partial<ValueOf<T>>),
-                                  ) => _setStoreValueEvent(path, val),
-                                  [GeneratedType.USE.concat(mapKey)]: () =>
-                                      isClient ? useStoreVal({ mapKey }) : null,
-                                  [GeneratedType.GET.concat(mapKey)]: () =>
-                                      getGlobalData(path),
-                              },
-                              isObject(val) &&
-                                  generateFunc<IStore<T>>(
-                                      val as IStore<T>,
-                                      path,
-                                  ),
-                          )
-                    : createMutators(val as any, prevKey),
-            );
-        },
-        {} as IGenerate<T>,
-    );
-
-    return result;
-};
-
-const createMutators = (values: Record<string, Function>, path: string[]) => {
-    const pathName = path[0] + capitalizeKeysToString(path.slice(1));
-    return entries(values).reduce((prev, [key, val]) => {
+): IGenerate<T> =>
+    entries(values).reduce((result, [key, val]) => {
+        if (!key) return result;
         const keyName = capitalizeName(key);
-        const set = (arg: any, type: UpdateType = "set") => {
-            const params = getParams(arg, getGlobalData(path));
-            _setStoreValueEvent(path, params, type);
-            return getGlobalData(path);
-        };
-
-        const patch = (arg: any) => set(arg, "patch");
-
-        const get = () => getGlobalData(path);
-
-        return assign(prev, {
-            [pathName.concat(keyName)]: (...args: any) => {
-                const fn = val({ set, get, patch }, getGlobalData(path));
-                if (isAFunction(fn)) {
-                    return fn(...args);
-                }
-                return fn;
-            },
-        });
-    }, {});
-};
+        const prevKeyName = capitalizeKeysToString(prevKey);
+        const path = prevKey.concat(key);
+        const storePath = [storeId].concat(path);
+        const mapKey = prevKeyName.concat(keyName);
+        return assign(
+            result,
+            isNotMutator(keyName)
+                ? !keyName.includes("_") &&
+                      assign(
+                          {
+                              [GeneratedType.SET.concat(mapKey)]: (
+                                  val:
+                                      | Partial<ValueOf<T>>
+                                      | ((
+                                            prev: ValueOf<T>,
+                                        ) => Partial<ValueOf<T>>),
+                              ) => _setStoreValueEvent(storePath, val),
+                              [GeneratedType.USE.concat(mapKey)]: () =>
+                                  isClient
+                                      ? useStoreVal({
+                                            mapKey: storeId.concat(mapKey),
+                                        })
+                                      : null,
+                              [GeneratedType.GET.concat(mapKey)]: () =>
+                                  getGlobalData(storePath),
+                          },
+                          isObject(val) &&
+                              generateFunc<IStore<T>>(storeId, val, path),
+                      )
+                : createMutators(
+                      val as any,
+                      prevKey,
+                      [storeId].concat(prevKey),
+                  ),
+        );
+    }, {} as IGenerate<T>);
 
 export function createState<T extends IStore<T>>(
     params: T,
+    options?: Options,
 ): IGenerate<CreateResult<T>>;
 export function createState<T extends IStore<T>>(): {
-    <U extends WithM<CreateState<T>>>(params: U): IGenerate<
+    <U extends WithM<CreateState<T>>>(params: U, options?: Options): IGenerate<
         CreateResult<U>,
         CreateResult<T>
     >;
 };
-export function createState<T extends IStore<T>>(params?: T) {
-    if (params && typeof params !== "undefined") {
-        return createStateFn(params);
-    }
-    return <U extends WithM<CreateState<T>>>(params: U) =>
-        createStateFn(params as unknown as T) as unknown as IGenerate<
-            CreateResult<U>,
-            CreateResult<T>
-        >;
+export function createState<T extends IStore<T>>(
+    params?: T,
+    options?: Options,
+): any {
+    return params ? createStateFn(params, options) : createStateFn;
 }
 
 export function createStateFn<T extends IStore<T>>(
     initialValues: T,
+    options?: Options,
 ): IGenerate<CreateResult<T>> {
-    const stores = Object.keys(initialValues);
+    const storeId = options?.key || generateId(initialValues);
+    if (!getGlobalData([storeId])) {
+        updateGlobalData([storeId], initialValues);
+        generateStaticPathsMap(getGlobalData([storeId]), storeId);
+    }
 
-    stores.forEach((store) => {
-        if (!EStorage.get()?.[store]) {
-            updateGlobalData(
-                [store],
-                (initialValues as Record<string, any>)?.[store],
-            );
-            generateStaticPathsMap(EStorage.get()?.[store], store);
-        }
-    });
-    const gen = generateFunc(initialValues);
+    const gen = generateFunc(storeId, initialValues);
     const handler = {
         get(target: any, name: string) {
             if (name in target) {
                 return target[name];
             }
             const [type, ...functionName] = name.split(/(?=[A-Z$])/);
-            const mapKey = functionName.join("");
+            const mapKey = storeId.concat(functionName.join(""));
             const splitName = capitalizeKeysToString(
-                name.slice(name[0] === "$" ? 1 : 0).split(/[\s$]+/),
+                name.slice(name[0] === "$" ? 1 : 0).split(SignRegExp),
                 true,
             );
+
             if (splitName in target && isAFunction(target[splitName])) {
                 return (...args: any[]) => target[splitName](...args);
             }
 
-            const isGenerated = Object.values(GeneratedType).some((val) =>
+            const isGenerated = generatedTypes.some((val) =>
                 val.includes(type),
             );
 
@@ -160,11 +132,7 @@ export function createStateFn<T extends IStore<T>>(
             switch (type) {
                 case GeneratedType.GET:
                     return (filterFunc?: Function) =>
-                        getGlobalData(
-                            EStorage.getMapByKey(mapKey),
-                            true,
-                            filterFunc,
-                        );
+                        getGlobalData(getMapByKey(mapKey), true, filterFunc);
 
                 case GeneratedType.USE:
                     return (filterFunc?: Function) =>
@@ -178,9 +146,10 @@ export function createStateFn<T extends IStore<T>>(
                 case GeneratedType.SET:
                     return (...args: [Function] | [Function, any]) => {
                         const [filterFunc, arrValue] = args;
-                        const basePath = EStorage.getMapByKey(mapKey);
-
+                        const basePath = getMapByKey(mapKey);
                         if (basePath) {
+                            console.log(basePath, args);
+
                             if (args.length > 1) {
                                 const arrrIdx =
                                     basePath?.findIndex(
@@ -203,28 +172,22 @@ export function createStateFn<T extends IStore<T>>(
                                         filterFunc,
                                     );
                                     _setStoreValueEvent(arrRootPath, value);
-                                    return;
                                 }
                                 return;
                             }
                             return _setStoreValueEvent(basePath, filterFunc);
                         }
                     };
-
                 case GeneratedType.RESET:
                     return () => {
-                        const basePath = EStorage.getMapByKey(mapKey);
-                        return _setStoreValueEvent(
+                        const basePath = getMapByKey(mapKey);
+                        _setStoreValueEvent(
                             basePath,
-                            getGlobalData(
-                                basePath,
-                                true,
-                                undefined,
-                                initialValues,
-                            ),
+                            getGlobalData(basePath, true, undefined, {
+                                [storeId]: initialValues,
+                            }),
                         );
                     };
-
                 default:
                     return () => undefined;
             }

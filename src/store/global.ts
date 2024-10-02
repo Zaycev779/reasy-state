@@ -1,14 +1,13 @@
 import { _pushStoreValueEvent, _updatePathEvent, SET_EV_NAME } from "./events";
 import { getGlobalData } from "./get-global";
+import { patchToGlobalMap } from "./maps/maps";
+import { getMapByKey } from "./maps/utils";
 import { IStore, UpdateType } from "./types/store";
 import {
-    capitalizeName,
     diffValuesBoolean,
-    entries,
     getAdditionalMapKeys,
     getParams,
     isClient,
-    isNotMutator,
     isObject,
     mergeDeep,
 } from "./utils";
@@ -17,11 +16,13 @@ declare global {
     namespace EStorage {
         let store: Record<string, any>;
         let map: Record<string, string[]>;
+        let storeId: number;
+        const mapId: WeakMap<object, number>;
         function get(): Record<string, any>;
         function getMap(): Record<string, string[]>;
         function getMapByKey(keyName: string): string[];
         function set(value: Record<string, any>): void;
-        function setMap(value: Record<string, string[]>): void;
+        function setMap(key: string, value: string[]): void;
     }
 }
 
@@ -35,9 +36,11 @@ if (!("EStorage" in globalThis)) {
         set: (value) => {
             EStorage.store = value;
         },
-        setMap: (value) => {
-            EStorage.map = value;
+        setMap: (key, value) => {
+            EStorage.map[key] = value;
         },
+        storeId: 0,
+        mapId: new WeakMap(),
     };
     if (isClient) {
         const onLoad = () => {
@@ -65,15 +68,10 @@ if (!("EStorage" in globalThis)) {
                 const updatePathMaps = getAdditionalMapKeys(path);
 
                 updatePathMaps.forEach((mapKey) => {
-                    const prevPath = EStorage.getMapByKey(mapKey);
+                    const prevPath = getMapByKey(mapKey);
                     patchToGlobalMap(mapKey);
-                    if (
-                        diffValuesBoolean(
-                            prevPath,
-                            EStorage.getMapByKey(mapKey),
-                        )
-                    ) {
-                        _updatePathEvent(mapKey, EStorage.getMapByKey(mapKey));
+                    if (diffValuesBoolean(prevPath, getMapByKey(mapKey))) {
+                        _updatePathEvent(mapKey, getMapByKey(mapKey));
                     }
                 });
                 _pushStoreValueEvent(path, updatedParams, prevValues);
@@ -92,8 +90,8 @@ if (!("EStorage" in globalThis)) {
 export const updateGlobalData = (
     paths: string[],
     data: Partial<IStore>,
-    src: Record<string, any> = EStorage.get(),
-): boolean => {
+    src: Record<string, any> = getGlobalData([]),
+) => {
     const [path, ...rest] = paths;
     if (!rest.length) {
         try {
@@ -107,80 +105,5 @@ export const updateGlobalData = (
     if (!src[path]) {
         src[path] = {};
     }
-    return updateGlobalData(rest, data, src[path]);
-};
-
-export const generateStaticPathsMap = (
-    data: any,
-    path: string,
-    prevPath: string[] = [path],
-): any => {
-    const pathName = capitalizeName(path);
-    if (isObject(data)) {
-        EStorage.setMap({
-            ...EStorage.getMap(),
-            [pathName]: prevPath,
-        });
-        entries(data).forEach(([name, val]) => {
-            const keyName = capitalizeName(name);
-            if (isNotMutator(keyName) && !keyName.includes("_")) {
-                EStorage.setMap({
-                    ...EStorage.getMap(),
-                    [pathName + keyName]: prevPath,
-                });
-
-                generateStaticPathsMap(
-                    val,
-                    pathName + keyName,
-                    prevPath.concat(name),
-                );
-            }
-        });
-    }
-
-    EStorage.setMap({
-        ...EStorage.getMap(),
-        [pathName]: prevPath,
-    });
-    return data;
-};
-
-export const patchToGlobalMap = (
-    mapKey: string,
-    baseMap: string = mapKey,
-    staticPath?: string[],
-    prevPath: string[] = [],
-) => {
-    if (!mapKey.includes("$")) return;
-    const [staticName, firstKey, ...additionalKeys] =
-        mapKey?.split(/[\s$]+/) ?? [];
-
-    const staticFromMap = staticPath || EStorage.getMap()?.[staticName] || [];
-    const baseRequiredData = getGlobalData(staticFromMap.concat(prevPath));
-
-    if (Array.isArray(baseRequiredData)) {
-        EStorage.setMap({
-            ...EStorage.getMap(),
-            [baseMap]: staticFromMap.concat(
-                prevPath,
-                "[]",
-                firstKey,
-                additionalKeys.length ? additionalKeys : [],
-            ),
-        });
-        return;
-    }
-    EStorage.setMap({
-        ...EStorage.getMap(),
-        [baseMap]: staticFromMap.concat(prevPath, firstKey),
-    });
-
-    if (additionalKeys.length) {
-        patchToGlobalMap(
-            "$".concat(additionalKeys.join("$")),
-            baseMap || mapKey,
-            staticFromMap,
-            prevPath.concat(firstKey),
-        );
-    }
+    updateGlobalData(rest, data, src[path]);
 };
