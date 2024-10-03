@@ -3,9 +3,9 @@ import { isClient } from "./utils";
 import { IStore, UpdateType } from "./types/store";
 import { getAdditionalPaths, getRootPaths, getUpdatedPaths } from "./utils";
 
-export const SET_EV_NAME = "__SET_STORE_EVENT";
-export const PUSH_EV_NAME = "__PUSH_STORE_EVENT";
-export const PATH_MAP_EV_NAME = "__PATH_MAP_STORE_EVENT";
+export const SET_EV_NAME = "__SET_EV";
+export const PUSH_EV_NAME = "__PUSH_EV";
+export const PATH_MAP_EV_NAME = "__PATH_EV";
 
 export const _setStoreValueEvent = <T>(
     path: string[],
