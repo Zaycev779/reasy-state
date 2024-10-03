@@ -1,4 +1,4 @@
-import { getMap } from "./maps/utils";
+import { getMap, getMapByKey } from "./maps/utils";
 import { IStore } from "./types/store";
 
 export type updatedParams = string | updatedParams[];
@@ -125,7 +125,7 @@ export const getAdditionalMapKeys = (paths: string[]) => {
     return paths
         .reduce((prevName, path, idx) => {
             const curVal = prevName.filter((val) => {
-                const pathMap = EStorage.getMapByKey(val);
+                const pathMap = getMapByKey(val);
                 return pathMap[idx] === path && pathMap.length > l;
             });
             return curVal;

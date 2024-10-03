@@ -5,7 +5,7 @@ export const getGlobalData = (
     path?: string[],
     forArray?: boolean,
     filterFunc?: Function,
-    src = EStorage.get(),
+    src = EStorage.store,
 ) =>
     path?.reduce(
         ({ value, skip }, v, idx) => {

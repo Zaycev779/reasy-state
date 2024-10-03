@@ -18,11 +18,6 @@ declare global {
         let map: Record<string, string[]>;
         let storeId: number;
         const mapId: WeakMap<object, number>;
-        function get(): Record<string, any>;
-        function getMap(): Record<string, string[]>;
-        function getMapByKey(keyName: string): string[];
-        function set(value: Record<string, any>): void;
-        function setMap(key: string, value: string[]): void;
     }
 }
 
@@ -30,15 +25,6 @@ if (!("EStorage" in globalThis)) {
     globalThis.EStorage = {
         store: {},
         map: {},
-        get: () => EStorage.store,
-        getMap: () => EStorage.map,
-        getMapByKey: (keyName: string) => EStorage.map[keyName],
-        set: (value) => {
-            EStorage.store = value;
-        },
-        setMap: (key, value) => {
-            EStorage.map[key] = value;
-        },
         storeId: 0,
         mapId: new WeakMap(),
     };

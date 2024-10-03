@@ -1,4 +1,4 @@
-export const getMapByKey = (key: string) => EStorage.getMapByKey(key);
-export const getMap = () => EStorage.getMap();
+export const getMapByKey = (key: string) => EStorage.map[key];
+export const getMap = () => EStorage.map;
 export const setMap = (key: string, value: string[]) =>
-    EStorage.setMap(key, value);
+    (EStorage.map[key] = value);
