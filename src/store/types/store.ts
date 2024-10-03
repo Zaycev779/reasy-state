@@ -1,8 +1,7 @@
-import { KeyCapitalize, Maybe } from "./index";
+import { KeyCapitalize } from "./index";
 import { Flatten } from "./flatten";
 
 export type UpdateType = "set" | "patch";
-export type IRecord = Maybe<string | number | boolean | object>;
 export enum GeneratedType {
     GET = "get",
     SET = "set",
@@ -111,7 +110,7 @@ type PickM<T> = T extends {
 export type CreateResult<T> = PickM<SetM<T>>;
 
 export type IStore<T extends Record<string, any> = Record<string, any>> = {
-    [P in keyof T]: IRecord | IStore<T> | Array<IRecord>;
+    [P in keyof T]: any | IStore<T>;
 };
 
 type IStaticFunc<T, U, N extends GeneratedType> = {
@@ -184,7 +183,7 @@ export type IGenerateFn<T, U> = IStaticFunc<T, U, GeneratedType.GET> &
     IFn<T, U>;
 
 export type IGenerate<T, U = unknown> = IGenerateFn<Flatten<T>, Flatten<U>> &
-    IResetFunc<T>;
+    IResetFunc<T extends object ? T : { [k in ""]: T }>;
 
 export type Options = {
     /** Unique store key */

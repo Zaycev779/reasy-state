@@ -54,7 +54,6 @@ if (!("EStorage" in globalThis)) {
                 }>;
                 const { params, path, type } = detail;
                 const prevValues = getGlobalData(path);
-
                 const updatedParams = getParams(params, prevValues);
                 updateGlobalData(
                     path,

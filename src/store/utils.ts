@@ -170,8 +170,9 @@ export const isArrayPathName = (name: string | string[]) => name.includes("[]");
 
 export const generateId = (object: any) => {
     const { mapId } = EStorage;
-    if (!mapId.has(object)) {
-        mapId.set(object, ++EStorage.storeId);
+    const value = isObject(object) ? object : { object };
+    if (!mapId.has(value)) {
+        mapId.set(value, ++EStorage.storeId);
     }
-    return "#".concat(String(mapId.get(object)));
+    return "#".concat(String(mapId.get(value)));
 };
