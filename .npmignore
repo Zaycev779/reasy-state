@@ -3,3 +3,5 @@ src/
 .rollup.cache
 rollup.config.mjs
 tsconfig.json
+.prettierignore
+.prettierrc
