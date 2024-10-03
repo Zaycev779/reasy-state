@@ -4,8 +4,7 @@ import { updateGlobalData } from "./global";
 import { useStoreVal } from "./hooks/use-store-val.hook";
 import { generateStaticPathsMap, patchToGlobalMap } from "./maps/maps";
 import { getMapByKey } from "./maps/utils";
-import { createMutators } from "./mutators";
-import { ValueOf } from "./types/index";
+import { generateMutators } from "./mutators";
 import {
     CreateResult,
     CreateState,
@@ -16,64 +15,17 @@ import {
     WithM,
 } from "./types/store";
 import {
-    assign,
     capitalizeKeysToString,
-    capitalizeName,
     createNewArrayValues,
-    entries,
     findPathArrayIndex,
     generateId,
     isAFunction,
     isClient,
-    isDefaultObject,
-    isNotMutator,
     SignRegExp,
     values,
 } from "./utils";
 
 const generatedTypes = values(GeneratedType);
-
-const generateFunc = <T extends IStore<T>>(
-    storeId: string,
-    values: T,
-    prevKey: string[] = [],
-): IGenerate<T> =>
-    entries(values).reduce((result, [key, val]) => {
-        if (!key) return result;
-        const keyName = capitalizeName(key);
-        const prevKeyName = capitalizeKeysToString(prevKey);
-        const path = prevKey.concat(key);
-        const storePath = [storeId].concat(path);
-        const mapKey = prevKeyName.concat(keyName);
-        return assign(
-            result,
-            isNotMutator(keyName)
-                ? assign(
-                      {
-                          [GeneratedType.SET.concat(mapKey)]: (
-                              val:
-                                  | Partial<ValueOf<T>>
-                                  | ((prev: ValueOf<T>) => Partial<ValueOf<T>>),
-                          ) => _setStoreValueEvent(storePath, val),
-                          [GeneratedType.USE.concat(mapKey)]: () =>
-                              isClient
-                                  ? useStoreVal({
-                                        mapKey: storeId.concat(mapKey),
-                                    })
-                                  : null,
-                          [GeneratedType.GET.concat(mapKey)]: () =>
-                              getGlobalData(storePath),
-                      },
-                      isDefaultObject(val) &&
-                          generateFunc<IStore<T>>(storeId, val, path),
-                  )
-                : createMutators(
-                      val as any,
-                      prevKey,
-                      [storeId].concat(prevKey),
-                  ),
-        );
-    }, {} as IGenerate<T>);
 
 export function createState<T extends IStore<T>>(
     params: T,
@@ -102,7 +54,7 @@ export function createStateFn<T extends IStore<T>>(
         generateStaticPathsMap(getGlobalData([storeId]), storeId);
     }
 
-    const gen = generateFunc(storeId, initialValues);
+    const mutators = generateMutators(storeId, initialValues);
     const handler = {
         get(target: any, name: string) {
             if (name in target) {
@@ -188,5 +140,5 @@ export function createStateFn<T extends IStore<T>>(
         },
     };
 
-    return new Proxy(gen, handler);
+    return new Proxy(mutators, handler);
 }
