@@ -52,30 +52,32 @@ it("set state value", async () => {
     } = createState({
         state: { value: 1, other: "test" },
     });
-
     let renderCounts = 0;
+    let renderCountsOther = 0;
+    let renderCountsValue = 0;
 
     function Page() {
         const state = useState();
-
+        renderCounts++;
         return <div>value1: {state.value}</div>;
     }
 
     function Page2() {
         const value = useStateValue();
+        renderCountsValue++;
 
         return <div>value2: {value}</div>;
     }
 
     function PageOther() {
         const other = useStateOther();
-        renderCounts++;
+        renderCountsOther++;
         return <div>other: {other}</div>;
     }
 
     function Button() {
         return (
-            <button onClick={() => setState({ value: 2, other: "test" })}>
+            <button onClick={() => setState({ value: 2, other: "test1" })}>
                 button 1
             </button>
         );
@@ -119,31 +121,42 @@ it("set state value", async () => {
             <Button2Prev />
         </>,
     );
-
     expect(renderCounts).toBe(1);
+    expect(renderCountsOther).toBe(1);
+    expect(renderCountsValue).toBe(1);
+
+    act(() => setStateOther("new value"));
+    expect(getState().other).toBe("new value");
+    expect(renderCountsOther).toBe(2);
 
     fireEvent.click(getByText("button 1"));
+    expect(renderCountsOther).toBe(3);
+    expect(renderCountsValue).toBe(3);
 
     await findByText("value1: 2");
     await findByText("value2: 2");
     fireEvent.click(getByText("button 2"));
+    expect(renderCountsValue).toBe(4);
 
     await findByText("value1: 3");
     await findByText("value2: 3");
 
     fireEvent.click(getByText("button 3"));
+    expect(renderCountsValue).toBe(5);
 
     await findByText("value1: 4");
     await findByText("value2: 4");
 
     fireEvent.click(getByText("button 4"));
+    expect(renderCountsValue).toBe(6);
 
     await findByText("value1: 5");
     await findByText("value2: 5");
 
     expect(getState().value).toBe(5);
     expect(getStateValue()).toBe(5);
-    expect(renderCounts).toBe(1);
-    act(() => setStateOther("new value"));
-    expect(getState().other).toBe("new value");
+
+    expect(renderCounts).toBe(6);
+    expect(renderCountsValue).toBe(6);
+    expect(renderCountsOther).toBe(3);
 });
