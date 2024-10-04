@@ -1,5 +1,5 @@
-import { _setStoreValueEvent } from "./events";
 import { getGlobalData } from "./get-global";
+import { updateStore } from "./global";
 import { IGenerate, IStore, UpdateType } from "./types/store";
 import {
     assign,
@@ -17,22 +17,27 @@ export const generateMutators = <T extends IStore<T>>(
     values: T,
     prevKey: string[] = [],
 ): IGenerate<T> =>
-    entries(values).reduce((result, [key, val]) => {
-        if (!key) return result;
-        const keyName = capitalizeName(key);
-        const path = prevKey.concat(key);
-        return assign(
-            result,
-            isNotMutator(keyName)
-                ? isDefaultObject(val) &&
-                      generateMutators<IStore<T>>(storeId, val, path)
-                : createMutators(
-                      val as any,
-                      prevKey,
-                      [storeId].concat(prevKey),
-                  ),
-        );
-    }, {} as IGenerate<T>);
+    entries(values).reduce(
+        (result, [key, val]) =>
+            key
+                ? assign(
+                      result,
+                      isNotMutator(capitalizeName(key))
+                          ? isDefaultObject(val) &&
+                                generateMutators<IStore<T>>(
+                                    storeId,
+                                    val,
+                                    prevKey.concat(key),
+                                )
+                          : createMutators(
+                                val,
+                                prevKey,
+                                [storeId].concat(prevKey),
+                            ),
+                  )
+                : result,
+        {} as IGenerate<T>,
+    );
 
 export const createMutators = (
     values: Record<string, Function>,
@@ -43,7 +48,7 @@ export const createMutators = (
     const get = () => getGlobalData(storePath);
     const set = (arg: any, type: UpdateType = "set") => {
         const params = getParams(arg, get());
-        _setStoreValueEvent(storePath, params, type);
+        updateStore(storePath, params, type);
         return get();
     };
     const patch = (arg: any) => set(arg, "patch");

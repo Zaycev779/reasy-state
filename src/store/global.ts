@@ -1,14 +1,14 @@
-import { _pushStoreValueEvent, _updatePathEvent, SET_EV_NAME } from "./events";
+import { _pushStoreValueEvent, _updatePathEvent } from "./events";
 import { getGlobalData } from "./get-global";
 import { patchToGlobalMap } from "./maps/maps";
 import { getMapByKey } from "./maps/utils";
 import { IStore, UpdateType } from "./types/store";
 import {
     diffValuesBoolean,
-    getAdditionalMapKeys,
+    getAdditionalKeys,
     getParams,
-    isClient,
     isObject,
+    isOptionalPathName,
     mergeDeep,
 } from "./utils";
 
@@ -28,48 +28,6 @@ if (!("EStorage" in globalThis)) {
         storeId: 0,
         mapId: new WeakMap(),
     };
-    if (isClient) {
-        const onLoad = () => {
-            const onTargetEvent = (ev: Event) => {
-                const { detail } = ev as CustomEvent<{
-                    path: string[];
-                    params:
-                        | Partial<IStore>
-                        | ((prev: IStore) => Partial<IStore>);
-                    type: UpdateType;
-                }>;
-                const { params, path, type } = detail;
-                const prevValues = getGlobalData(path);
-                const updatedParams = getParams(params, prevValues);
-                updateGlobalData(
-                    path,
-                    type === "patch" &&
-                        isObject(updatedParams) &&
-                        isObject(prevValues)
-                        ? mergeDeep({}, prevValues, updatedParams)
-                        : updatedParams,
-                );
-
-                const updatePathMaps = getAdditionalMapKeys(path);
-
-                updatePathMaps.forEach((mapKey) => {
-                    const prevPath = getMapByKey(mapKey);
-                    patchToGlobalMap(mapKey);
-                    if (diffValuesBoolean(prevPath, getMapByKey(mapKey))) {
-                        _updatePathEvent(mapKey, getMapByKey(mapKey));
-                    }
-                });
-                _pushStoreValueEvent(path, updatedParams, prevValues);
-            };
-
-            document.addEventListener(SET_EV_NAME, onTargetEvent);
-        };
-        if (document.readyState !== "loading") {
-            onLoad();
-        } else {
-            window.addEventListener("DOMContentLoaded", () => onLoad);
-        }
-    }
 }
 
 export const updateGlobalData = (
@@ -91,4 +49,30 @@ export const updateGlobalData = (
         src[path] = {};
     }
     updateGlobalData(rest, data, src[path]);
+};
+
+export const updateStore = <T>(
+    path: string[],
+    params?: Partial<T> | ((prev: T) => Partial<T>),
+    type: UpdateType = "set",
+) => {
+    const prevValues = getGlobalData(path);
+    const updatedParams = getParams(params, prevValues);
+    updateGlobalData(
+        path,
+        type === "patch" && isObject(updatedParams) && isObject(prevValues)
+            ? mergeDeep({}, prevValues, updatedParams)
+            : updatedParams,
+    );
+
+    const updatePathKeys = getAdditionalKeys(path, isOptionalPathName);
+
+    updatePathKeys.forEach((mapKey) => {
+        const prevPath = getMapByKey(mapKey);
+        patchToGlobalMap(mapKey);
+        if (diffValuesBoolean(prevPath, getMapByKey(mapKey))) {
+            _updatePathEvent(mapKey, getMapByKey(mapKey));
+        }
+    });
+    _pushStoreValueEvent(path, updatedParams, prevValues);
 };

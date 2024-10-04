@@ -1,22 +1,10 @@
 import { getGlobalData } from "./get-global";
-import { isClient } from "./utils";
-import { IStore, UpdateType } from "./types/store";
+import { isArrayPathName, isClient, pathToString } from "./utils";
+import { IStore } from "./types/store";
 import { getAdditionalPaths, getRootPaths, getUpdatedPaths } from "./utils";
 
-export const SET_EV_NAME = "__SET_EV";
 export const PUSH_EV_NAME = "__PUSH_EV";
 export const PATH_MAP_EV_NAME = "__PATH_EV";
-
-export const _setStoreValueEvent = <T>(
-    path: string[],
-    params?: Partial<T> | ((prev: T) => Partial<T>),
-    type: UpdateType = "set",
-) =>
-    sendEvent(SET_EV_NAME, {
-        path,
-        params,
-        type,
-    });
 
 export const _updatePathEvent = (pathMap: string, path: string[]) =>
     sendEvent(PATH_MAP_EV_NAME + pathMap, { path });
@@ -27,7 +15,10 @@ export const _pushStoreValueEvent = <T extends IStore<T>>(
     prevValues: T,
 ) => {
     const updatePaths = getUpdatedPaths(updatedParams, prevValues, paths);
-    const additionalPaths = getAdditionalPaths(paths);
+    const additionalPaths = getAdditionalPaths(
+        paths,
+        isArrayPathName,
+    ) as string[][];
     updatePaths.push(...additionalPaths);
     if (updatePaths.length) {
         const rest = [...paths];
@@ -36,7 +27,7 @@ export const _pushStoreValueEvent = <T extends IStore<T>>(
     }
     updatePaths.forEach((pathVal) => {
         const params = getGlobalData(pathVal);
-        sendEvent(PUSH_EV_NAME + pathVal.join(), { params });
+        sendEvent(PUSH_EV_NAME + pathToString(pathVal), { params });
     });
 };
 

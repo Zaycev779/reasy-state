@@ -4,6 +4,7 @@ import {
     entries,
     isDefaultObject,
     isNotMutator,
+    isOptionalPathName,
     SignRegExp,
 } from "../utils";
 import { getMapByKey, setMap } from "./utils";
@@ -39,7 +40,7 @@ export const patchToGlobalMap = (
     staticPath?: string[],
     prevPath: string[] = [],
 ) => {
-    if (!mapKey.includes("$")) return;
+    if (!isOptionalPathName(mapKey)) return;
     const [staticName, firstKey, ...additionalKeys] =
         mapKey?.split(SignRegExp) ?? [];
 

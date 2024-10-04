@@ -1,6 +1,5 @@
-import { _setStoreValueEvent } from "./events";
 import { getGlobalData } from "./get-global";
-import { updateGlobalData } from "./global";
+import { updateStore, updateGlobalData } from "./global";
 import { useStoreVal } from "./hooks/use-store-val.hook";
 import { generateStaticPathsMap, patchToGlobalMap } from "./maps/maps";
 import { getMapByKey } from "./maps/utils";
@@ -21,6 +20,7 @@ import {
     generateId,
     isAFunction,
     isClient,
+    pathToString,
     SignRegExp,
     values,
 } from "./utils";
@@ -61,7 +61,7 @@ export function createStateFn<T extends IStore<T>>(
                 return target[name];
             }
             const [type, ...functionName] = name.split(/(?=[A-Z$])/);
-            const mapKey = storeId.concat(functionName.join(""));
+            const mapKey = storeId.concat(pathToString(functionName));
             const splitName = capitalizeKeysToString(
                 name.slice(name[0] === "$" ? 1 : 0).split(SignRegExp),
                 true,
@@ -117,17 +117,17 @@ export function createStateFn<T extends IStore<T>>(
                                         arrValue,
                                         filterFunc,
                                     );
-                                    _setStoreValueEvent(arrRootPath, value);
+                                    updateStore(arrRootPath, value);
                                 }
                                 return;
                             }
-                            return _setStoreValueEvent(basePath, filterFunc);
+                            return updateStore(basePath, filterFunc);
                         }
                     };
                 case GeneratedType.RESET:
                     return () => {
                         const basePath = getMapByKey(mapKey);
-                        _setStoreValueEvent(
+                        updateStore(
                             basePath,
                             getGlobalData(basePath, true, undefined, {
                                 [storeId]: initialValues,

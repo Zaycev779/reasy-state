@@ -10,6 +10,7 @@ import {
     findPathArrayIndex,
     isAFunction,
     isDefaultObject,
+    pathToString,
 } from "../utils";
 import { useEvent } from "./use-event.hook";
 import { getMapByKey } from "../maps/utils";
@@ -31,10 +32,10 @@ export const useStoreVal = ({ filterFunc, mapKey }: IProps) => {
     useEvent<{
         params: IStore;
     }>({
-        type: path ? PUSH_EV_NAME + path.join() : undefined,
-        onChange({ params }) {
+        type: path ? PUSH_EV_NAME + pathToString(path) : undefined,
+        onChange: ({ params }) => {
             const sliceIdx = findPathArrayIndex(path);
-            if (sliceIdx >= 0 && path) {
+            if (sliceIdx >= 0) {
                 if (!Array.isArray(params)) return setState(params);
                 const additionalPaths = path.slice(sliceIdx + 1, path.length);
                 const filteredValue = isAFunction(filterFunc)
@@ -50,16 +51,14 @@ export const useStoreVal = ({ filterFunc, mapKey }: IProps) => {
             }
             setState(isDefaultObject(params) ? assign({}, params) : params);
         },
-        onStartEvent() {
-            setState(getState());
-        },
+        onStart: () => setState(getState()),
     });
 
     useEvent<{
         path: string[];
     }>({
         type: mapKey ? PATH_MAP_EV_NAME + mapKey : undefined,
-        onChange({ path }) {
+        onChange: ({ path }) => {
             if (path) {
                 setPath(path);
                 setState(getState());

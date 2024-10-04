@@ -4,28 +4,26 @@ import { useEffect } from "react";
 
 interface IUseEvent<T> {
     type?: string;
-    onStartEvent?: () => void;
+    onStart?: () => void;
     onChange: (values: T) => void;
 }
 
-export const useEvent = <T>({ type, onStartEvent, onChange }: IUseEvent<T>) =>
+export const useEvent = <T>({ type, onStart, onChange }: IUseEvent<T>) =>
     useEffect(() => {
+        if (!type) return;
+
         const onTargetEvent = (ev: Event) => {
             const { detail } = ev as CustomEvent<T>;
             onChange(detail);
         };
 
-        if (type) {
-            if (onStartEvent) {
-                onStartEvent();
-            }
-            document.addEventListener(type, onTargetEvent);
+        if (onStart) {
+            onStart();
         }
+        document.addEventListener(type, onTargetEvent);
 
         return () => {
-            if (type) {
-                document.removeEventListener(type, onTargetEvent);
-            }
+            document.removeEventListener(type, onTargetEvent);
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [type]);

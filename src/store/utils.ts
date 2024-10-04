@@ -1,10 +1,12 @@
-import { getMap, getMapByKey } from "./maps/utils";
+import { getMap } from "./maps/utils";
 import { IStore } from "./types/store";
 
 export type updatedParams = string | updatedParams[];
 export const Mutators = "mutators";
 export const isClient = typeof window !== "undefined" && window;
 export const SignRegExp = /[\s$]+/;
+
+export const pathToString = (path: string[]) => path.join("");
 
 export const getRootPaths = (paths: string[]) =>
     paths.reduce(
@@ -78,18 +80,26 @@ export function mergeDeep(target: any, ...sources: any): any {
     return mergeDeep(target, ...sources);
 }
 
-export const getAdditionalPaths = (paths: string[]) => {
-    const storeMap = values(getMap()) as string[][];
-    return paths
-        .reduce((prev, path, idx) => {
-            const curVal = prev.filter(
-                (curVal) =>
-                    curVal?.[idx] === path && curVal.length > paths.length,
-            );
-            return curVal;
-        }, storeMap)
-        .filter((v) => isArrayPathName(v));
+export const getAdditionalPaths = (
+    paths: string[],
+    filter: Function,
+    type = 1,
+) => {
+    const storeMap = entries(getMap()) as [string, string[]][];
+    const pathStr = pathToString(paths),
+        l = paths.length;
+    return storeMap
+        .filter(
+            (entry) =>
+                pathToString(entry[1]).startsWith(pathStr) &&
+                entry[1].length > l &&
+                filter(entry[type]),
+        )
+        .map((entrie) => entrie[type]);
 };
+
+export const getAdditionalKeys = (paths: string[], filter: Function) =>
+    getAdditionalPaths(paths, filter, 0) as string[];
 
 export const createNewArrayValues = (
     keys: string[],
@@ -118,21 +128,6 @@ export const createNewArrayValues = (
     return prev;
 };
 
-export const getAdditionalMapKeys = (paths: string[]) => {
-    const storeMap = Object.keys(getMap()) as string[],
-        l = paths.length;
-
-    return paths
-        .reduce((prevName, path, idx) => {
-            const curVal = prevName.filter((val) => {
-                const pathMap = getMapByKey(val);
-                return pathMap[idx] === path && pathMap.length > l;
-            });
-            return curVal;
-        }, storeMap)
-        .filter((val) => val.includes("$"));
-};
-
 export const findPathArrayIndex = (array?: string[]) =>
     array?.findIndex((val) => val === "[]") ?? -1;
 
@@ -151,7 +146,9 @@ export const capitalizeName = (name: string) =>
     name.charAt(0).toUpperCase() + name.slice(1);
 
 export const capitalizeKeysToString = (arr: string[], ignoreFirst?: boolean) =>
-    arr.map((k, i) => (!i && ignoreFirst ? k : capitalizeName(k))).join("");
+    pathToString(
+        arr.map((k, i) => (!i && ignoreFirst ? k : capitalizeName(k))),
+    );
 
 export const assign = <T extends {}, U, V>(
     target: T,
@@ -167,6 +164,8 @@ export const isNotMutator = (keyName: string) =>
     keyName !== capitalizeName(Mutators);
 
 export const isArrayPathName = (name: string | string[]) => name.includes("[]");
+export const isOptionalPathName = (name: string | string[]) =>
+    name.includes("$");
 
 export const generateId = (object: any) => {
     const { mapId } = EStorage;
