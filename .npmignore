@@ -1,5 +1,6 @@
 .babelrc
 src/
+tests/
 .rollup.cache
 rollup.config.mjs
 tsconfig.json

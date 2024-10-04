@@ -17,6 +17,11 @@
         "declaration": true,
         "declarationDir": "types",
         "emitDeclarationOnly": true,
+        "moduleResolution":"node",
+        "paths": {
+            "reasy-state": ["./src/index.ts"],
+            "reasy-state/*": ["./src/*.ts"]
+        }
     },
     "include": ["**/*.ts", "**/*.tsx"],
 }
