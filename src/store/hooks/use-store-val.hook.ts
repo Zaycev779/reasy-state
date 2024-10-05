@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getGlobalData } from "../get-global";
 import { IStore } from "../types/store";
 import { PATH_MAP_EV_NAME, PUSH_EV_NAME } from "../events";
@@ -23,10 +23,14 @@ interface IProps {
 export const useStoreVal = ({ filterFunc, mapKey }: IProps) => {
     const [path, setPath] = useState<string[]>(getMapByKey(mapKey));
     const getState = () => getGlobalData(path, true, filterFunc);
-    const [state, setState] = useState(getState());
+    const isInit = useRef<boolean>();
+    const [state, setState] = useState(getState);
 
     useEffect(() => {
-        setPath(getMapByKey(mapKey));
+        if (isInit.current) {
+            setPath(getMapByKey(mapKey));
+        }
+        isInit.current = true;
     }, [mapKey]);
 
     useEvent<{
@@ -51,7 +55,7 @@ export const useStoreVal = ({ filterFunc, mapKey }: IProps) => {
             }
             setState(isDefaultObject(params) ? assign({}, params) : params);
         },
-        onStart: () => setState(getState()),
+        onChangeType: () => setState(getState()),
     });
 
     useEvent<{

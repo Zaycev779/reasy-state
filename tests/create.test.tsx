@@ -1,15 +1,14 @@
 import { expect, it } from "vitest";
 import { act, fireEvent, render } from "@testing-library/react";
 import { createState } from "reasy-state";
-import { useEffect } from "react";
 
-it("create state", async () => {
-    const { useState } = createState({ state: { value: 1 } });
+it("create store", async () => {
+    const { useStore } = createState({ store: { value: 1 } });
 
     function Page() {
-        const state = useState();
+        const store = useStore();
 
-        return <div>value: {state.value}</div>;
+        return <div>value: {store.value}</div>;
     }
 
     const { findByText } = render(
@@ -21,13 +20,13 @@ it("create state", async () => {
     await findByText("value: 1");
 });
 
-it("create primitive state", async () => {
+it("create primitive store", async () => {
     const { use } = createState(1);
 
     function Page() {
-        const state = use();
+        const store = use();
 
-        return <div>value: {state}</div>;
+        return <div>value: {store}</div>;
     }
 
     const { findByText } = render(
@@ -39,45 +38,45 @@ it("create primitive state", async () => {
     await findByText("value: 1");
 });
 
-it("set state value", async () => {
+it("set store value", async () => {
     const {
-        useState,
-        setState,
-        useStateValue,
-        setStateValue,
-        getState,
-        getStateValue,
-        useStateOther,
-        setStateOther,
+        useStore,
+        setStore,
+        useStoreValue,
+        setStoreValue,
+        getStore,
+        getStoreValue,
+        useStoreOther,
+        setStoreOther,
     } = createState({
-        state: { value: 1, other: "test" },
+        store: { value: 1, other: "test" },
     });
     let renderCounts = 0;
     let renderCountsOther = 0;
     let renderCountsValue = 0;
 
     function Page() {
-        const state = useState();
+        const store = useStore();
         renderCounts++;
-        return <div>value1: {state.value}</div>;
+        return <div>value1: {store.value}</div>;
     }
 
     function Page2() {
-        const value = useStateValue();
+        const value = useStoreValue();
         renderCountsValue++;
 
         return <div>value2: {value}</div>;
     }
 
     function PageOther() {
-        const other = useStateOther();
+        const other = useStoreOther();
         renderCountsOther++;
         return <div>other: {other}</div>;
     }
 
     function Button() {
         return (
-            <button onClick={() => setState({ value: 2, other: "test1" })}>
+            <button onClick={() => setStore({ value: 2, other: "test1" })}>
                 button 1
             </button>
         );
@@ -87,7 +86,7 @@ it("set state value", async () => {
         return (
             <button
                 onClick={() =>
-                    setState(({ value, other }) => ({
+                    setStore(({ value, other }) => ({
                         value: value + 1,
                         other,
                     }))
@@ -99,12 +98,12 @@ it("set state value", async () => {
     }
 
     function Button2() {
-        return <button onClick={() => setStateValue(4)}>button 3</button>;
+        return <button onClick={() => setStoreValue(4)}>button 3</button>;
     }
 
     function Button2Prev() {
         return (
-            <button onClick={() => setStateValue((prev) => prev + 1)}>
+            <button onClick={() => setStoreValue((prev) => prev + 1)}>
                 button 4
             </button>
         );
@@ -125,38 +124,38 @@ it("set state value", async () => {
     expect(renderCountsOther).toBe(1);
     expect(renderCountsValue).toBe(1);
 
-    act(() => setStateOther("new value"));
-    expect(getState().other).toBe("new value");
+    act(() => setStoreOther("new value"));
+    expect(getStore().other).toBe("new value");
     expect(renderCountsOther).toBe(2);
 
     fireEvent.click(getByText("button 1"));
     expect(renderCountsOther).toBe(3);
-    expect(renderCountsValue).toBe(3);
+    expect(renderCountsValue).toBe(2);
 
     await findByText("value1: 2");
     await findByText("value2: 2");
     fireEvent.click(getByText("button 2"));
-    expect(renderCountsValue).toBe(4);
+    expect(renderCountsValue).toBe(3);
 
     await findByText("value1: 3");
     await findByText("value2: 3");
 
     fireEvent.click(getByText("button 3"));
-    expect(renderCountsValue).toBe(5);
+    expect(renderCountsValue).toBe(4);
 
     await findByText("value1: 4");
     await findByText("value2: 4");
 
     fireEvent.click(getByText("button 4"));
-    expect(renderCountsValue).toBe(6);
+    expect(renderCountsValue).toBe(5);
 
     await findByText("value1: 5");
     await findByText("value2: 5");
 
-    expect(getState().value).toBe(5);
-    expect(getStateValue()).toBe(5);
+    expect(getStore().value).toBe(5);
+    expect(getStoreValue()).toBe(5);
 
     expect(renderCounts).toBe(6);
-    expect(renderCountsValue).toBe(6);
+    expect(renderCountsValue).toBe(5);
     expect(renderCountsOther).toBe(3);
 });

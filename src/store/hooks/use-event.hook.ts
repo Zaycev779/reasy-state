@@ -1,14 +1,15 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 interface IUseEvent<T> {
     type?: string;
-    onStart?: () => void;
+    onChangeType?: () => void;
     onChange: (values: T) => void;
 }
 
-export const useEvent = <T>({ type, onStart, onChange }: IUseEvent<T>) =>
+export const useEvent = <T>({ type, onChangeType, onChange }: IUseEvent<T>) => {
+    const prevType = useRef<string>();
     useEffect(() => {
         if (!type) return;
 
@@ -17,8 +18,11 @@ export const useEvent = <T>({ type, onStart, onChange }: IUseEvent<T>) =>
             onChange(detail);
         };
 
-        if (onStart) {
-            onStart();
+        if (onChangeType) {
+            if (prevType.current) {
+                onChangeType();
+            }
+            prevType.current = type;
         }
         document.addEventListener(type, onTargetEvent);
 
@@ -27,3 +31,4 @@ export const useEvent = <T>({ type, onStart, onChange }: IUseEvent<T>) =>
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [type]);
+};
