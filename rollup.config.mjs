@@ -47,7 +47,7 @@ export default [{
     ],
     plugins: [
         del({ targets: "dist/*" }),
-        typescript({ compilerOptions: {lib: ["es5", "es6", "dom"], target: "es5" }, tsconfig: "./tsconfig.json", incremental: false  }),
+        typescript({ compilerOptions: {lib: ["es5", "es6", "dom"], target: "es5" }, rootDir:"src", tsconfig: "./tsconfig.json", incremental: false }),
     ],
 }, {
     input: 'dist/types/index.d.ts',
