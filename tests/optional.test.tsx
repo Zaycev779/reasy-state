@@ -104,3 +104,32 @@ it("create optional store width CreateState type", async () => {
     expect(renderCountsId).toBe(1);
     expect(renderCountsRating).toBe(2);
 });
+
+it("create optional store width any types", async () => {
+    const state = createState<Record<string, any>>({ userStore: {} });
+
+    function Page() {
+        const value = state?.use$userStore$value();
+
+        return <div>value: {value || "-"}</div>;
+    }
+
+    function Button() {
+        return (
+            <button onClick={() => state.set$userStore$value("new value")}>
+                button
+            </button>
+        );
+    }
+    const { getByText, findByText } = render(
+        <>
+            <Page />
+            <Button />
+        </>,
+    );
+    expect(state?.get$userStore$value()).toBe(undefined);
+    await findByText("value: -");
+    fireEvent.click(getByText("button"));
+    expect(state?.get$userStore$value()).toBe("new value");
+    await findByText("value: new value");
+});

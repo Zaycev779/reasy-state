@@ -6,7 +6,7 @@ import { IStore } from "../types/store";
 import { PATH_MAP_EV_NAME, PUSH_EV_NAME } from "../events";
 import {
     assign,
-    diffValues,
+    diffValuesBoolean,
     findPathArrayIndex,
     isAFunction,
     isDefaultObject,
@@ -22,9 +22,21 @@ interface IProps {
 
 export const useStoreVal = ({ filterFunc, mapKey }: IProps) => {
     const [path, setPath] = useState<string[]>(getMapByKey(mapKey));
-    const getState = () => getGlobalData(path, true, filterFunc);
+    const getState = (newPath?: string[]) =>
+        getGlobalData(newPath || path, true, filterFunc);
     const isInit = useRef<boolean>();
     const [state, setState] = useState(getState);
+    const prevState = useRef<any>();
+
+    const _setState = (values: any) => {
+        if (diffValuesBoolean(prevState.current, values)) {
+            setState(values);
+        }
+    };
+
+    useEffect(() => {
+        prevState.current = state;
+    }, [state]);
 
     useEffect(() => {
         if (isInit.current) {
@@ -49,13 +61,12 @@ export const useStoreVal = ({ filterFunc, mapKey }: IProps) => {
                     (prev, key) => prev.map((val) => val[key]),
                     filteredValue,
                 );
-
-                setState((prev) => diffValues(prev, vals));
+                _setState(vals);
                 return;
             }
             setState(isDefaultObject(params) ? assign({}, params) : params);
         },
-        onChangeType: () => setState(getState()),
+        onChangeType: () => _setState(getState()),
     });
 
     useEvent<{
@@ -65,7 +76,7 @@ export const useStoreVal = ({ filterFunc, mapKey }: IProps) => {
         onChange: ({ path }) => {
             if (path) {
                 setPath(path);
-                setState(getState());
+                _setState(getState(path));
             }
         },
     });

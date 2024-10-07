@@ -139,8 +139,13 @@ export const getParams = (params: any, prev: any) =>
 export const diffValues = (prevObject: any, newObject: any) =>
     diffValuesBoolean(prevObject, newObject) ? newObject : prevObject;
 
-export const diffValuesBoolean = (prevObject: any, newObject: any) =>
-    JSON.stringify(prevObject) !== JSON.stringify(newObject);
+export const diffValuesBoolean = (prevObject: any, newObject: any) => {
+    try {
+        return JSON.stringify(prevObject) !== JSON.stringify(newObject);
+    } catch {
+        return true;
+    }
+};
 
 export const capitalizeName = (name: string) =>
     name.charAt(0).toUpperCase() + name.slice(1);
