@@ -1,8 +1,10 @@
 .babelrc
 src/
 tests/
+.github/
 .rollup.cache
 rollup.config.mjs
 tsconfig.json
+vitest.config.ts
 .prettierignore
 .prettierrc

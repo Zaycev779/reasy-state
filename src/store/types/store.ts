@@ -96,15 +96,14 @@ type SetM<T> = T extends (...args: any) => infer D
       }
     : T;
 
+type PickObj<T> = {
+    [K in keyof T as K extends M ? never : K]: PickM<T[K]>;
+};
+
 type PickM<T> = T extends {
     [K: string]: unknown;
-} & { mutators?: any }
-    ? Omit<
-          {
-              [K in keyof T]: PickM<T[K]>;
-          } & T[M],
-          M
-      >
+}
+    ? (T extends { [k in M]-?: any } ? T[M] : unknown) & PickObj<T>
     : T;
 
 export type CreateResult<T> = PickM<SetM<T>>;
@@ -158,7 +157,13 @@ type FuncName<T, P extends keyof T, N extends GeneratedType> = T[P] extends
 
 type FuncGet<T, P extends keyof T> = IsArray<
     P,
-    T[P] extends (arg: infer A) => infer D ? (arg?: A) => D[] : never,
+    T[P] extends (arg: infer A) => infer D
+        ? (
+              arg?: A,
+          ) =>
+              | D[]
+              | (P extends `${string}$${string}[]${string}` ? undefined : never)
+        : never,
     () => T[P]
 >;
 

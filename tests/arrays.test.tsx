@@ -143,7 +143,7 @@ it("create store with optional array", async () => {
         setStore$array,
         useStore$array$evenVal,
         setStore$array$evenVal,
-    } = createState()({
+    } = createState({
         store,
     });
 

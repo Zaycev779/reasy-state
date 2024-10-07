@@ -27,7 +27,9 @@ type EscapeArray<
     : TKey extends `${infer TKeyBefore}$[${bigint}]${infer TKeyAfter}`
     ? TValue extends any
         ? E extends { key: `${TKeyBefore}`; value?: infer V extends any[] }
-            ? (f?: (v: ArrItem<E["value"]>) => any | boolean) => TValue
+            ? ArrItem<E["value"]> extends never
+                ? never
+                : (f?: (v: ArrItem<E["value"]>) => any | boolean) => TValue
             : never
         : never
     : TValue;

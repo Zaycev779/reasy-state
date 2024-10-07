@@ -52,6 +52,7 @@ it("create optional store width CreateState type", async () => {
     };
 
     const {
+        getUserStore$data,
         useUserStore$data$rating,
         useUserStoreId,
         setUserStore$data$rating,
