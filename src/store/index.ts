@@ -4,6 +4,7 @@ import { useStoreVal } from "./hooks/use-store-val.hook";
 import { generateStaticPathsMap, patchToGlobalMap } from "./maps/maps";
 import { getMapByKey } from "./maps/utils";
 import { generateMutators } from "./mutators";
+import { loadStorage } from "./storage";
 import {
     CreateResult,
     CreateState,
@@ -22,6 +23,7 @@ import {
     isClient,
     pathToString,
     SignRegExp,
+    staticStoreId,
     values,
 } from "./utils";
 
@@ -29,32 +31,38 @@ const generatedTypes = values(GeneratedType);
 
 export function createState<T extends IStore<T>>(
     params: T,
-    options?: Options,
+    options?: Options<T>,
 ): IGenerate<CreateResult<T>>;
 export function createState<T extends IStore<T>>(): {
-    <U extends WithM<CreateState<T>>>(params: U, options?: Options): IGenerate<
-        CreateResult<U>,
-        CreateResult<T>
-    >;
+    <U extends WithM<CreateState<T>>>(
+        params: U,
+        options?: Options<U & T>,
+    ): IGenerate<CreateResult<U>, CreateResult<T>>;
 };
 export function createState<T extends IStore<T>>(
     params?: T,
-    options?: Options,
+    options?: Options<T>,
 ): any {
     return params ? createStateFn(params, options) : createStateFn;
 }
 
 export function createStateFn<T extends IStore<T>>(
     initialValues: T,
-    options?: Options,
+    options?: Options<T>,
 ): IGenerate<CreateResult<T>> {
-    const storeId = options?.key || generateId(initialValues);
+    const staticId = staticStoreId(options?.key);
+    const storeId = staticId || generateId(initialValues);
+    if (options?.key && staticId) {
+        options.key = staticId;
+    }
+
+    const storageValues = loadStorage(options, initialValues) || initialValues;
     if (!getGlobalData([storeId])) {
-        updateGlobalData([storeId], initialValues);
+        updateGlobalData([storeId], storageValues);
         generateStaticPathsMap(getGlobalData([storeId]), storeId);
     }
 
-    const mutators = generateMutators(storeId, initialValues);
+    const mutators = generateMutators(storeId, initialValues, [], options);
     const handler = {
         get(target: any, name: string) {
             if (name in target) {
@@ -94,7 +102,11 @@ export function createStateFn<T extends IStore<T>>(
                             : null;
 
                 case GeneratedType.SET:
-                    return (...args: [Function] | [Function, any]) => {
+                    return (
+                        ...args:
+                            | [(...args: any) => any]
+                            | [(...args: any) => any, any]
+                    ) => {
                         const [filterFunc, arrValue] = args;
                         const basePath = getMapByKey(mapKey);
                         if (basePath) {
@@ -117,11 +129,21 @@ export function createStateFn<T extends IStore<T>>(
                                         arrValue,
                                         filterFunc,
                                     );
-                                    updateStore(arrRootPath, value);
+                                    updateStore(
+                                        arrRootPath,
+                                        value,
+                                        undefined,
+                                        options,
+                                    );
                                 }
                                 return;
                             }
-                            return updateStore(basePath, filterFunc);
+                            return updateStore(
+                                basePath,
+                                filterFunc,
+                                undefined,
+                                options,
+                            );
                         }
                     };
                 case GeneratedType.RESET:
@@ -132,6 +154,8 @@ export function createStateFn<T extends IStore<T>>(
                             getGlobalData(basePath, true, undefined, {
                                 [storeId]: initialValues,
                             }),
+                            undefined,
+                            options,
                         );
                     };
                 default:

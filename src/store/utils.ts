@@ -1,5 +1,6 @@
 import { getMap } from "./maps/utils";
-import { IStore } from "./types/store";
+import { Maybe } from "./types";
+import { IStore, StorageType } from "./types/store";
 
 export type updatedParams = string | updatedParams[];
 export const Mutators = "mutators";
@@ -58,26 +59,43 @@ export const defaultObjectProto = getPrototypeOf({});
 export const isDefaultObject = (value: any) =>
     isObject(value) && defaultObjectProto === getPrototypeOf(value);
 
-export function mergeDeep(target: any, ...sources: any): any {
+const mutate =
+    (type: StorageType, val: any) => (fn: Record<StorageType, any>) =>
+        fn[type](val);
+
+export function mergeDeep(
+    type: Maybe<StorageType>,
+    target: any,
+    ...sources: any
+): any {
     if (!sources.length) return target;
     const source = sources.shift();
 
     if (isObject(target) && isObject(source)) {
         for (const key in source) {
+            if (key === Mutators) continue;
             if (isObject(source[key])) {
                 if (!target[key]) assign(target, { [key]: {} });
                 if (!isDefaultObject(source[key])) {
-                    target[key] = source[key];
+                    target[key] =
+                        type && isAFunction(target[key])
+                            ? target[key](mutate(type, source[key]))
+                            : source[key];
                 } else {
-                    mergeDeep(target[key], source[key]);
+                    mergeDeep(type, target[key], source[key]);
                 }
             } else {
-                assign(target, { [key]: source[key] });
+                assign(target, {
+                    [key]:
+                        type && isAFunction(target[key])
+                            ? target[key](mutate(type, source[key]))
+                            : source[key],
+                });
             }
         }
     }
 
-    return mergeDeep(target, ...sources);
+    return mergeDeep(type, target, ...sources);
 }
 
 export const getAdditionalPaths = (
@@ -180,3 +198,6 @@ export const generateId = (object: any) => {
     }
     return "#".concat(String(mapId.get(value)));
 };
+
+export const staticStoreId = (key?: string) =>
+    key ? "#".concat(key).replace("$", "#") : undefined;

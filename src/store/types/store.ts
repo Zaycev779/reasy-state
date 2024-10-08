@@ -8,16 +8,22 @@ export enum GeneratedType {
     USE = "use",
     RESET = "reset",
 }
+
+export enum StorageType {
+    GET = "get",
+    PUT = "put",
+}
+
 type M = "mutators";
 
 export type CreateState<T, PT = T, D = PT> = T extends {
     [K: string]: unknown;
 }
-    ? {
+    ? WithM<{
           [K in keyof T as K extends M ? K & M : K]: K extends M
               ? MTyping<T>
               : WithM<CreateState<T[K], D, T>>;
-      }
+      }>
     : T;
 
 type WithoutM<T> = T extends {
@@ -48,7 +54,7 @@ type SetFn<PT> = {
 };
 
 type MTyping<PT, WPT = WithoutM<PT>> = PT extends {
-    mutators?: infer T;
+    [k in M]?: infer T;
 }
     ? {
           [K in keyof T]: T[K] extends (...args: infer D) => Promise<void>
@@ -62,7 +68,7 @@ type MTyping<PT, WPT = WithoutM<PT>> = PT extends {
 export type WithM<T> = T extends {
     [K: string]: unknown;
 }
-    ? T extends { mutators: any }
+    ? T extends { [k in M]: any }
         ? T
         : {
               [K in keyof T]: K extends M
@@ -71,7 +77,7 @@ export type WithM<T> = T extends {
                   ? Y
                   : never;
           } & {
-              mutators?: {
+              [K in M]?: {
                   [k: string]: (
                       val: SetFn<WithoutM<T>>,
                       prev: WithoutM<T>,
@@ -190,7 +196,46 @@ export type IGenerateFn<T, U> = IStaticFunc<T, U, GeneratedType.GET> &
 export type IGenerate<T, U = unknown> = IGenerateFn<Flatten<T>, Flatten<U>> &
     IResetFunc<T extends object ? T : { [k in ""]: T }>;
 
-export type Options = {
+export type Options<T> = {
     /** Unique store key */
-    key?: string;
+    key: string;
+    /** Storage params
+     * @default false
+     */
+    storage?: boolean | StorageOptions<T>;
+};
+
+export type StorageOptions<T> = {
+    /** Storage type ( localStorage, sessionStorage )
+     * @default localStorage
+     */
+    type: Storage;
+} & {
+    [k in string as M]?: WithoutM<T> extends infer U
+        ? StorageM<U>
+        : never | undefined;
+};
+
+type StorageM<T> = T extends {
+    [k in string]?: unknown;
+}
+    ? {
+          [K in keyof T]?: StorageM<T[K]> extends infer R ? R : never;
+      }
+    : T extends undefined
+    ? never
+    : FStorage<T>;
+
+type FStorage<T> = {
+    (
+        /**  @argument mutate data before save in storage */
+        mutate: <S>(args: FArgs<T, S>) => any,
+    ): any;
+};
+
+type FArgs<T, S> = {
+    /**  @argument  mutate data before save in storage */
+    [StorageType.PUT]?: (prev: T) => S;
+    /**  @argument  mutate data after load from storage */
+    [StorageType.GET]?: (prev: S) => any;
 };
