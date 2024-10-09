@@ -21,6 +21,7 @@ export const storageAction = <T extends IStore<T>>(
                 switch (actionType) {
                     case StorageType.G: {
                         const data = type.getItem(name);
+
                         if (data) {
                             const parse = JSON.parse(data || "{}");
                             return mergeDeep(

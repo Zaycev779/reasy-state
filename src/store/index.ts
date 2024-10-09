@@ -23,6 +23,7 @@ import {
     generateId,
     isAFunction,
     isClient,
+    mergeDeep,
     pathToString,
     SignRegExp,
     values,
@@ -56,10 +57,10 @@ export function createStateFn<T extends IStore<T>>(
         options.key = storeId;
     }
 
-    const storageValues =
-        storageAction(StorageType.G, options, initialValues) || initialValues;
+    const storageValues = storageAction(StorageType.G, options, initialValues);
+
     if (!getGlobalData([storeId])) {
-        updateGlobalData([storeId], storageValues);
+        updateGlobalData([storeId], storageValues || initialValues);
         generateStaticPathsMap(getGlobalData([storeId]), storeId);
     }
     const gen = generateMutators(storeId, initialValues, options);
