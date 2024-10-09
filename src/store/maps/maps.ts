@@ -41,14 +41,14 @@ export const patchToGlobalMap = (
     prevPath: string[] = [],
 ) => {
     if (!isOptionalPathName(mapKey)) return;
-    const [staticName, firstKey, ...additionalKeys] =
-        mapKey?.split(SignRegExp) ?? [];
+    const [staticName, firstKey, ...additionalKeys] = mapKey
+        ? mapKey.split(SignRegExp)
+        : [];
 
     const staticFromMap = staticPath || getMapByKey(staticName) || [];
-    const baseRequiredData = getGlobalData(staticFromMap.concat(prevPath));
     const length = additionalKeys.length;
 
-    if (Array.isArray(baseRequiredData)) {
+    if (Array.isArray(getGlobalData(staticFromMap.concat(prevPath)))) {
         setMap(
             baseMap,
             staticFromMap.concat(

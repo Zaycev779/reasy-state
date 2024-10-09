@@ -1,17 +1,20 @@
 import { KeyCapitalize } from "./index";
 import { Flatten } from "./flatten";
 
-export type UpdateType = "set" | "patch";
+export enum UpdateType {
+    S = "set",
+    P = "patch",
+}
 export enum GeneratedType {
-    GET = "get",
-    SET = "set",
-    USE = "use",
-    RESET = "reset",
+    G = "get",
+    S = "set",
+    U = "use",
+    R = "reset",
 }
 
 export enum StorageType {
-    GET = "get",
-    PUT = "put",
+    G = "get",
+    P = "put",
 }
 
 type M = "mutators";
@@ -134,7 +137,7 @@ type IStaticRes<
     T,
     P extends keyof T,
     N extends GeneratedType,
-> = N extends GeneratedType.SET ? FuncSet<T, P> : FuncGet<T, P>;
+> = N extends GeneratedType.S ? FuncSet<T, P> : FuncGet<T, P>;
 
 type IFn<T, U> = {
     [P in keyof T as T[P] extends Function
@@ -185,12 +188,12 @@ type Param<T, D = T> = D | ((prev: T) => D);
 type IsArray<P, T1, T2> = P extends `${infer X}[]${infer Y}` ? T1 : T2;
 
 type IResetFunc<T> = {
-    [P in keyof T as FuncName<T, P, GeneratedType.RESET>]: () => void;
+    [P in keyof T as FuncName<T, P, GeneratedType.R>]: () => void;
 };
 
-export type IGenerateFn<T, U> = IStaticFunc<T, U, GeneratedType.GET> &
-    IStaticFunc<T, U, GeneratedType.SET> &
-    IStaticFunc<T, U, GeneratedType.USE> &
+export type IGenerateFn<T, U> = IStaticFunc<T, U, GeneratedType.G> &
+    IStaticFunc<T, U, GeneratedType.S> &
+    IStaticFunc<T, U, GeneratedType.U> &
     IFn<T, U>;
 
 export type IGenerate<T, U = unknown> = IGenerateFn<Flatten<T>, Flatten<U>> &
@@ -235,7 +238,9 @@ type FStorage<T> = {
 
 type FArgs<T, S> = {
     /**  @argument  mutate data before save in storage */
-    [StorageType.PUT]?: (prev: T) => S;
+    [StorageType.P]?: (prev: T) => S;
     /**  @argument  mutate data after load from storage */
-    [StorageType.GET]?: (prev: S) => any;
+    [StorageType.G]?: (prev: S) => any;
 };
+
+export type FType = <A extends [], R>(...args: A) => R;

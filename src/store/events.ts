@@ -14,27 +14,30 @@ export const _pushStoreValueEvent = <T extends IStore<T>>(
     updatedParams: T,
     prevValues: T,
 ) => {
-    const updatePaths = getUpdatedPaths(updatedParams, prevValues, paths);
-    const additionalPaths = getAdditionalPaths(
+    const updatePaths = getUpdatedPaths(
+        updatedParams,
+        prevValues,
         paths,
-        isArrayPathName,
-    ) as string[][];
-    updatePaths.push(...additionalPaths);
+    ).concat(getAdditionalPaths(paths, isArrayPathName) as string[][]);
+
     if (updatePaths.length) {
-        const rest = [...paths];
+        const rest = paths.concat();
         rest.splice(-1);
         updatePaths.push(...getRootPaths(rest));
     }
-    updatePaths.forEach((pathVal) => {
-        const params = getGlobalData(pathVal);
-        sendEvent(PUSH_EV_NAME + pathToString(pathVal), { params });
-    });
+    updatePaths.forEach((pathVal) =>
+        sendEvent(PUSH_EV_NAME + pathToString(pathVal), {
+            params: getGlobalData(pathVal),
+        }),
+    );
 };
 
 const sendEvent = (route: string, detail: any) => {
     if (!isClient) return;
-    const ev = new CustomEvent(route, {
-        detail,
-    });
-    document.dispatchEvent(ev);
+
+    document.dispatchEvent(
+        new CustomEvent(route, {
+            detail,
+        }),
+    );
 };

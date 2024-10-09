@@ -4,14 +4,16 @@ import { useStoreVal } from "./hooks/use-store-val.hook";
 import { generateStaticPathsMap, patchToGlobalMap } from "./maps/maps";
 import { getMapByKey } from "./maps/utils";
 import { generateMutators } from "./mutators";
-import { loadStorage } from "./storage";
+import { storageAction } from "./storage";
 import {
     CreateResult,
     CreateState,
+    FType,
     GeneratedType,
     IGenerate,
     IStore,
     Options,
+    StorageType,
     WithM,
 } from "./types/store";
 import {
@@ -23,7 +25,6 @@ import {
     isClient,
     pathToString,
     SignRegExp,
-    staticStoreId,
     values,
 } from "./utils";
 
@@ -50,19 +51,18 @@ export function createStateFn<T extends IStore<T>>(
     initialValues: T,
     options?: Options<T>,
 ): IGenerate<CreateResult<T>> {
-    const staticId = staticStoreId(options?.key);
-    const storeId = staticId || generateId(initialValues);
-    if (options?.key && staticId) {
-        options.key = staticId;
+    const storeId = generateId(initialValues, options?.key);
+    if (options) {
+        options.key = storeId;
     }
 
-    const storageValues = loadStorage(options, initialValues) || initialValues;
+    const storageValues =
+        storageAction(StorageType.G, options, initialValues) || initialValues;
     if (!getGlobalData([storeId])) {
         updateGlobalData([storeId], storageValues);
         generateStaticPathsMap(getGlobalData([storeId]), storeId);
     }
-
-    const mutators = generateMutators(storeId, initialValues, [], options);
+    const gen = generateMutators(storeId, initialValues, options);
     const handler = {
         get(target: any, name: string) {
             if (name in target) {
@@ -76,7 +76,7 @@ export function createStateFn<T extends IStore<T>>(
             );
 
             if (splitName in target && isAFunction(target[splitName])) {
-                return (...args: any[]) => target[splitName](...args);
+                return target[splitName];
             }
 
             const isGenerated = generatedTypes.some((val) =>
@@ -88,12 +88,12 @@ export function createStateFn<T extends IStore<T>>(
             }
 
             switch (type) {
-                case GeneratedType.GET:
-                    return (filterFunc?: Function) =>
+                case GeneratedType.G:
+                    return (filterFunc?: FType) =>
                         getGlobalData(getMapByKey(mapKey), true, filterFunc);
 
-                case GeneratedType.USE:
-                    return (filterFunc?: Function) =>
+                case GeneratedType.U:
+                    return (filterFunc?: FType) =>
                         isClient
                             ? useStoreVal({
                                   mapKey,
@@ -101,52 +101,41 @@ export function createStateFn<T extends IStore<T>>(
                               })
                             : null;
 
-                case GeneratedType.SET:
-                    return (
-                        ...args:
-                            | [(...args: any) => any]
-                            | [(...args: any) => any, any]
-                    ) => {
-                        const [filterFunc, arrValue] = args;
+                case GeneratedType.S:
+                    return function () {
+                        const args = <any>arguments;
+                        const [filterFunc, arrValue] = args as [FType, any];
                         const basePath = getMapByKey(mapKey);
                         if (basePath) {
                             if (args.length > 1) {
                                 const sliceIdx = findPathArrayIndex(basePath);
 
-                                if (sliceIdx >= 0 && basePath) {
+                                if (sliceIdx >= 0) {
                                     const additionalPaths = basePath.slice(
                                         sliceIdx + 1,
-                                        basePath.length,
                                     );
                                     const arrRootPath = basePath.slice(
                                         0,
                                         sliceIdx,
                                     );
-                                    const prev = getGlobalData(arrRootPath);
-                                    const value = createNewArrayValues(
-                                        additionalPaths,
-                                        prev,
-                                        arrValue,
-                                        filterFunc,
-                                    );
+
                                     updateStore(
                                         arrRootPath,
-                                        value,
-                                        undefined,
+                                        createNewArrayValues(
+                                            additionalPaths,
+                                            getGlobalData(arrRootPath),
+                                            arrValue,
+                                            filterFunc,
+                                        ),
                                         options,
                                     );
                                 }
                                 return;
                             }
-                            return updateStore(
-                                basePath,
-                                filterFunc,
-                                undefined,
-                                options,
-                            );
+                            return updateStore(basePath, filterFunc, options);
                         }
                     };
-                case GeneratedType.RESET:
+                case GeneratedType.R:
                     return () => {
                         const basePath = getMapByKey(mapKey);
                         updateStore(
@@ -154,7 +143,6 @@ export function createStateFn<T extends IStore<T>>(
                             getGlobalData(basePath, true, undefined, {
                                 [storeId]: initialValues,
                             }),
-                            undefined,
                             options,
                         );
                     };
@@ -163,6 +151,5 @@ export function createStateFn<T extends IStore<T>>(
             }
         },
     };
-
-    return new Proxy(mutators, handler);
+    return new Proxy(gen, handler);
 }

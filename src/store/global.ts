@@ -2,8 +2,8 @@ import { _pushStoreValueEvent, _updatePathEvent } from "./events";
 import { getGlobalData } from "./get-global";
 import { patchToGlobalMap } from "./maps/maps";
 import { getMapByKey } from "./maps/utils";
-import { pushStorage } from "./storage";
-import { IStore, Options, UpdateType } from "./types/store";
+import { storageAction } from "./storage";
+import { IStore, Options, StorageType, UpdateType } from "./types/store";
 import {
     diffValuesBoolean,
     getAdditionalKeys,
@@ -40,14 +40,13 @@ export const updateGlobalData = (
     const [path, ...rest] = paths;
     if (!rest.length) {
         try {
-            const cloneData = isDefaultObject(data)
+            src[path] = isDefaultObject(data)
                 ? mergeDeep(undefined, {}, data)
                 : data;
-            src[path] = cloneData;
         } catch {
             src[path] = data;
         }
-        return true;
+        return;
     }
     if (!src[path]) {
         src[path] = {};
@@ -58,14 +57,14 @@ export const updateGlobalData = (
 export const updateStore = <T>(
     path: string[],
     params?: Partial<T> | ((prev: T) => Partial<T>),
-    type: UpdateType = "set",
     options?: Options<T>,
+    type: UpdateType = UpdateType.S,
 ) => {
     const prevValues = getGlobalData(path);
     const updatedParams = getParams(params, prevValues);
     updateGlobalData(
         path,
-        type === "patch" && isObject(updatedParams) && isObject(prevValues)
+        type === UpdateType.P && isObject(updatedParams) && isObject(prevValues)
             ? mergeDeep(undefined, {}, prevValues, updatedParams)
             : updatedParams,
     );
@@ -80,5 +79,5 @@ export const updateStore = <T>(
         }
     });
     _pushStoreValueEvent(path, updatedParams, prevValues);
-    pushStorage(options);
+    storageAction(StorageType.P, options);
 };

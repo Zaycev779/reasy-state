@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useRef } from "react";
 
 interface IUseEvent<T> {
@@ -13,10 +11,8 @@ export const useEvent = <T>({ type, onChangeType, onChange }: IUseEvent<T>) => {
     useEffect(() => {
         if (!type) return;
 
-        const onTargetEvent = (ev: Event) => {
-            const { detail } = ev as CustomEvent<T>;
-            onChange(detail);
-        };
+        const onTargetEvent = (ev: Event) =>
+            onChange((ev as CustomEvent<T>).detail);
 
         if (onChangeType) {
             if (prevType.current) {

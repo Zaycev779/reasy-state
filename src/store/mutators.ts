@@ -15,10 +15,10 @@ import {
 export const generateMutators = <T extends IStore<T>>(
     storeId: string,
     values: T,
-    prevKey: string[] = [],
     options?: Options<any>,
+    prevKey: string[] = [],
 ): IGenerate<T> =>
-    entries(values).reduce(
+    entries<any>(values).reduce(
         (result, [key, val]) =>
             key
                 ? assign(
@@ -28,8 +28,8 @@ export const generateMutators = <T extends IStore<T>>(
                                 generateMutators<IStore<T>>(
                                     storeId,
                                     val,
-                                    prevKey.concat(key),
                                     options,
+                                    prevKey.concat(key),
                                 )
                           : createMutators(
                                 val,
@@ -50,19 +50,18 @@ export const createMutators = (
 ) => {
     const pathName = path[0] + capitalizeKeysToString(path.slice(1));
     const get = () => getGlobalData(storePath);
-    const set = (arg: any, type: UpdateType = "set") => {
-        const params = getParams(arg, get());
-        updateStore(storePath, params, type, options);
+    const set = (arg: any, type: UpdateType = UpdateType.S) => {
+        updateStore(storePath, getParams(arg, get()), options, type);
         return get();
     };
-    const patch = (arg: any) => set(arg, "patch");
+    const patch = (arg: any) => set(arg, UpdateType.P);
 
     return entries(values).reduce(
         (prev, [key, val]) =>
             assign(prev, {
-                [pathName.concat(capitalizeName(key))]: (...args: any) => {
+                [pathName.concat(capitalizeName(key))]: function () {
                     const fn = val({ set, get, patch }, get());
-                    return isAFunction(fn) ? fn(...args) : fn;
+                    return isAFunction(fn) ? fn.apply(null, arguments) : fn;
                 },
             }),
         {},
