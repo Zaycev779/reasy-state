@@ -1,23 +1,32 @@
 import { KeyCapitalize } from "./index";
 import { Flatten } from "./flatten";
 
-export type UpdateType = "set" | "patch";
-export enum GeneratedType {
-    GET = "get",
-    SET = "set",
-    USE = "use",
-    RESET = "reset",
+export enum UpdateType {
+    S = "set",
+    P = "patch",
 }
+export enum GeneratedType {
+    G = "get",
+    S = "set",
+    U = "use",
+    R = "reset",
+}
+
+export enum StorageType {
+    G = "get",
+    P = "put",
+}
+
 type M = "mutators";
 
 export type CreateState<T, PT = T, D = PT> = T extends {
     [K: string]: unknown;
 }
-    ? {
+    ? WithM<{
           [K in keyof T as K extends M ? K & M : K]: K extends M
               ? MTyping<T>
               : WithM<CreateState<T[K], D, T>>;
-      }
+      }>
     : T;
 
 type WithoutM<T> = T extends {
@@ -48,7 +57,7 @@ type SetFn<PT> = {
 };
 
 type MTyping<PT, WPT = WithoutM<PT>> = PT extends {
-    mutators?: infer T;
+    [k in M]?: infer T;
 }
     ? {
           [K in keyof T]: T[K] extends (...args: infer D) => Promise<void>
@@ -62,7 +71,7 @@ type MTyping<PT, WPT = WithoutM<PT>> = PT extends {
 export type WithM<T> = T extends {
     [K: string]: unknown;
 }
-    ? T extends { mutators: any }
+    ? T extends { [k in M]: any }
         ? T
         : {
               [K in keyof T]: K extends M
@@ -71,7 +80,7 @@ export type WithM<T> = T extends {
                   ? Y
                   : never;
           } & {
-              mutators?: {
+              [K in M]?: {
                   [k: string]: (
                       val: SetFn<WithoutM<T>>,
                       prev: WithoutM<T>,
@@ -128,7 +137,7 @@ type IStaticRes<
     T,
     P extends keyof T,
     N extends GeneratedType,
-> = N extends GeneratedType.SET ? FuncSet<T, P> : FuncGet<T, P>;
+> = N extends GeneratedType.S ? FuncSet<T, P> : FuncGet<T, P>;
 
 type IFn<T, U> = {
     [P in keyof T as T[P] extends Function
@@ -179,18 +188,59 @@ type Param<T, D = T> = D | ((prev: T) => D);
 type IsArray<P, T1, T2> = P extends `${infer X}[]${infer Y}` ? T1 : T2;
 
 type IResetFunc<T> = {
-    [P in keyof T as FuncName<T, P, GeneratedType.RESET>]: () => void;
+    [P in keyof T as FuncName<T, P, GeneratedType.R>]: () => void;
 };
 
-export type IGenerateFn<T, U> = IStaticFunc<T, U, GeneratedType.GET> &
-    IStaticFunc<T, U, GeneratedType.SET> &
-    IStaticFunc<T, U, GeneratedType.USE> &
+export type IGenerateFn<T, U> = IStaticFunc<T, U, GeneratedType.G> &
+    IStaticFunc<T, U, GeneratedType.S> &
+    IStaticFunc<T, U, GeneratedType.U> &
     IFn<T, U>;
 
 export type IGenerate<T, U = unknown> = IGenerateFn<Flatten<T>, Flatten<U>> &
     IResetFunc<T extends object ? T : { [k in ""]: T }>;
 
-export type Options = {
+export type Options<T> = {
     /** Unique store key */
-    key?: string;
+    key: string;
+    /** Storage params
+     * @default false
+     */
+    storage?: boolean | StorageOptions<T>;
 };
+
+export type StorageOptions<T> = {
+    /** Storage type ( localStorage, sessionStorage )
+     * @default localStorage
+     */
+    type: Storage;
+} & {
+    [k in string as M]?: WithoutM<T> extends infer U
+        ? StorageM<U>
+        : never | undefined;
+};
+
+type StorageM<T> = T extends {
+    [k in string]?: unknown;
+}
+    ? {
+          [K in keyof T]?: StorageM<T[K]> extends infer R ? R : never;
+      }
+    : T extends undefined
+    ? never
+    : FStorage<T>;
+
+type FStorage<T> = {
+    (
+        /**  @argument mutate data before save in storage */
+        mutate: <S>(args: FArgs<T, S>) => any,
+    ): any;
+};
+
+type FArgs<T, S> = {
+    /**  @argument  mutate data before save in storage */
+    [StorageType.P]?: (prev: T) => S;
+    /**  @argument  mutate data after load from storage */
+    [StorageType.G]?: (prev: S) => any;
+};
+
+export type FType = <A extends [], R>(...args: A) => R;

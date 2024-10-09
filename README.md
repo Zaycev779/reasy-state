@@ -1,3 +1,8 @@
+[![Build Status](https://img.shields.io/github/actions/workflow/status/Zaycev779/reasy-state/build.js.yml?branch=main&style=flat&colorA=0066CC&colorB=FFCC00)](https://github.com/Zaycev779/reasy-state/actions)
+[![Build Size](https://img.shields.io/bundlephobia/minzip/reasy-state?label=bundle%20size&style=flat&colorA=0066CC&colorB=FFCC00)](https://bundlephobia.com/result?p=reasy-state)
+[![Version](https://img.shields.io/npm/v/reasy-state?style=flat&colorA=0066CC&colorB=FFCC00)](https://www.npmjs.com/package/reasy-state)
+[![Downloads](https://img.shields.io/npm/dt/reasy-state.svg?style=flat&colorA=0066CC&colorB=FFCC00)](https://www.npmjs.com/package/reasy-state)
+
 # Reast Easy State
 
 Reast Easy State is simple state management for React
@@ -333,10 +338,37 @@ export const Ratings = () => {
 };
 ```
 
-### Options
+### Storage
 
-You must specify the key if you use multiple states with the same initialization parameters.
+You can save the state in the store( localStorage (default), sessionStorage )
+To do this, specify a unique key and configure saving if necessary
 
 ```jsx
-  const {...} = createState({ stateName }, { key?: "state_1" });
+    const store = { value: "value" }
+    const { ... } = createState({ store }, { key: "storage_state_1", storage: true });
+```
+
+If necessary, you can mutate the data on read and write like this (This can be useful when using momentjs for example):
+
+```jsx
+    const store = { id: 1, date: moment() };
+
+    const { ... } = createState(
+        { store },
+        {
+            key: "session_storage_date_1",
+            storage: {
+                type: sessionStorage,
+                mutators: {
+                    store: {
+                        date: (mutate) =>
+                            mutate({
+                                put: (prev) => prev.toISOString(),
+                                get: (prev) => moment(prev),
+                            }),
+                    },
+                },
+            },
+        },
+    );
 ```

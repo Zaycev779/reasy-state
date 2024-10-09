@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useRef, useState } from "react";
 import { getGlobalData } from "../get-global";
 import { IStore } from "../types/store";
@@ -48,12 +46,12 @@ export const useStoreVal = ({ filterFunc, mapKey }: IProps) => {
     useEvent<{
         params: IStore;
     }>({
-        type: path ? PUSH_EV_NAME + pathToString(path) : undefined,
+        type: path && PUSH_EV_NAME + pathToString(path),
         onChange: ({ params }) => {
             const sliceIdx = findPathArrayIndex(path);
             if (sliceIdx >= 0) {
                 if (!Array.isArray(params)) return setState(params);
-                const additionalPaths = path.slice(sliceIdx + 1, path.length);
+                const additionalPaths = path.slice(sliceIdx + 1);
                 const filteredValue = isAFunction(filterFunc)
                     ? params.filter(filterFunc)
                     : params;
@@ -72,7 +70,7 @@ export const useStoreVal = ({ filterFunc, mapKey }: IProps) => {
     useEvent<{
         path: string[];
     }>({
-        type: mapKey ? PATH_MAP_EV_NAME + mapKey : undefined,
+        type: mapKey && PATH_MAP_EV_NAME + mapKey,
         onChange: ({ path }) => {
             if (path) {
                 setPath(path);
