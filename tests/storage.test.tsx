@@ -138,7 +138,7 @@ it("create storage store mutators", async () => {
                     store: {
                         date: (mutate) =>
                             mutate({
-                                put: (prev) => prev.toLocaleString(),
+                                put: (prev) => prev.toUTCString(),
                             }),
                     },
                 },
@@ -200,14 +200,18 @@ it("create storage store mutators", async () => {
     expect(
         JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY_MUT) || "{}"),
     ).toStrictEqual({
-        store: { date: "01.01.2001, 02:00:00", value: 2, other: "test2" },
+        store: {
+            date: "Mon, 01 Jan 2001 00:00:00 GMT",
+            value: 2,
+            other: "test2",
+        },
     });
 
     expect(setItemSpy).toHaveBeenCalledWith(
         LOCAL_STORAGE_KEY_MUT,
         JSON.stringify({
             store: {
-                date: "01.01.2001, 02:00:00",
+                date: "Mon, 01 Jan 2001 00:00:00 GMT",
                 value: 2,
                 other: "test2",
             },
@@ -219,7 +223,7 @@ it("create storage store mutators", async () => {
             store: {
                 value: 2,
                 other: "test2",
-                date: "01.01.2001, 02:00:00",
+                date: "Mon, 01 Jan 2001 00:00:00 GMT",
             },
         }),
     );
@@ -229,12 +233,6 @@ it("create storage store mutators", async () => {
 });
 
 it("create storage store mutators", async () => {
-    // expect(
-    //     JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY_MUT) || "{}"),
-    // ).toStrictEqual({
-    //     store: { value: 2, other: "test2", date: "01.01.2001, 02:00:00" },
-    // });
-
     const { useStoreDate, useStoreValue, useStoreOther } = createState(
         {
             store: { value: 1, other: "test1", date: new Date() },
