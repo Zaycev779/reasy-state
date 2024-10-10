@@ -1,5 +1,6 @@
 import { KeyCapitalize } from "./index";
 import { Flatten } from "./flatten";
+import { ReactNode } from "react";
 
 export enum UpdateType {
     S = "set",
@@ -10,6 +11,7 @@ export enum GeneratedType {
     S = "set",
     U = "use",
     R = "reset",
+    SR = "SSR",
 }
 
 export enum StorageType {
@@ -155,10 +157,12 @@ type IFn<T, U> = {
         : never]: () => U[P];
 };
 
+type AnyFunc = (...args: any) => any;
+
 type FuncName<T, P extends keyof T, N extends GeneratedType> = T[P] extends
     | Function
     | void
-    | ((...args: any) => any)
+    | AnyFunc
     ? P extends `${infer X}[]${infer Y}`
         ? `${N}${KeyCapitalize<X>}${KeyCapitalize<Y>}`
         : never
@@ -197,7 +201,28 @@ export type IGenerateFn<T, U> = IStaticFunc<T, U, GeneratedType.G> &
     IFn<T, U>;
 
 export type IGenerate<T, U = unknown> = IGenerateFn<Flatten<T>, Flatten<U>> &
-    IResetFunc<T extends object ? T : { [k in ""]: T }>;
+    IResetFunc<T extends object ? T : { [k in ""]: T }> &
+    ISSR<Flatten<T>, Flatten<U>>;
+
+export type ISSR<T, U> = { ssr: ISSRFunc<T, U> };
+
+type ISSRComp<T> = React.FC<{ value: T }>;
+
+type ISSRFunc<T, U, N extends GeneratedType = GeneratedType.SR> = {
+    [P in keyof T as keyof U extends `$${P extends string ? string : never}`
+        ? T extends U
+            ? T[P] extends AnyFunc
+                ? never
+                : FuncName<T, P, N>
+            : never
+        : FuncName<T, P, N>]: ISSRComp<T[P]>;
+} & {
+    [P in keyof U as U[P] extends AnyFunc
+        ? never
+        : P extends `${string | ""}$${string}`
+        ? FuncName<U, P, N>
+        : never]: ISSRComp<U[P]>;
+};
 
 export type Options<T> = {
     /** Unique store key */

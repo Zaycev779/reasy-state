@@ -1,7 +1,7 @@
 import { KeyCapitalize } from "./index";
 
 export type Flatten<TValue> = CollapseEntries<
-    CreateEntries<TValue, TValue, "">
+    CreateEntries<TValue, { [P in keyof TValue]-?: TValue[P] }, "">
 >;
 
 type Entry = { key: string; value: unknown };
@@ -79,7 +79,7 @@ type CreateVal<K, V> = {
     value: V;
 };
 
-type IsUndefined<V, P extends keyof V, R1, R2> = {
+export type IsUndefined<V, P extends keyof V, R1, R2> = {
     [S in keyof Pick<V, P>]: V[P];
 } extends Record<P, V[P]>
     ? R2

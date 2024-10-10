@@ -1,6 +1,11 @@
 import { IStore } from "./types/store";
 import { isArrayPathName } from "./utils";
 
+export const getGlobalBySrc = (path: string[], storeId: string, src: any) =>
+    getGlobalData(path, true, undefined, {
+        [storeId]: src,
+    });
+
 export const getGlobalData = (
     path?: string[],
     forArray?: boolean,

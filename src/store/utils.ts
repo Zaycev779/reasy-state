@@ -4,7 +4,7 @@ import { IStore, StorageType } from "./types/store";
 
 export type updatedParams = string | updatedParams[];
 export const Mutators = "mutators";
-export const isClient = typeof window !== "undefined" && window;
+export const isClient = () => typeof window !== "undefined" && window;
 export const SignRegExp = /[\s$]+/;
 
 export const pathToString = (path: string[]) => path.join("");
@@ -36,7 +36,7 @@ export const getUpdatedPaths = <T extends IStore>(
                 }
                 getUpdatedPaths(updated, prev, propName, res);
             } else {
-                if (prevValues[key] !== updatedParams[key]) {
+                if (prevValues?.[key] !== updatedParams[key]) {
                     res.push(propName);
                 }
             }
