@@ -8,7 +8,8 @@
 Reast Easy State is simple state management for React
 
 Reasy-state allows you to easily work with your state without creating selectors or worrying about re-renders,
-by having each object element have its own hook for getting the value, get/set functions and mutators
+by having each object element have its own hook for getting the value, get/set functions and mutators.
+It is also possible to initialize the state in the [server side component](#usage-in-ssr-warning-experemental)
 
 ## Installation
 
@@ -204,8 +205,7 @@ export const UserRating = () => {
                 <button
                     onClick={async () => {
                         const response = await userStoreDataRemove(5);
-                        console.log(response); // "success"
-                        return response;
+                        return response; // "success"
                     }}
                 >
                     -5
@@ -213,8 +213,7 @@ export const UserRating = () => {
                 <button
                     onClick={async () => {
                         const response = await userStoreDataDec();
-                        console.log(response); // true
-                        return response;
+                        return response; // true
                     }}
                 >
                     -
@@ -338,10 +337,57 @@ export const Ratings = () => {
 };
 ```
 
+### Usage in ssr :warning: (experemental)
+
+You can initialize your state or part of it in a server component like this:
+
+```jsx
+//store.ts
+'use client';
+
+import { createState } from 'reasy-state';
+
+type Store = {
+    user: {
+        id: number;
+        login: string;
+    };
+};
+
+export const { use$user$id, get$user$id, ssr: { SSR$user } } = createState<Store>()();
+```
+
+```jsx
+//page.tsx
+"use server";
+
+export default async function ServerPage() {
+    const data = await getUser("username"); // data = {id, name}
+    return (
+        <>
+            <SSR$user value={data} />
+            <ClientPage />
+        </>
+    );
+}
+```
+
+```jsx
+"use client";
+
+import { get$user$id, use$user$id } from "./store";
+
+export const ClientPage = () => {
+    const id = use$user$id();
+    return <p>User id = {id}</p>;
+};
+```
+
 ### Storage
 
 You can save the state in the store( localStorage (default), sessionStorage )
 To do this, specify a unique key and configure saving if necessary
+:warning: If SSR is used together with storage, the latter will be initialized only after the component is rendered to avoid hydration warning
 
 ```jsx
     const store = { value: "value" }
