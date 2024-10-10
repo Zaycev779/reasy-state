@@ -337,7 +337,7 @@ export const Ratings = () => {
 };
 ```
 
-### Usage in ssr :warning: (experemental)
+### Usage in ssr components :warning: (experemental)
 
 You can initialize your state or part of it in a server component like this:
 
@@ -387,6 +387,7 @@ export const ClientPage = () => {
 
 You can save the state in the store( localStorage (default), sessionStorage )
 To do this, specify a unique key and configure saving if necessary
+
 :warning: If SSR is used together with storage, the latter will be initialized only after the component is rendered to avoid hydration warning
 
 ```jsx
