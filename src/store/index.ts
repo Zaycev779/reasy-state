@@ -31,7 +31,8 @@ import {
     values,
 } from "./utils";
 
-const generatedTypes = values(GeneratedType);
+const SSRType = "_".concat(GeneratedType.SR.toLowerCase());
+const generatedTypes = values(GeneratedType).concat(SSRType as GeneratedType);
 
 export function createState<T extends IStore<T>>(
     params: T,
@@ -52,8 +53,6 @@ export function createState<T extends IStore<T>>(
 ): any {
     return params ? createStateFn(params, options) : createStateFn;
 }
-
-const SSRType = "_".concat(GeneratedType.SR.toLowerCase());
 
 export function createStateFn<T extends IStore<T>>(
     initialValues?: T,
@@ -106,18 +105,20 @@ export function createStateFn<T extends IStore<T>>(
                             updateGlobalData(basePath, value);
 
                             useLayoutEffect(() => {
-                                const storage = getGlobalBySrc(
-                                    getMapByKey(mapKey),
-                                    storeId,
-                                    storageValues,
-                                );
-                                if (storage) {
-                                    updateStore(
-                                        basePath,
-                                        storage,
-                                        undefined,
-                                        UpdateType.P,
+                                if (options && options.storage) {
+                                    const storage = getGlobalBySrc(
+                                        getMapByKey(mapKey),
+                                        storeId,
+                                        storageValues,
                                     );
+                                    if (storage) {
+                                        updateStore(
+                                            basePath,
+                                            storage,
+                                            undefined,
+                                            UpdateType.P,
+                                        );
+                                    }
                                 }
                             }, []);
                         }
