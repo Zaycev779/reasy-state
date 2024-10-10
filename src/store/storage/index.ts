@@ -1,6 +1,6 @@
 import { getGlobalData } from "../get-global";
 import { IStore, Options, StorageOptions, StorageType } from "../types/store";
-import { isObject, mergeDeep, stringify } from "../utils";
+import { isClient, isObject, mergeDeep, stringify } from "../utils";
 
 const storagePrefix = "_res";
 
@@ -9,7 +9,7 @@ export const storageAction = <T extends IStore<T>>(
     options?: Options<T>,
     initial?: T,
 ): IStore<T> | undefined => {
-    if (options) {
+    if (options && isClient()) {
         const { key, storage } = options;
         if (key && storage) {
             const { type, mutators } = (

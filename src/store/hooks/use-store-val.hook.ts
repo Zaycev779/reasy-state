@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { getGlobalData } from "../get-global";
 import { IStore } from "../types/store";
 import { PATH_MAP_EV_NAME, PUSH_EV_NAME } from "../events";
@@ -32,11 +32,11 @@ export const useStoreVal = ({ filterFunc, mapKey }: IProps) => {
         }
     };
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         prevState.current = state;
     }, [state]);
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (isInit.current) {
             setPath(getMapByKey(mapKey));
         }
@@ -47,6 +47,7 @@ export const useStoreVal = ({ filterFunc, mapKey }: IProps) => {
         params: IStore;
     }>({
         type: path && PUSH_EV_NAME + pathToString(path),
+        onLoad: () => _setState(getState()),
         onChange: ({ params }) => {
             const sliceIdx = findPathArrayIndex(path);
             if (sliceIdx >= 0) {

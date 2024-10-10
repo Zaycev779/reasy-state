@@ -1,14 +1,20 @@
-import { useEffect, useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 
 interface IUseEvent<T> {
     type?: string;
     onChangeType?: () => void;
     onChange: (values: T) => void;
+    onLoad?: () => void;
 }
 
-export const useEvent = <T>({ type, onChangeType, onChange }: IUseEvent<T>) => {
+export const useEvent = <T>({
+    type,
+    onChangeType,
+    onChange,
+    onLoad,
+}: IUseEvent<T>) => {
     const prevType = useRef<string>();
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (!type) return;
 
         const onTargetEvent = (ev: Event) =>
@@ -21,7 +27,9 @@ export const useEvent = <T>({ type, onChangeType, onChange }: IUseEvent<T>) => {
             prevType.current = type;
         }
         document.addEventListener(type, onTargetEvent);
-
+        if (onLoad) {
+            onLoad();
+        }
         return () => {
             document.removeEventListener(type, onTargetEvent);
         };

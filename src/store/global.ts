@@ -34,7 +34,7 @@ if (!("EStorage" in globalThis)) {
 
 export const updateGlobalData = (
     paths: string[],
-    data: Partial<IStore>,
+    data?: Partial<IStore>,
     src: Record<string, any> = getGlobalData([]),
 ) => {
     const [path, ...rest] = paths;

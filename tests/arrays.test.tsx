@@ -269,3 +269,30 @@ it("create store with optional array", async () => {
     expect(renderCountsArrayIds).toBe(4);
     expect(renderCountsArrayEvenIds).toBe(3);
 });
+
+it("create store with optional store array", async () => {
+    type Data = {
+        store?: {
+            value: string;
+            array: { id: number }[];
+            obj?: {
+                array2: Array<{ id2: number }>;
+            };
+        };
+    };
+
+    const {
+        get$store$array$id,
+        set$store$array,
+        get$store$obj$array2$id2,
+        set$store$obj$array2,
+    } = createState<Data>()();
+
+    expect(get$store$array$id()).toBe(undefined);
+    set$store$array([{ id: 1 }]);
+    expect(get$store$array$id()).toStrictEqual([1]);
+
+    expect(get$store$obj$array2$id2()).toBe(undefined);
+    set$store$obj$array2([{ id2: 2 }]);
+    expect(get$store$obj$array2$id2()).toStrictEqual([2]);
+});
