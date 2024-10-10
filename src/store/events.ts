@@ -33,7 +33,7 @@ export const _pushStoreValueEvent = <T extends IStore<T>>(
 };
 
 const sendEvent = (route: string, detail: any) => {
-    if (!isClient) return;
+    if (!isClient()) return;
 
     document.dispatchEvent(
         new CustomEvent(route, {
