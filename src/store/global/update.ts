@@ -1,9 +1,9 @@
-import { _pushStoreValueEvent, _updatePathEvent } from "./events";
-import { getGlobalData } from "./get-global";
-import { patchToGlobalMap } from "./maps/maps";
-import { getMapByKey } from "./maps/utils";
-import { storageAction } from "./storage";
-import { IStore, Options, StorageType, UpdateType } from "./types/store";
+import { _pushStoreValueEvent, _updatePathEvent } from "../events";
+import { getGlobalData } from "./get";
+import { patchToGlobalMap } from "../maps/maps";
+import { getMapByKey } from "../maps/utils";
+import { storageAction } from "../storage";
+import { IStore, Options, StorageType, UpdateType } from "../types/store";
 import {
     diffValuesBoolean,
     getAdditionalKeys,
@@ -12,25 +12,7 @@ import {
     isObject,
     isOptionalPathName,
     mergeDeep,
-} from "./utils";
-
-declare global {
-    namespace EStorage {
-        let store: Record<string, any>;
-        let map: Record<string, string[]>;
-        let storeId: number;
-        const mapId: WeakMap<object, number>;
-    }
-}
-
-if (!("EStorage" in globalThis)) {
-    globalThis.EStorage = {
-        store: {},
-        map: {},
-        storeId: 0,
-        mapId: new WeakMap(),
-    };
-}
+} from "../utils";
 
 export const updateGlobalData = (
     paths: string[],

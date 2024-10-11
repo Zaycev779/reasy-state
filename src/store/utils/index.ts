@@ -1,11 +1,12 @@
-import { getMap } from "./maps/utils";
-import { Maybe } from "./types";
-import { IStore, StorageType } from "./types/store";
+import { getMap } from "../maps/utils";
+import { Maybe } from "../types";
+import { IStore, StorageType } from "../types/store";
 
 export type updatedParams = string | updatedParams[];
 export const Mutators = "mutators";
-export const isClient = () => typeof window !== "undefined" && window;
 export const SignRegExp = /[\s$]+/;
+export const ArrayMapKey = "[]";
+export const OptionalKey = "$";
 
 export const pathToString = (path: string[]) => path.join("");
 
@@ -143,7 +144,7 @@ export const createNewArrayValues = (
 };
 
 export const findPathArrayIndex = (array?: string[]) =>
-    (array && array.findIndex((val) => val === "[]")) || -1;
+    (array && array.findIndex((val) => val === ArrayMapKey)) || -1;
 
 export const isAFunction = (value: any) => typeof value === "function";
 
@@ -181,17 +182,7 @@ export const values = Object.values;
 export const isNotMutator = (keyName: string) =>
     keyName !== capitalizeName(Mutators);
 
-export const isArrayPathName = (name: string | string[]) => name.includes("[]");
+export const isArrayPathName = (name: string | string[]) =>
+    name.includes(ArrayMapKey);
 export const isOptionalPathName = (name: string | string[]) =>
-    name.includes("$");
-
-export const generateId = (object: any, key?: string) => {
-    if (key) return "#".concat(key).replace("$", "#");
-
-    const { mapId } = EStorage;
-    const value = isObject(object) ? object : { object };
-    if (!mapId.has(value)) {
-        mapId.set(value, ++EStorage.storeId);
-    }
-    return "#".concat(String(mapId.get(value)));
-};
+    name.includes(OptionalKey);

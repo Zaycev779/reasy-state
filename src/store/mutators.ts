@@ -1,6 +1,6 @@
-import { getGlobalData } from "./get-global";
-import { updateStore } from "./global";
-import { IGenerate, IStore, Options, UpdateType } from "./types/store";
+import { getGlobalData } from "./global/get";
+import { updateStore } from "./global/update";
+import { IStore, Options, UpdateType } from "./types/store";
 import {
     assign,
     capitalizeKeysToString,
@@ -12,34 +12,31 @@ import {
     isNotMutator,
 } from "./utils";
 
+const reduceMutators = <T extends IStore<T>>(
+    store: T,
+    value: (key: string, val: any) => any,
+) =>
+    entries(store).reduce(
+        (prev, [key, val]) => assign(prev, value(key, val)),
+        {},
+    );
+
 export const generateMutators = <T extends IStore<T>>(
     storeId: string,
     values: T,
     options?: Options<any>,
     prevKey: string[] = [],
-): IGenerate<T> =>
-    entries<any>(values).reduce(
-        (result, [key, val]) =>
-            key
-                ? assign(
-                      result,
-                      isNotMutator(capitalizeName(key))
-                          ? isDefaultObject(val) &&
-                                generateMutators<IStore<T>>(
-                                    storeId,
-                                    val,
-                                    options,
-                                    prevKey.concat(key),
-                                )
-                          : createMutators(
-                                val,
-                                prevKey,
-                                [storeId].concat(prevKey),
-                                options,
-                            ),
-                  )
-                : result,
-        {} as IGenerate<T>,
+) =>
+    reduceMutators(values, (key, val) =>
+        isNotMutator(capitalizeName(key))
+            ? isDefaultObject(val) &&
+              generateMutators<IStore<T>>(
+                  storeId,
+                  val,
+                  options,
+                  prevKey.concat(key),
+              )
+            : createMutators(val, prevKey, [storeId].concat(prevKey), options),
     );
 
 export const createMutators = (
@@ -56,14 +53,10 @@ export const createMutators = (
     };
     const patch = (arg: any) => set(arg, UpdateType.P);
 
-    return entries(values).reduce(
-        (prev, [key, val]) =>
-            assign(prev, {
-                [pathName.concat(capitalizeName(key))]: function () {
-                    const fn = val({ set, get, patch }, get());
-                    return isAFunction(fn) ? fn.apply(null, arguments) : fn;
-                },
-            }),
-        {},
-    );
+    return reduceMutators(values, (key, val) => ({
+        [pathName.concat(capitalizeName(key))]: function () {
+            const fn = val({ set, get, patch }, get());
+            return isAFunction(fn) ? fn.apply(null, arguments) : fn;
+        },
+    }));
 };

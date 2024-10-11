@@ -1,5 +1,6 @@
-import { IStore } from "./types/store";
-import { isArrayPathName } from "./utils";
+import { Storage } from "./index";
+import { IStore } from "../types/store";
+import { isArrayPathName } from "../utils";
 
 export const getGlobalBySrc = (path: string[], storeId: string, src: any) =>
     getGlobalData(path, true, undefined, {
@@ -10,7 +11,7 @@ export const getGlobalData = (
     path?: string[],
     forArray?: boolean,
     filterFunc?: () => void,
-    src = EStorage.store,
+    src = Storage.store,
 ) =>
     path
         ? (path.reduce(

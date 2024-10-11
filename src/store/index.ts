@@ -1,6 +1,5 @@
 import { useLayoutEffect } from "react";
-import { getGlobalBySrc, getGlobalData } from "./get-global";
-import { updateStore, updateGlobalData } from "./global";
+import { getGlobalBySrc, getGlobalData } from "./global/get";
 import { useStoreVal } from "./hooks/use-store-val.hook";
 import { generateStaticPathsMap, patchToGlobalMap } from "./maps/maps";
 import { getMapByKey } from "./maps/utils";
@@ -23,15 +22,18 @@ import {
     capitalizeKeysToString,
     createNewArrayValues,
     findPathArrayIndex,
-    generateId,
     isAFunction,
-    isClient,
+    OptionalKey,
     pathToString,
     SignRegExp,
     values,
 } from "./utils";
+import { updateGlobalData, updateStore } from "./global/update";
+import { generateId } from "./global/generate-id";
+import { isClient } from "./utils/client";
 
 const SSRType = "_".concat(GeneratedType.SR.toLowerCase());
+
 const generatedTypes = values(GeneratedType).concat(SSRType as GeneratedType);
 
 export function createState<T extends IStore<T>>(
@@ -81,7 +83,7 @@ export function createStateFn<T extends IStore<T>>(
 
             const mapKey = storeId.concat(pathToString(functionName));
             const splitName = capitalizeKeysToString(
-                name.slice(name[0] === "$" ? 1 : 0).split(SignRegExp),
+                name.slice(+(name[0] === OptionalKey)).split(SignRegExp),
                 true,
             );
 
@@ -92,7 +94,6 @@ export function createStateFn<T extends IStore<T>>(
             const isGenerated = generatedTypes.some((val) =>
                 val.includes(type),
             );
-
             if (isGenerated && mapKey) {
                 patchToGlobalMap(mapKey);
             }
@@ -103,7 +104,6 @@ export function createStateFn<T extends IStore<T>>(
                         const basePath = getMapByKey(mapKey);
                         if (basePath) {
                             updateGlobalData(basePath, value);
-
                             useLayoutEffect(() => {
                                 if (options && options.storage) {
                                     const storage = getGlobalBySrc(

@@ -1,10 +1,12 @@
-import { getGlobalData } from "../get-global";
+import { getGlobalData } from "../global/get";
 import {
+    ArrayMapKey,
     capitalizeName,
     entries,
     isDefaultObject,
     isNotMutator,
     isOptionalPathName,
+    OptionalKey,
     SignRegExp,
 } from "../utils";
 import { getMapByKey, setMap } from "./utils";
@@ -41,9 +43,7 @@ export const patchToGlobalMap = (
     prevPath: string[] = [],
 ) => {
     if (!isOptionalPathName(mapKey)) return;
-    const [staticName, firstKey, ...additionalKeys] = mapKey
-        ? mapKey.split(SignRegExp)
-        : [];
+    const [staticName, firstKey, ...additionalKeys] = mapKey.split(SignRegExp);
 
     const staticFromMap = staticPath || getMapByKey(staticName) || [];
     const length = additionalKeys.length;
@@ -53,7 +53,7 @@ export const patchToGlobalMap = (
             baseMap,
             staticFromMap.concat(
                 prevPath,
-                "[]",
+                ArrayMapKey,
                 firstKey,
                 length ? additionalKeys : [],
             ),
@@ -64,7 +64,7 @@ export const patchToGlobalMap = (
 
     if (length) {
         patchToGlobalMap(
-            "$".concat(additionalKeys.join("$")),
+            OptionalKey.concat(additionalKeys.join(OptionalKey)),
             baseMap || mapKey,
             staticFromMap,
             prevPath.concat(firstKey),

@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState } from "react";
-import { getGlobalData } from "../get-global";
+import { getGlobalData } from "../global/get";
 import { IStore } from "../types/store";
 import { PATH_MAP_EV_NAME, PUSH_EV_NAME } from "../events";
 import {

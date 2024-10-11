@@ -1,7 +1,6 @@
 import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render } from "@testing-library/react";
 import { CreateState, createState } from "reasy-state";
-import { getGlobalData } from "reasy-state/store/get-global";
 const LOCAL_STORAGE_KEY = "_res#storage_test";
 
 const getItemSpy = vi.spyOn(Storage.prototype, "getItem");

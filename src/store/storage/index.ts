@@ -1,6 +1,7 @@
-import { getGlobalData } from "../get-global";
+import { getGlobalData } from "../global/get";
 import { IStore, Options, StorageOptions, StorageType } from "../types/store";
-import { isClient, isObject, mergeDeep, stringify } from "../utils";
+import { isObject, mergeDeep, stringify } from "../utils";
+import { isClient } from "../utils/client";
 
 const storagePrefix = "_res";
 

@@ -1,7 +1,8 @@
-import { getGlobalData } from "./get-global";
-import { isArrayPathName, isClient, pathToString } from "./utils";
+import { getGlobalData } from "./global/get";
+import { isArrayPathName, pathToString } from "./utils";
 import { IStore } from "./types/store";
 import { getAdditionalPaths, getRootPaths, getUpdatedPaths } from "./utils";
+import { isClient } from "./utils/client";
 
 export const PUSH_EV_NAME = "__PUSH_EV";
 export const PATH_MAP_EV_NAME = "__PATH_EV";
