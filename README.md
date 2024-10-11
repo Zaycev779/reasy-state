@@ -9,7 +9,7 @@ Reast Easy State is simple state management for React
 
 Reasy-state allows you to easily work with your state without creating selectors or worrying about re-renders,
 by having each object element have its own hook for getting the value, get/set functions and mutators.
-It is also possible to initialize the state in the [server side component](#usage-in-ssr-warning-experemental)
+It is also possible to initialize the state in the [server side component](#usage-in-ssr-components-warning-experemental)
 
 ## Installation
 
