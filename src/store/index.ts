@@ -123,22 +123,16 @@ export function createStateFn<T extends IStore<T>>(
                             }, []);
                         }
                     };
+                case GeneratedType.U:
+                    if (isClient)
+                        return (filterFunc?: FType) =>
+                            useStoreVal({
+                                mapKey,
+                                filterFunc,
+                            });
                 case GeneratedType.G:
                     return (filterFunc?: FType) =>
                         getGlobalData(getMapByKey(mapKey), true, filterFunc);
-
-                case GeneratedType.U:
-                    return (filterFunc?: FType) =>
-                        isClient()
-                            ? useStoreVal({
-                                  mapKey,
-                                  filterFunc,
-                              })
-                            : getGlobalData(
-                                  getMapByKey(mapKey),
-                                  true,
-                                  filterFunc,
-                              );
 
                 case GeneratedType.S:
                     return function () {

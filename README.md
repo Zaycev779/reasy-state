@@ -350,7 +350,7 @@ import { createState } from 'reasy-state';
 type Store = {
     user: {
         id: number;
-        login: string;
+        name: string;
     };
 };
 

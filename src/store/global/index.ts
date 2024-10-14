@@ -20,6 +20,6 @@ if (!("EStorage" in globalThis)) {
     globalThis.EStorage = storageInitial();
 }
 
-export const Storage = isClient()
+export const Storage = isClient
     ? EStorage
     : (storageInitial() as typeof EStorage);
