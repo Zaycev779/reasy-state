@@ -26,7 +26,7 @@ export const generateMutators = <T extends IStore<T>>(
     values: T,
     options?: Options<any>,
     prevKey: string[] = [],
-) =>
+): any =>
     reduceMutators(values, (key, val) =>
         isNotMutator(capitalizeName(key))
             ? isDefaultObject(val) &&

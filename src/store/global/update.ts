@@ -5,10 +5,10 @@ import { getMapByKey } from "../maps/utils";
 import { storageAction } from "../storage";
 import { IStore, Options, StorageType, UpdateType } from "../types/store";
 import {
+    createCopy,
     diffValuesBoolean,
     getAdditionalKeys,
     getParams,
-    isDefaultObject,
     isObject,
     isOptionalPathName,
     mergeDeep,
@@ -21,13 +21,7 @@ export const updateGlobalData = (
 ) => {
     const [path, ...rest] = paths;
     if (!rest.length) {
-        try {
-            src[path] = isDefaultObject(data)
-                ? mergeDeep(undefined, {}, data)
-                : data;
-        } catch {
-            src[path] = data;
-        }
+        src[path] = createCopy(data);
         return;
     }
     if (!src[path]) {

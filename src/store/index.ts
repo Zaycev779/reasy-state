@@ -72,16 +72,14 @@ export function createStateFn<T extends IStore<T>>(
     }
     const gen = generateMutators(storeId, initialValues || {}, options);
     const handler = {
-        get(target: any, name: string) {
-            if (name in target) {
-                return target[name];
-            }
+        get(target: any, name: string): any {
             const [type, ...functionName] = name
                 .replace(GeneratedType.SR, SSRType)
                 .split(/(?=[A-Z$])/);
             if (type === "ssr") return new Proxy({}, handler);
 
             const mapKey = storeId.concat(pathToString(functionName));
+
             const splitName = capitalizeKeysToString(
                 name.slice(+(name[0] === OptionalKey)).split(SignRegExp),
                 true,
@@ -107,7 +105,7 @@ export function createStateFn<T extends IStore<T>>(
                             useLayoutEffect(() => {
                                 if (options && options.storage) {
                                     const storage = getGlobalBySrc(
-                                        getMapByKey(mapKey),
+                                        basePath,
                                         storeId,
                                         storageValues,
                                     );
@@ -133,7 +131,7 @@ export function createStateFn<T extends IStore<T>>(
                 case GeneratedType.G:
                     return (filterFunc?: FType) =>
                         getGlobalData(getMapByKey(mapKey), true, filterFunc);
-
+                case GeneratedType.R:
                 case GeneratedType.S:
                     return function () {
                         const args = <any>arguments;
@@ -165,18 +163,20 @@ export function createStateFn<T extends IStore<T>>(
                                 }
                                 return;
                             }
-                            return updateStore(basePath, filterFunc, options);
+                            return updateStore(
+                                basePath,
+                                type === GeneratedType.R
+                                    ? getGlobalBySrc(
+                                          basePath,
+                                          storeId,
+                                          initialValues,
+                                      )
+                                    : filterFunc,
+                                options,
+                            );
                         }
                     };
-                case GeneratedType.R:
-                    return () => {
-                        const basePath = getMapByKey(mapKey);
-                        updateStore(
-                            basePath,
-                            getGlobalBySrc(basePath, storeId, initialValues),
-                            options,
-                        );
-                    };
+
                 default:
                     return () => undefined;
             }

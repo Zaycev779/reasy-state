@@ -125,12 +125,15 @@ it("set store value", async () => {
     expect(renderCountsValue).toBe(1);
 
     act(() => setStoreOther("new value"));
+    await findByText("other: new value");
     expect(getStore().other).toBe("new value");
     expect(renderCountsOther).toBe(2);
 
     fireEvent.click(getByText("button 1"));
     expect(renderCountsOther).toBe(3);
     expect(renderCountsValue).toBe(2);
+    expect(getStore().other).toBe("test1");
+    await findByText("other: test1");
 
     await findByText("value1: 2");
     await findByText("value2: 2");
@@ -155,7 +158,7 @@ it("set store value", async () => {
     expect(getStore().value).toBe(5);
     expect(getStoreValue()).toBe(5);
 
-    expect(renderCounts).toBe(6);
+    expect(renderCounts).toBe(5);
     expect(renderCountsValue).toBe(5);
     expect(renderCountsOther).toBe(3);
 });

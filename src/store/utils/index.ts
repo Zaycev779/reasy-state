@@ -30,8 +30,8 @@ export const getUpdatedPaths = <T extends IStore>(
                 continue;
             }
             if (isObject(updatedParams[key])) {
-                const updated = assign({}, updatedParams[key] || {});
-                const prev = assign({}, (prevValues[key] as IStore) || {});
+                const updated = createCopy(updatedParams[key]);
+                const prev = createCopy(prevValues[key] || {});
                 if (updated !== prev) {
                     res.push(propName);
                 }
@@ -63,6 +63,9 @@ const mutate =
         fn[type](val);
 
 type TMergeArgs = [Maybe<StorageType>, ...any];
+
+export const createCopy = (value: any) =>
+    isDefaultObject(value) ? mergeDeep(undefined, {}, value) : value;
 
 export function mergeDeep(...args: TMergeArgs): any {
     const [type, target, ...sources] = args as TMergeArgs;
@@ -124,7 +127,8 @@ export const createNewArrayValues = (
 ) => {
     const l = keys.length - 1;
     if (Array.isArray(prev) && l >= 0) {
-        return prev.map((prevVal) => {
+        return prev.map((_prevVal) => {
+            const prevVal = createCopy(_prevVal);
             if (isAFunction(filterFunc) && !filterFunc!(prevVal)) {
                 return prevVal;
             }
@@ -137,7 +141,7 @@ export const createNewArrayValues = (
             if (targetObj) {
                 targetObj[e] = getParams(newValue, targetObj[e]);
             }
-            return assign({}, prevVal);
+            return prevVal;
         });
     }
     return prev;

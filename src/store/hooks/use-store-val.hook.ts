@@ -1,13 +1,12 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { getGlobalData } from "../global/get";
 import { IStore } from "../types/store";
 import { PATH_MAP_EV_NAME, PUSH_EV_NAME } from "../events";
 import {
-    assign,
+    createCopy,
     diffValuesBoolean,
     findPathArrayIndex,
     isAFunction,
-    isDefaultObject,
     pathToString,
 } from "../utils";
 import { useEvent } from "./use-event.hook";
@@ -22,32 +21,21 @@ export const useStoreVal = ({ filterFunc, mapKey }: IProps) => {
     const [path, setPath] = useState<string[]>(getMapByKey(mapKey));
     const getState = (newPath?: string[]) =>
         getGlobalData(newPath || path, true, filterFunc);
-    const isInit = useRef<boolean>();
+
     const [state, setState] = useState(getState);
-    const prevState = useRef<any>();
+    const prevState = useRef<any>(state);
 
     const _setState = (values: any) => {
         if (diffValuesBoolean(prevState.current, values)) {
             setState(values);
+            prevState.current = values;
         }
     };
-
-    useLayoutEffect(() => {
-        prevState.current = state;
-    }, [state]);
-
-    useLayoutEffect(() => {
-        if (isInit.current) {
-            setPath(getMapByKey(mapKey));
-        }
-        isInit.current = true;
-    }, [mapKey]);
 
     useEvent<{
         params: IStore;
     }>({
         type: path && PUSH_EV_NAME + pathToString(path),
-        onLoad: () => _setState(getState()),
         onChange: ({ params }) => {
             const sliceIdx = findPathArrayIndex(path);
             if (sliceIdx >= 0) {
@@ -63,7 +51,8 @@ export const useStoreVal = ({ filterFunc, mapKey }: IProps) => {
                 _setState(vals);
                 return;
             }
-            setState(isDefaultObject(params) ? assign({}, params) : params);
+
+            _setState(createCopy(params));
         },
         onChangeType: () => _setState(getState()),
     });

@@ -25,9 +25,7 @@ export const getGlobalData = (
                       if (forArray) {
                           const additionalPaths = path.slice(idx + 1);
                           const filterValue = filterFunc
-                              ? isArray
-                                  ? value.filter(filterFunc)
-                                  : undefined
+                              ? isArray && value.filter(filterFunc)
                               : value;
                           return {
                               value:

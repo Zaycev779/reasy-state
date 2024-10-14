@@ -18,16 +18,11 @@ export const generateStaticPathsMap = (
 ): any => {
     const pathName = capitalizeName(path);
     if (isDefaultObject(data)) {
-        setMap(pathName, prevPath);
         entries(data).forEach(([name, val]) => {
-            const keyName = capitalizeName(name);
+            const keyName = pathName + capitalizeName(name);
             if (isNotMutator(keyName)) {
-                setMap(pathName + keyName, prevPath);
-                generateStaticPathsMap(
-                    val,
-                    pathName + keyName,
-                    prevPath.concat(name),
-                );
+                setMap(keyName, prevPath);
+                generateStaticPathsMap(val, keyName, prevPath.concat(name));
             }
         });
     }
