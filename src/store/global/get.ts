@@ -15,39 +15,39 @@ export const getGlobalData = (
 ) =>
     path
         ? (path.reduce(
-              (prev, v, idx) => {
-                  if (prev.skip) {
+              (prev, rec, idx) => {
+                  if (prev.s) {
                       return prev;
                   }
-                  const { value } = prev;
-                  const isArray = Array.isArray(value);
-                  if (isArrayPathName(v) || isArray) {
+                  const { e } = prev;
+                  const isArray = Array.isArray(e);
+                  if (isArrayPathName(rec) || isArray) {
                       if (forArray) {
                           const additionalPaths = path.slice(idx + 1);
                           const filterValue = filterFunc
-                              ? isArray && value.filter(filterFunc)
-                              : value;
+                              ? isArray && e.filter(filterFunc)
+                              : e;
                           return {
-                              value:
+                              e:
                                   filterValue &&
                                   filterValue.map(
-                                      (v: any) =>
+                                      (e: any) =>
                                           additionalPaths &&
                                           additionalPaths.reduce(
                                               (prev, key) => prev && prev[key],
-                                              v,
+                                              e,
                                           ),
                                   ),
-                              skip: true,
+                              s: true,
                           };
                       }
                       return {
-                          value,
-                          skip: true,
+                          e,
+                          s: true,
                       };
                   }
-                  return { value: value && value[v] };
+                  return { e: e && e[rec] };
               },
-              { value: src } as { value?: Record<string, any>; skip?: boolean },
-          ).value as Partial<IStore>)
+              { e: src } as { e?: Record<string, any>; s?: boolean },
+          ).e as Partial<IStore>)
         : {};

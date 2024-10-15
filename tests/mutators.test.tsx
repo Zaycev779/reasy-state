@@ -184,7 +184,7 @@ it("create optional mutators", async () => {
         $userStore3$settings$notification2$switch,
         $userStore3$settings$notification$switch,
         use$userStore3$settings$notification$message,
-        resetUserStore3,
+        reset,
     } = state3;
 
     const Test1 = () => {
@@ -241,7 +241,7 @@ it("create optional mutators", async () => {
     expect(renderCounts1).toBe(2);
     expect(renderCounts2).toBe(2);
 
-    act(() => resetUserStore3());
+    act(() => reset());
     await findByText("message1: true");
     await findByText("message2: undefined");
 

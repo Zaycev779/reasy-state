@@ -20,9 +20,9 @@ import {
 } from "./types/store";
 import {
     capitalizeKeysToString,
+    concat,
     createNewArrayValues,
     findPathArrayIndex,
-    isAFunction,
     OptionalKey,
     pathToString,
     SignRegExp,
@@ -32,9 +32,11 @@ import { updateGlobalData, updateStore } from "./global/update";
 import { generateId } from "./global/generate-id";
 import { isClient } from "./utils/client";
 
-const SSRType = "_".concat(GeneratedType.SR.toLowerCase());
-
-const generatedTypes = values(GeneratedType).concat(SSRType as GeneratedType);
+const SSRType = "_" + GeneratedType.SR.toLowerCase();
+const generatedTypes = concat(
+    values(GeneratedType),
+    SSRType,
+) as GeneratedType[];
 
 export function createState<T extends IStore<T>>(
     params: T,
@@ -56,10 +58,10 @@ export function createState<T extends IStore<T>>(
     return params ? createStateFn(params, options) : createStateFn;
 }
 
-export function createStateFn<T extends IStore<T>>(
+export const createStateFn = <T extends IStore<T>>(
     initialValues?: T,
     options?: Options<T>,
-): IGenerate<CreateResult<T>> {
+): IGenerate<CreateResult<T>> => {
     const storeId = generateId(initialValues, options?.key);
     if (options) {
         options.key = storeId;
@@ -78,21 +80,18 @@ export function createStateFn<T extends IStore<T>>(
                 .split(/(?=[A-Z$])/);
             if (type === "ssr") return new Proxy({}, handler);
 
-            const mapKey = storeId.concat(pathToString(functionName));
+            const mapKey = concat(storeId, pathToString(functionName));
 
             const splitName = capitalizeKeysToString(
                 name.slice(+(name[0] === OptionalKey)).split(SignRegExp),
                 true,
             );
 
-            if (splitName in target && isAFunction(target[splitName])) {
+            if (splitName in target) {
                 return target[splitName];
             }
 
-            const isGenerated = generatedTypes.some((val) =>
-                val.includes(type),
-            );
-            if (isGenerated && mapKey) {
+            if (generatedTypes.some((val) => val.includes(type))) {
                 patchToGlobalMap(mapKey);
             }
 
@@ -124,57 +123,44 @@ export function createStateFn<T extends IStore<T>>(
                 case GeneratedType.U:
                     if (isClient)
                         return (filterFunc?: FType) =>
-                            useStoreVal({
-                                mapKey,
-                                filterFunc,
-                            });
+                            useStoreVal(mapKey, filterFunc);
                 case GeneratedType.G:
                     return (filterFunc?: FType) =>
                         getGlobalData(getMapByKey(mapKey), true, filterFunc);
                 case GeneratedType.R:
                 case GeneratedType.S:
-                    return function () {
-                        const args = <any>arguments;
-                        const [filterFunc, arrValue] = args as [FType, any];
+                    return (filterFunc: FType, arrValue?: any) => {
                         const basePath = getMapByKey(mapKey);
-                        if (basePath) {
-                            if (args.length > 1) {
-                                const sliceIdx = findPathArrayIndex(basePath);
+                        if (!basePath) return;
+                        if (arrValue) {
+                            const sliceIdx = findPathArrayIndex(basePath);
 
-                                if (sliceIdx >= 0) {
-                                    const additionalPaths = basePath.slice(
-                                        sliceIdx + 1,
-                                    );
-                                    const arrRootPath = basePath.slice(
-                                        0,
-                                        sliceIdx,
-                                    );
+                            if (sliceIdx >= 0) {
+                                const additionalPaths = basePath.slice(
+                                    sliceIdx + 1,
+                                );
+                                const arrRootPath = basePath.slice(0, sliceIdx);
 
-                                    updateStore(
-                                        arrRootPath,
-                                        createNewArrayValues(
-                                            additionalPaths,
-                                            getGlobalData(arrRootPath),
-                                            arrValue,
-                                            filterFunc,
-                                        ),
-                                        options,
-                                    );
-                                }
-                                return;
+                                updateStore(
+                                    arrRootPath,
+                                    createNewArrayValues(
+                                        additionalPaths,
+                                        getGlobalData(arrRootPath),
+                                        arrValue,
+                                        filterFunc,
+                                    ),
+                                    options,
+                                );
                             }
-                            return updateStore(
-                                basePath,
-                                type === GeneratedType.R
-                                    ? getGlobalBySrc(
-                                          basePath,
-                                          storeId,
-                                          initialValues,
-                                      )
-                                    : filterFunc,
-                                options,
-                            );
+                            return;
                         }
+                        updateStore(
+                            basePath,
+                            type === GeneratedType.R
+                                ? initialValues
+                                : filterFunc,
+                            options,
+                        );
                     };
 
                 default:
@@ -183,4 +169,4 @@ export function createStateFn<T extends IStore<T>>(
         },
     };
     return new Proxy(gen, handler);
-}
+};

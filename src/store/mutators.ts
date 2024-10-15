@@ -5,6 +5,7 @@ import {
     assign,
     capitalizeKeysToString,
     capitalizeName,
+    concat,
     entries,
     getParams,
     isAFunction,
@@ -34,9 +35,9 @@ export const generateMutators = <T extends IStore<T>>(
                   storeId,
                   val,
                   options,
-                  prevKey.concat(key),
+                  concat(prevKey, key),
               )
-            : createMutators(val, prevKey, [storeId].concat(prevKey), options),
+            : createMutators(val, prevKey, concat([storeId], prevKey), options),
     );
 
 export const createMutators = (
@@ -54,9 +55,9 @@ export const createMutators = (
     const patch = (arg: any) => set(arg, UpdateType.P);
 
     return reduceMutators(values, (key, val) => ({
-        [pathName.concat(capitalizeName(key))]: function () {
+        [pathName + capitalizeName(key)]: (...args: any) => {
             const fn = val({ set, get, patch }, get());
-            return isAFunction(fn) ? fn.apply(null, arguments) : fn;
+            return getParams(fn, ...args);
         },
     }));
 };

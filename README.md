@@ -25,7 +25,7 @@ npm install reasy-state
 
 Create state and export necessary functions
 
-The function names will be generated automatically, depending on your object. ( get*, set*, use* and reset*storageName\*)
+The function names will be generated automatically, depending on your object. ( `get*`, `set*`, `use*` and `reset`)
 
 ```jsx
 // store.ts
@@ -47,7 +47,7 @@ export const {
     useUserStoreName,
     useUserStoreSettingsNotificationMessage,
     setUserStoreSettingsNotificationMessage,
-    resetUserStore,
+    reset,
 } = createState({ userStore });
 ```
 
@@ -56,7 +56,7 @@ export const {
 ```jsx
 // user.tsx
 
-import { getUserStoreId, useUserStoreName } from "./store";
+import { getUserStoreId, useUserStoreName, reset } from "./store";
 
 const UserComponent = () => {
     const userName = useUserStoreName();
@@ -65,7 +65,7 @@ const UserComponent = () => {
             <p onClick={() => console.log("User ID:", getUserStoreId())}>
                 {userName}
             </p>
-            <button onClick={resetUserStore}>Reset store</button>
+            <button onClick={reset}>Reset store</button>
         </div>
     );
 };
@@ -96,9 +96,9 @@ const SettingsNotificationComponent = () => {
 
 ### Mutators
 
-You can use 'mutators' to export functions. You can also use closures and async functions inside mutators.
-Use a "set" or "patch" function that takes a new value, or a function that takes the old value as a parameter and returns a new value, to change the state of the current object in the state. "set" / "patch" will return you the new state of the object.
-Use a "get" function for async mutators, for get previous object value, or use second function argument
+You can use `mutators` to export functions. You can also use closures and async functions inside mutators.
+Use a `set` or `patch` function that takes a new value, or a function that takes the old value as a parameter and returns a new value, to change the state of the current object in the state. `set` / `patch` will return you the new state of the object.
+Use a `get` function for async mutators, for get previous object value, or use second function argument
 
 ```jsx
 mutators: {
@@ -261,7 +261,7 @@ export const {
 
 ### Undefined params
 
-You can use functions for undefined parameters using the $ sign
+You can use functions for undefined parameters using the `$` sign
 
 ```jsx
 // store.ts
@@ -280,9 +280,9 @@ export const { useUserStore$data$rating } = createState({ userStore });
 
 ### Arrays
 
-You can use arrays parameters functions using the $ sign
+You can use arrays parameters functions using the `$` sign
 
-For array element "set", "get" and "use" functions, you can use a filter to specify which elements you need to get or change
+For array element `set`, `get` and `use` functions, you can use a filter to specify which elements you need to get or change
 
 ```jsx
 get`[...functionName]`(filterFunction?);
@@ -385,8 +385,8 @@ export const ClientPage = () => {
 
 ### Storage
 
-You can save the state in the store( localStorage (default), sessionStorage )
-To do this, specify a unique key and configure saving if necessary
+You can save the state in the store( `localStorage` (default), `sessionStorage` )
+To do this, specify a unique `key` and configure saving if necessary
 
 :warning: If SSR is used together with storage, the latter will be initialized only after the component is rendered to avoid hydration warning
 

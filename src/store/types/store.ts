@@ -1,4 +1,4 @@
-import { KeyCapitalize } from "./index";
+import { KeyCapitalize, ValueOf } from "./index";
 import { Flatten } from "./flatten";
 import { ReactNode } from "react";
 
@@ -191,8 +191,8 @@ type Param<T, D = T> = D | ((prev: T) => D);
 
 type IsArray<P, T1, T2> = P extends `${infer X}[]${infer Y}` ? T1 : T2;
 
-type IResetFunc<T> = {
-    [P in keyof T as FuncName<T, P, GeneratedType.R>]: () => void;
+type IResetFunc = {
+    [GeneratedType.R]: () => void;
 };
 
 export type IGenerateFn<T, U> = IStaticFunc<T, U, GeneratedType.G> &
@@ -201,7 +201,7 @@ export type IGenerateFn<T, U> = IStaticFunc<T, U, GeneratedType.G> &
     IFn<T, U>;
 
 export type IGenerate<T, U = unknown> = IGenerateFn<Flatten<T>, Flatten<U>> &
-    IResetFunc<T extends object ? T : { [k in ""]: T }> &
+    IResetFunc &
     ISSR<Flatten<T>, Flatten<U>>;
 
 export type ISSR<T, U> = { ssr: ISSRFunc<T, U> };

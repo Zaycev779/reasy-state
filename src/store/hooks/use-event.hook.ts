@@ -1,15 +1,13 @@
 import { useLayoutEffect } from "react";
+import { Maybe } from "../types";
 
-interface IUseEvent<T> {
-    type?: string;
-    onChangeType?: () => void;
-    onChange: (values: T) => void;
-}
-
-export const useEvent = <T>({ type, onChangeType, onChange }: IUseEvent<T>) => {
+export const useEvent = <T>(
+    type: Maybe<string>,
+    onChange: (values: T) => void,
+    onChangeType?: () => void,
+) => {
     useLayoutEffect(() => {
         if (!type) return;
-
         const onTargetEvent = (ev: Event) =>
             onChange((ev as CustomEvent<T>).detail);
 

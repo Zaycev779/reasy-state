@@ -21,7 +21,7 @@ export default [{
                     module: true,
                     toplevel: true,
                     unsafe_arrows: true,
-                    drop_console: true,
+                    drop_console: true,  
                 },
                 output: { quote_style: 1 },
                 }),
@@ -48,7 +48,7 @@ export default [{
     ],
     plugins: [
         del({ targets: "dist/*" }),
-        typescript({ compilerOptions: {lib: ["es5", "es6", "dom"], target: "es5" }, rootDir:"src", tsconfig: "./tsconfig.json", incremental: false }),
+        typescript({ compilerOptions: {lib: ["dom", "es2018"], target: "es2018" }, rootDir:"src", tsconfig: "./tsconfig.json", incremental: false }),
     ],
 }, {
     input: 'dist/types/index.d.ts',

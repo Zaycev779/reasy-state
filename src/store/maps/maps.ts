@@ -2,6 +2,7 @@ import { getGlobalData } from "../global/get";
 import {
     ArrayMapKey,
     capitalizeName,
+    concat,
     entries,
     isDefaultObject,
     isNotMutator,
@@ -22,13 +23,12 @@ export const generateStaticPathsMap = (
             const keyName = pathName + capitalizeName(name);
             if (isNotMutator(keyName)) {
                 setMap(keyName, prevPath);
-                generateStaticPathsMap(val, keyName, prevPath.concat(name));
+                generateStaticPathsMap(val, keyName, concat(prevPath, name));
             }
         });
     }
 
     setMap(pathName, prevPath);
-    return data;
 };
 
 export const patchToGlobalMap = (
@@ -43,10 +43,11 @@ export const patchToGlobalMap = (
     const staticFromMap = staticPath || getMapByKey(staticName) || [];
     const length = additionalKeys.length;
 
-    if (Array.isArray(getGlobalData(staticFromMap.concat(prevPath)))) {
+    if (Array.isArray(getGlobalData(concat(staticFromMap, prevPath)))) {
         setMap(
             baseMap,
-            staticFromMap.concat(
+            concat(
+                staticFromMap,
                 prevPath,
                 ArrayMapKey,
                 firstKey,
@@ -55,14 +56,14 @@ export const patchToGlobalMap = (
         );
         return;
     }
-    setMap(baseMap, staticFromMap.concat(prevPath, firstKey));
+    setMap(baseMap, concat(staticFromMap, prevPath, firstKey));
 
     if (length) {
         patchToGlobalMap(
-            OptionalKey.concat(additionalKeys.join(OptionalKey)),
+            concat(OptionalKey, additionalKeys.join(OptionalKey)),
             baseMap || mapKey,
             staticFromMap,
-            prevPath.concat(firstKey),
+            concat(prevPath, firstKey),
         );
     }
 };
