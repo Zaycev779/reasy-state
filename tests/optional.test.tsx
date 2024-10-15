@@ -45,6 +45,8 @@ it("create optional store width CreateState type", async () => {
         id: number;
         data?: {
             rating: number;
+            $ignore: number;
+            $ignoreObj: { t: 1 };
         };
     };
     const userStore: CreateState<UserStore> = {

@@ -68,7 +68,7 @@ type TKeyName<
     THas$<TPrevKey, TKeyNameParse<TKey>, V>
 >;
 
-type THas$<K, T1, T2> = K extends `$` ? T1 : T2;
+type THas$<K, T1, T2> = K extends `${string}$${string}` ? T1 : T2;
 
 type TKeyNameParse<TKey extends string> = `$${TKey extends `$${infer Y}`
     ? Y
@@ -91,7 +91,7 @@ type CreateEntries<TValue, TInit, TPrevKey = ""> = TValue extends {
     ? {
           [TKey in keyof TValue]-?: TKey extends string
               ? CreateEntry<
-                    TValue[TKey],
+                    TValue[THas$<TKey, never, TKey>],
                     TInit,
                     THas$<
                         TPrevKey,

@@ -1,5 +1,5 @@
 [![Build Status](https://img.shields.io/github/actions/workflow/status/Zaycev779/reasy-state/build.js.yml?branch=main&style=flat&colorA=0066CC&colorB=FFCC00)](https://github.com/Zaycev779/reasy-state/actions)
-[![Build Size](https://img.shields.io/bundlephobia/minzip/reasy-state?label=bundle%20size&style=flat&colorA=0066CC&colorB=FFCC00)](https://bundlephobia.com/result?p=reasy-state)
+[![Build Size](https://img.shields.io/bundlephobia/minzip/reasy-state?cacheSeconds=3600&label=bundle%20size&style=flat&colorA=0066CC&colorB=FFCC00)](https://bundlephobia.com/result?p=reasy-state)
 [![Version](https://img.shields.io/npm/v/reasy-state?style=flat&colorA=0066CC&colorB=FFCC00)](https://www.npmjs.com/package/reasy-state)
 [![Downloads](https://img.shields.io/npm/dt/reasy-state.svg?style=flat&colorA=0066CC&colorB=FFCC00)](https://www.npmjs.com/package/reasy-state)
 

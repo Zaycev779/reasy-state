@@ -441,3 +441,48 @@ it("primitive array store", async () => {
 
     expect(renderCounts).toBe(2);
 });
+
+it("primitive array store 2", async () => {
+    type Store = number[];
+
+    const arrayStore = createState<Store>()();
+
+    let renderCounts = 0;
+    function Page() {
+        const value = arrayStore.use();
+        renderCounts++;
+        return <div>array: {value?.join(",") ?? "-"}</div>;
+    }
+
+    function Button() {
+        return (
+            <button
+                onClick={() =>
+                    arrayStore.set((prev) => [
+                        ...(prev || []),
+                        prev?.[(prev?.length ?? 1) - 1] ?? 0 + 1,
+                    ])
+                }
+            >
+                button
+            </button>
+        );
+    }
+
+    const { getByText, findByText } = render(
+        <>
+            <Page />
+            <Button />
+        </>,
+    );
+
+    expect(renderCounts).toBe(1);
+
+    await findByText("array: -");
+
+    fireEvent.click(getByText("button"));
+
+    await findByText("array: 1");
+
+    expect(renderCounts).toBe(2);
+});
