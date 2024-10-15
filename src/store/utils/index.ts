@@ -13,7 +13,7 @@ export const pathToString = (path: string[]) => path.join("");
 export const getRootPaths = (paths: string[]) =>
     paths.reduce(
         (prev, val, idx) =>
-            prev.concat([((prev && prev[idx - 1]) || []).concat(val)]),
+            concat(prev, [concat((prev && prev[idx - 1]) || [], val)]),
         [] as string[][],
     );
 
@@ -25,7 +25,7 @@ export const getUpdatedPaths = <T extends IStore>(
 ) => {
     if (isObject(updatedParams)) {
         for (const key in assign({}, prevValues || {}, updatedParams)) {
-            const propName = paths ? paths.concat(key) : [key];
+            const propName = paths ? concat(paths, key) : [key];
             if (key === Mutators) {
                 continue;
             }
@@ -42,11 +42,25 @@ export const getUpdatedPaths = <T extends IStore>(
                 }
             }
         }
-        return [paths].concat(res);
+        return concat([paths], res);
     }
 
     return prevValues !== updatedParams ? [paths] : [];
 };
+
+export const getAdditionalPaths = (
+    paths: string[],
+    filter = isArrayPathName,
+    type = 1,
+) =>
+    entries(getMap())
+        .filter(
+            (entry) =>
+                pathToString(entry[1]).startsWith(pathToString(paths)) &&
+                entry[1].length > paths.length &&
+                filter(entry[type]),
+        )
+        .map((entrie) => entrie[type]);
 
 export const isObject = (value: any) =>
     value && typeof value === "object" && !Array.isArray(value);
@@ -62,13 +76,17 @@ const mutate =
     (type: StorageType, val: any) => (fn: Record<StorageType, any>) =>
         fn[type](val);
 
-type TMergeArgs = [Maybe<StorageType>, ...any];
-
 export const createCopy = (value: any) =>
     isDefaultObject(value) ? mergeDeep(undefined, {}, value) : value;
 
-export function mergeDeep(...args: TMergeArgs): any {
-    const [type, target, ...sources] = args as TMergeArgs;
+export const concat = (target: any[] | string, ...arrays: any): any =>
+    target.concat(...arrays);
+
+export const mergeDeep = (
+    type: Maybe<StorageType>,
+    target: any,
+    ...sources: any
+): any => {
     if (!sources.length) return target;
     const source = sources.shift();
 
@@ -83,11 +101,7 @@ export function mergeDeep(...args: TMergeArgs): any {
                             ? target[key](mutate(type, source[key]))
                             : source[key];
                 } else {
-                    Reflect.apply(mergeDeep, null, [
-                        type,
-                        target[key],
-                        source[key],
-                    ]);
+                    mergeDeep(type, target[key], source[key]);
                 }
             } else {
                 assign(target, {
@@ -99,25 +113,11 @@ export function mergeDeep(...args: TMergeArgs): any {
             }
         }
     }
-    return Reflect.apply(mergeDeep, null, [type, target].concat(sources));
-}
+    return mergeDeep(type, target, ...sources);
+};
 
-export const getAdditionalPaths = (
-    paths: string[],
-    filter: Function,
-    type = 1,
-) =>
-    entries(getMap())
-        .filter(
-            (entry) =>
-                pathToString(entry[1]).startsWith(pathToString(paths)) &&
-                entry[1].length > paths.length &&
-                filter(entry[type]),
-        )
-        .map((entrie) => entrie[type]);
-
-export const getAdditionalKeys = (paths: string[], filter: Function) =>
-    getAdditionalPaths(paths, filter, 0) as string[];
+export const getAdditionalKeys = (paths: string[]) =>
+    getAdditionalPaths(paths, isOptionalPathName, 0) as string[];
 
 export const createNewArrayValues = (
     keys: string[],
@@ -152,8 +152,8 @@ export const findPathArrayIndex = (array?: string[]) =>
 
 export const isAFunction = (value: any) => typeof value === "function";
 
-export const getParams = (params: any, prev: any) =>
-    isAFunction(params) ? params(prev) : params;
+export const getParams = (params: any, ...args: any[]) =>
+    isAFunction(params) ? params(...args) : params;
 
 export const stringify = (value: any) => {
     try {

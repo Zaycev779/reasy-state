@@ -12,12 +12,7 @@ import {
 import { useEvent } from "./use-event.hook";
 import { getMapByKey } from "../maps/utils";
 
-interface IProps {
-    mapKey: string;
-    filterFunc?: any;
-}
-
-export const useStoreVal = ({ filterFunc, mapKey }: IProps) => {
+export const useStoreVal = (mapKey: string, filterFunc?: any) => {
     const [path, setPath] = useState<string[]>(getMapByKey(mapKey));
     const getState = (newPath?: string[]) =>
         getGlobalData(newPath || path, true, filterFunc);
@@ -32,41 +27,32 @@ export const useStoreVal = ({ filterFunc, mapKey }: IProps) => {
         }
     };
 
-    useEvent<{
-        params: IStore;
-    }>({
-        type: path && PUSH_EV_NAME + pathToString(path),
-        onChange: ({ params }) => {
+    useEvent<{ p: IStore }>(
+        path && PUSH_EV_NAME + pathToString(path),
+        ({ p }) => {
             const sliceIdx = findPathArrayIndex(path);
-            if (sliceIdx >= 0) {
-                if (!Array.isArray(params)) return setState(params);
-                const additionalPaths = path.slice(sliceIdx + 1);
-                const filteredValue = isAFunction(filterFunc)
-                    ? params.filter(filterFunc)
-                    : params;
-                const vals = additionalPaths.reduce(
-                    (prev, key) => prev.map((val) => val[key]),
-                    filteredValue,
+            if (sliceIdx < 0 || !Array.isArray(p)) _setState(createCopy(p));
+            else {
+                _setState(
+                    path
+                        .slice(sliceIdx + 1)
+                        .reduce(
+                            (prev, key) => prev.map((val) => val[key]),
+                            isAFunction(filterFunc) ? p.filter(filterFunc) : p,
+                        ),
                 );
-                _setState(vals);
-                return;
             }
-
-            _setState(createCopy(params));
         },
-        onChangeType: () => _setState(getState()),
-    });
+        () => _setState(getState()),
+    );
 
     useEvent<{
-        path: string[];
-    }>({
-        type: mapKey && PATH_MAP_EV_NAME + mapKey,
-        onChange: ({ path }) => {
-            if (path) {
-                setPath(path);
-                _setState(getState(path));
-            }
-        },
+        p: string[];
+    }>(mapKey && PATH_MAP_EV_NAME + mapKey, ({ p }) => {
+        if (p) {
+            setPath(p);
+            _setState(getState(p));
+        }
     });
 
     return state;

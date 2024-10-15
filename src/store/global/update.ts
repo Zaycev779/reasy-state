@@ -10,7 +10,6 @@ import {
     getAdditionalKeys,
     getParams,
     isObject,
-    isOptionalPathName,
     mergeDeep,
 } from "../utils";
 
@@ -45,7 +44,7 @@ export const updateStore = <T>(
             : updatedParams,
     );
 
-    const updatePathKeys = getAdditionalKeys(path, isOptionalPathName);
+    const updatePathKeys = getAdditionalKeys(path);
 
     updatePathKeys.forEach((mapKey) => {
         const prevPath = getMapByKey(mapKey);

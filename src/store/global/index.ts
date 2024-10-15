@@ -4,7 +4,7 @@ declare global {
     namespace EStorage {
         let store: Record<string, any>;
         let map: Record<string, string[]>;
-        let storeId: number;
+        let id: number;
         const mapId: WeakMap<object, number>;
     }
 }
@@ -12,7 +12,7 @@ declare global {
 const storageInitial = () => ({
     store: {},
     map: {},
-    storeId: 0,
+    id: 0,
     mapId: new WeakMap(),
 });
 
