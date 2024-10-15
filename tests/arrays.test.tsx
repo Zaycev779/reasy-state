@@ -296,3 +296,148 @@ it("create store with optional store array", async () => {
     set$store$obj$array2([{ id2: 2 }]);
     expect(get$store$obj$array2$id2()).toStrictEqual([2]);
 });
+
+it("create store with primitive array", async () => {
+    const { useStoreArray, setStoreArray } = createState({
+        store: {
+            array: [1],
+        },
+    });
+
+    let renderCounts = 0;
+    function Page() {
+        const value = useStoreArray();
+        renderCounts++;
+        return <div>array: {value.join(",")}</div>;
+    }
+
+    function Button() {
+        return (
+            <button
+                onClick={() =>
+                    setStoreArray((prev) => [
+                        ...prev,
+                        prev[prev.length - 1] + 1,
+                    ])
+                }
+            >
+                button
+            </button>
+        );
+    }
+
+    const { getByText, findByText } = render(
+        <>
+            <Page />
+            <Button />
+        </>,
+    );
+
+    expect(renderCounts).toBe(1);
+
+    await findByText("array: 1");
+
+    fireEvent.click(getByText("button"));
+
+    await findByText("array: 1,2");
+
+    expect(renderCounts).toBe(2);
+});
+
+it("create store with primitive optional array", async () => {
+    type Store = {
+        store: {
+            array?: number[];
+        };
+    };
+
+    const { setStore$array, useStore$array } = createState<Store>({
+        store: {},
+    });
+
+    let renderCounts = 0;
+    function Page() {
+        const value = useStore$array();
+        renderCounts++;
+        return <div>array: {value?.join(",") ?? "-"}</div>;
+    }
+
+    function Button() {
+        return (
+            <button
+                onClick={() =>
+                    setStore$array((prev) => [
+                        ...(prev || []),
+                        prev?.[(prev?.length ?? 1) - 1] ?? 0 + 1,
+                    ])
+                }
+            >
+                button
+            </button>
+        );
+    }
+
+    const { getByText, findByText } = render(
+        <>
+            <Page />
+            <Button />
+        </>,
+    );
+
+    expect(renderCounts).toBe(1);
+
+    await findByText("array: -");
+
+    fireEvent.click(getByText("button"));
+
+    await findByText("array: 1");
+
+    expect(renderCounts).toBe(2);
+});
+
+it("primitive array store", async () => {
+    type Store = {
+        array?: number[];
+    };
+
+    const { set$array, use$array } = createState<Store>()();
+
+    let renderCounts = 0;
+    function Page() {
+        const value = use$array();
+        renderCounts++;
+        return <div>array: {value?.join(",") ?? "-"}</div>;
+    }
+
+    function Button() {
+        return (
+            <button
+                onClick={() =>
+                    set$array((prev) => [
+                        ...(prev || []),
+                        prev?.[(prev?.length ?? 1) - 1] ?? 0 + 1,
+                    ])
+                }
+            >
+                button
+            </button>
+        );
+    }
+
+    const { getByText, findByText } = render(
+        <>
+            <Page />
+            <Button />
+        </>,
+    );
+
+    expect(renderCounts).toBe(1);
+
+    await findByText("array: -");
+
+    fireEvent.click(getByText("button"));
+
+    await findByText("array: 1");
+
+    expect(renderCounts).toBe(2);
+});
