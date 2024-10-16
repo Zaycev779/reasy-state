@@ -14,7 +14,7 @@ type EscapeArrayKey<TKey extends string> =
         ? never
         : TKey extends `${infer TKeyBefore}$[${bigint}]${infer TKeyAfter}`
         ? TKeyBefore extends `${infer X}[]${infer Y}`
-            ? never // TODO flatten arrays
+            ? EscapeArrayKey<`${TKeyBefore}${TKeyAfter}`>
             : EscapeArrayKey<`${TKeyBefore}[]${TKeyAfter}`>
         : TKey;
 

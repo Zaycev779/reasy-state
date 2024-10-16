@@ -87,7 +87,7 @@ it("create storage store", async () => {
 
     expect(getItemSpy).toHaveBeenCalledWith(LOCAL_STORAGE_KEY);
 
-    EStorage.store["#storage_test"] = undefined;
+    //    EStorage.store["#storage_test"] = undefined;
 });
 
 it("load storage store", async () => {
@@ -228,7 +228,7 @@ it("create storage store mutators", async () => {
     );
     expect(getItemSpy).toHaveBeenCalledWith(LOCAL_STORAGE_KEY_MUT);
 
-    EStorage.store["#storage_mut"] = undefined;
+    //    EStorage.store["#storage_mut"] = undefined;
 });
 
 it("create storage store mutators", async () => {

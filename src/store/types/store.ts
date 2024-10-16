@@ -174,7 +174,7 @@ type FuncGet<T, P extends keyof T> = IsArray<
         ? (
               arg?: A,
           ) =>
-              | D[]
+              | (D extends any[] ? D : D[])
               | (P extends `${string}$${string}[]${string}` ? undefined : never)
         : never,
     () => T[P]

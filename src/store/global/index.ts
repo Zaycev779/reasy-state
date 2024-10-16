@@ -1,25 +1,13 @@
-import { isClient } from "../utils/client";
+type Storage = {
+    store: Record<string, any>;
+    map: Record<string, string[]>;
+    id: number;
+    mapId: WeakMap<object, number>;
+};
 
-declare global {
-    namespace EStorage {
-        let store: Record<string, any>;
-        let map: Record<string, string[]>;
-        let id: number;
-        const mapId: WeakMap<object, number>;
-    }
-}
-
-const storageInitial = () => ({
+export const Storage: Storage = {
     store: {},
     map: {},
     id: 0,
     mapId: new WeakMap(),
-});
-
-if (!("EStorage" in globalThis)) {
-    globalThis.EStorage = storageInitial();
-}
-
-export const Storage = isClient
-    ? EStorage
-    : (storageInitial() as typeof EStorage);
+};

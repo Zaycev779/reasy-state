@@ -68,10 +68,9 @@ export const createStateFn = <T extends IStore<T>>(
     }
     const storageValues = storageAction(StorageType.G, options, initialValues);
 
-    if (!getGlobalData([storeId])) {
-        updateGlobalData([storeId], storageValues || initialValues);
-        generateStaticPathsMap(getGlobalData([storeId]), storeId);
-    }
+    updateGlobalData([storeId], storageValues || initialValues);
+    generateStaticPathsMap(storeId);
+
     const gen = generateMutators(storeId, initialValues || {}, options);
     const handler = {
         get(target: any, name: string): any {
