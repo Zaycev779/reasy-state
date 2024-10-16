@@ -26,9 +26,6 @@ export const getUpdatedPaths = <T extends IStore>(
     if (isObject(updatedParams)) {
         for (const key in assign({}, prevValues || {}, updatedParams)) {
             const propName = paths ? concat(paths, key) : [key];
-            if (key === Mutators) {
-                continue;
-            }
             if (isObject(updatedParams[key])) {
                 const updated = createCopy(updatedParams[key]);
                 const prev = createCopy(prevValues[key] || {});
@@ -63,7 +60,9 @@ export const getAdditionalPaths = (
         .map((entrie) => entrie[type]);
 
 export const isObject = (value: any) =>
-    value && typeof value === "object" && !Array.isArray(value);
+    value && typeof value === "object" && !isArray(value);
+
+export const isArray = (value: any) => Array.isArray(value);
 
 const getPrototypeOf = Object.getPrototypeOf;
 
@@ -126,8 +125,8 @@ export const createNewArrayValues = (
     filterFunc?: Function,
 ) => {
     const l = keys.length - 1;
-    if (Array.isArray(prev) && l >= 0) {
-        return prev.map((_prevVal) => {
+    if (isArray(prev) && l >= 0) {
+        return prev.map((_prevVal: any) => {
             const prevVal = createCopy(_prevVal);
             if (isAFunction(filterFunc) && !filterFunc!(prevVal)) {
                 return prevVal;
@@ -154,6 +153,9 @@ export const isAFunction = (value: any) => typeof value === "function";
 
 export const getParams = (params: any, ...args: any[]) =>
     isAFunction(params) ? params(...args) : params;
+
+export const getFiltred = (params: any, filterFunc: any) =>
+    isAFunction(filterFunc) ? params.filter(filterFunc) : params;
 
 export const stringify = (value: any) => {
     try {
@@ -182,9 +184,6 @@ export const assign = Object.assign;
 export const entries = Object.entries;
 
 export const values = Object.values;
-
-export const isNotMutator = (keyName: string) =>
-    keyName !== capitalizeName(Mutators);
 
 export const isArrayPathName = (name: string | string[]) =>
     name.includes(ArrayMapKey);

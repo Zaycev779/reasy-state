@@ -4,13 +4,11 @@ import { IStore, Options, UpdateType } from "./types/store";
 import {
     assign,
     capitalizeKeysToString,
-    capitalizeName,
     concat,
     entries,
     getParams,
-    isAFunction,
     isDefaultObject,
-    isNotMutator,
+    Mutators,
 } from "./utils";
 
 const reduceMutators = <T extends IStore<T>>(
@@ -29,15 +27,15 @@ export const generateMutators = <T extends IStore<T>>(
     prevKey: string[] = [],
 ): any =>
     reduceMutators(values, (key, val) =>
-        isNotMutator(capitalizeName(key))
-            ? isDefaultObject(val) &&
+        key === Mutators
+            ? createMutators(val, prevKey, concat([storeId], prevKey), options)
+            : isDefaultObject(val) &&
               generateMutators<IStore<T>>(
                   storeId,
                   val,
                   options,
                   concat(prevKey, key),
-              )
-            : createMutators(val, prevKey, concat([storeId], prevKey), options),
+              ),
     );
 
 export const createMutators = (
@@ -46,7 +44,6 @@ export const createMutators = (
     storePath: string[],
     options?: Options<any>,
 ) => {
-    const pathName = path[0] + capitalizeKeysToString(path.slice(1));
     const get = () => getGlobalData(storePath);
     const set = (arg: any, type: UpdateType = UpdateType.S) => {
         updateStore(storePath, getParams(arg, get()), options, type);
@@ -55,7 +52,7 @@ export const createMutators = (
     const patch = (arg: any) => set(arg, UpdateType.P);
 
     return reduceMutators(values, (key, val) => ({
-        [pathName + capitalizeName(key)]: (...args: any) => {
+        [capitalizeKeysToString(concat(path, key), true)]: (...args: any) => {
             const fn = val({ set, get, patch }, get());
             return getParams(fn, ...args);
         },

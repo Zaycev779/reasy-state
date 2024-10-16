@@ -4,8 +4,8 @@ import {
     capitalizeName,
     concat,
     entries,
+    isArray,
     isDefaultObject,
-    isNotMutator,
     isOptionalPathName,
     OptionalKey,
     SignRegExp,
@@ -13,19 +13,17 @@ import {
 import { getMapByKey, setMap } from "./utils";
 
 export const generateStaticPathsMap = (
-    data: any,
     path: string,
     prevPath: string[] = [path],
+    data = getGlobalData(prevPath),
 ): any => {
     const pathName = capitalizeName(path);
     if (isDefaultObject(data)) {
-        entries(data).forEach(([name, val]) => {
+        for (const name in data) {
             const keyName = pathName + capitalizeName(name);
-            if (isNotMutator(keyName)) {
-                setMap(keyName, prevPath);
-                generateStaticPathsMap(val, keyName, concat(prevPath, name));
-            }
-        });
+            setMap(keyName, prevPath);
+            generateStaticPathsMap(keyName, concat(prevPath, name), data[name]);
+        }
     }
 
     setMap(pathName, prevPath);
@@ -43,7 +41,7 @@ export const patchToGlobalMap = (
     const staticFromMap = staticPath || getMapByKey(staticName) || [];
     const length = additionalKeys.length;
 
-    if (Array.isArray(getGlobalData(concat(staticFromMap, prevPath)))) {
+    if (isArray(getGlobalData(concat(staticFromMap, prevPath)))) {
         setMap(
             baseMap,
             concat(
@@ -54,6 +52,7 @@ export const patchToGlobalMap = (
                 length ? additionalKeys : [],
             ),
         );
+
         return;
     }
     setMap(baseMap, concat(staticFromMap, prevPath, firstKey));

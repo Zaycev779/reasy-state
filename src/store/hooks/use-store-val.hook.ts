@@ -6,7 +6,9 @@ import {
     createCopy,
     diffValuesBoolean,
     findPathArrayIndex,
+    getFiltred,
     isAFunction,
+    isArray,
     pathToString,
 } from "../utils";
 import { useEvent } from "./use-event.hook";
@@ -31,14 +33,14 @@ export const useStoreVal = (mapKey: string, filterFunc?: any) => {
         path && PUSH_EV_NAME + pathToString(path),
         ({ p }) => {
             const sliceIdx = findPathArrayIndex(path);
-            if (sliceIdx < 0 || !Array.isArray(p)) _setState(createCopy(p));
+            if (sliceIdx < 0 || !isArray(p)) _setState(createCopy(p));
             else {
                 _setState(
                     path
                         .slice(sliceIdx + 1)
                         .reduce(
-                            (prev, key) => prev.map((val) => val[key]),
-                            isAFunction(filterFunc) ? p.filter(filterFunc) : p,
+                            (prev, key) => prev.flatMap((val: any) => val[key]),
+                            getFiltred(p, filterFunc),
                         ),
                 );
             }

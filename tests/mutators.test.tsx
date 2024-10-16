@@ -248,3 +248,41 @@ it("create optional mutators", async () => {
     expect(renderCounts1).toBe(3);
     expect(renderCounts2).toBe(3);
 });
+
+it("create root mutators", async () => {
+    type State = {
+        store: {
+            value: number;
+        };
+    };
+    const { useStoreValue, inc, getStore } = createState<State>()({
+        store: {
+            value: 1,
+        },
+        mutators: {
+            inc: ({ set, get }, { store: { value } }) =>
+                set({ store: { value: value + 1 } }),
+        },
+    });
+
+    function Page() {
+        const value = useStoreValue();
+        return <div>value: {value}</div>;
+    }
+
+    function Button() {
+        return <button onClick={() => inc()}>inc</button>;
+    }
+
+    const { getByText, findByText } = render(
+        <>
+            <Page />
+            <Button />
+        </>,
+    );
+
+    await findByText("value: 1");
+
+    fireEvent.click(getByText("inc"));
+    await findByText("value: 2");
+});

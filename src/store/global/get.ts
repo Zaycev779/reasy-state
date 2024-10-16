@@ -1,6 +1,5 @@
 import { Storage } from "./index";
-import { IStore } from "../types/store";
-import { isArrayPathName } from "../utils";
+import { getFiltred, isArray, isArrayPathName } from "../utils";
 
 export const getGlobalBySrc = (path: string[], storeId: string, src: any) =>
     getGlobalData(path, true, undefined, {
@@ -12,42 +11,32 @@ export const getGlobalData = (
     forArray?: boolean,
     filterFunc?: () => void,
     src = Storage.store,
-) =>
-    path
-        ? (path.reduce(
-              (prev, rec, idx) => {
-                  if (prev.s) {
-                      return prev;
-                  }
-                  const { e } = prev;
-                  const isArray = Array.isArray(e);
-                  if (isArrayPathName(rec) || isArray) {
-                      if (forArray) {
-                          const additionalPaths = path.slice(idx + 1);
-                          const filterValue = filterFunc
-                              ? isArray && e.filter(filterFunc)
-                              : e;
-                          return {
-                              e:
-                                  filterValue &&
-                                  filterValue.map(
-                                      (e: any) =>
-                                          additionalPaths &&
-                                          additionalPaths.reduce(
-                                              (prev, key) => prev && prev[key],
-                                              e,
-                                          ),
-                                  ),
-                              s: true,
-                          };
-                      }
-                      return {
-                          e,
-                          s: true,
-                      };
-                  }
-                  return { e: e && e[rec] };
-              },
-              { e: src } as { e?: Record<string, any>; s?: boolean },
-          ).e as Partial<IStore>)
-        : {};
+) => {
+    if (!path) return {};
+    for (let i = 0; i < path.length; i++) {
+        if (isArrayPathName(path[i])) {
+            if (forArray) {
+                src =
+                    isArray(src) &&
+                    arrayPathReduce(getFiltred(src, filterFunc), path, i + 1);
+            }
+            break;
+        }
+        src = src && src[path[i]];
+    }
+    return src;
+};
+
+const arrayPathReduce = (value: any[], path: string[], index: number): any =>
+    value.flatMap((e: any) =>
+        path
+            .slice(index)
+            .reduce(
+                (prev, key, idx) =>
+                    prev &&
+                    (isArray(prev)
+                        ? arrayPathReduce(prev, path, index + idx)
+                        : prev[key]),
+                e,
+            ),
+    );
