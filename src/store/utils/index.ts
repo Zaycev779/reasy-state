@@ -4,9 +4,9 @@ import { IStore, StorageType } from "../types/store";
 
 export type updatedParams = string | updatedParams[];
 export const Mutators = "mutators";
-export const SignRegExp = /[\s$]+/;
 export const ArrayMapKey = "[]";
 export const OptionalKey = "$";
+export const signSplit = (value: string) => value.split(/[\s$]+/);
 
 export const pathToString = (path: string[]) => path.join("");
 
@@ -174,16 +174,14 @@ export const diffValuesBoolean = (prevObject: any, newObject: any) =>
 export const capitalizeName = (name: string) =>
     name.charAt(0).toUpperCase() + name.slice(1);
 
-export const capitalizeKeysToString = (arr: string[], ignoreFirst?: boolean) =>
-    pathToString(
-        arr.map((k, i) => (!i && ignoreFirst ? k : capitalizeName(k))),
-    );
+export const capitalizeKeysToString = (arr: string[]) =>
+    pathToString(arr.map((k) => capitalizeName(k)));
 
 export const assign = Object.assign;
 
 export const entries = Object.entries;
 
-export const values = Object.values;
+//export const values = Object.values;
 
 export const isArrayPathName = (name: string | string[]) =>
     name.includes(ArrayMapKey);

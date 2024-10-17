@@ -52,7 +52,7 @@ export const createMutators = (
     const patch = (arg: any) => set(arg, UpdateType.P);
 
     return reduceMutators(values, (key, val) => ({
-        [capitalizeKeysToString(concat(path, key), true)]: (...args: any) => {
+        [capitalizeKeysToString(concat(path, key))]: (...args: any) => {
             const fn = val({ set, get, patch }, get());
             return getParams(fn, ...args);
         },

@@ -3,12 +3,11 @@ import {
     ArrayMapKey,
     capitalizeName,
     concat,
-    entries,
     isArray,
     isDefaultObject,
     isOptionalPathName,
     OptionalKey,
-    SignRegExp,
+    signSplit,
 } from "../utils";
 import { getMapByKey, setMap } from "./utils";
 
@@ -36,7 +35,7 @@ export const patchToGlobalMap = (
     prevPath: string[] = [],
 ) => {
     if (!isOptionalPathName(mapKey)) return;
-    const [staticName, firstKey, ...additionalKeys] = mapKey.split(SignRegExp);
+    const [staticName, firstKey, ...additionalKeys] = signSplit(mapKey);
 
     const staticFromMap = staticPath || getMapByKey(staticName) || [];
     const length = additionalKeys.length;

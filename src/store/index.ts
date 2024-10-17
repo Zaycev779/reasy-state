@@ -23,20 +23,14 @@ import {
     concat,
     createNewArrayValues,
     findPathArrayIndex,
-    OptionalKey,
     pathToString,
-    SignRegExp,
-    values,
+    signSplit,
 } from "./utils";
 import { updateGlobalData, updateStore } from "./global/update";
 import { generateId } from "./global/generate-id";
 import { isClient } from "./utils/client";
 
 const SSRType = "_" + GeneratedType.SR.toLowerCase();
-const generatedTypes = concat(
-    values(GeneratedType),
-    SSRType,
-) as GeneratedType[];
 
 export function createState<T extends IStore<T>>(
     params: T,
@@ -71,28 +65,19 @@ export const createStateFn = <T extends IStore<T>>(
     updateGlobalData([storeId], storageValues || initialValues);
     generateStaticPathsMap(storeId);
 
-    const gen = generateMutators(storeId, initialValues || {}, options);
     const handler = {
         get(target: any, name: string): any {
+            if (name === "ssr") return new Proxy({}, handler);
+
             const [type, ...functionName] = name
                 .replace(GeneratedType.SR, SSRType)
                 .split(/(?=[A-Z$])/);
-            if (type === "ssr") return new Proxy({}, handler);
+
+            const splitName = capitalizeKeysToString(signSplit(name));
+            if (splitName in target) return target[splitName];
 
             const mapKey = concat(storeId, pathToString(functionName));
-
-            const splitName = capitalizeKeysToString(
-                name.slice(+(name[0] === OptionalKey)).split(SignRegExp),
-                true,
-            );
-
-            if (splitName in target) {
-                return target[splitName];
-            }
-
-            if (generatedTypes.some((val) => val.includes(type))) {
-                patchToGlobalMap(mapKey);
-            }
+            patchToGlobalMap(mapKey);
 
             switch (type) {
                 case SSRType:
@@ -167,5 +152,8 @@ export const createStateFn = <T extends IStore<T>>(
             }
         },
     };
-    return new Proxy(gen, handler);
+    return new Proxy(
+        generateMutators(storeId, initialValues || {}, options),
+        handler,
+    );
 };
