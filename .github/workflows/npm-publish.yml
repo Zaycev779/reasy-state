@@ -28,6 +28,7 @@ jobs:
         with:
           node-version: 18
           registry-url: "https://registry.npmjs.com/"
+          cache: 'npm'
       - run: npm ci
       - run: npm run build --if-present
       - run: npm prune --production
