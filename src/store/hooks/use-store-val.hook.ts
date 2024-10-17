@@ -1,4 +1,3 @@
-import { useRef, useState } from "react";
 import { getGlobalData } from "../global/get";
 import { IStore } from "../types/store";
 import { PATH_MAP_EV_NAME, PUSH_EV_NAME } from "../events";
@@ -7,12 +6,12 @@ import {
     diffValuesBoolean,
     findPathArrayIndex,
     getFiltred,
-    isAFunction,
     isArray,
     pathToString,
 } from "../utils";
 import { useEvent } from "./use-event.hook";
 import { getMapByKey } from "../maps/utils";
+import { useRef, useState } from "../utils/client";
 
 export const useStoreVal = (mapKey: string, filterFunc?: any) => {
     const [path, setPath] = useState<string[]>(getMapByKey(mapKey));

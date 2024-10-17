@@ -1,6 +1,5 @@
-import { KeyCapitalize, ValueOf } from "./index";
+import { KeyCapitalize } from "./index";
 import { Flatten } from "./flatten";
-import { ReactNode } from "react";
 
 export enum UpdateType {
     S = "set",

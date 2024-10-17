@@ -1,4 +1,3 @@
-import { useLayoutEffect } from "react";
 import { getGlobalBySrc, getGlobalData } from "./global/get";
 import { useStoreVal } from "./hooks/use-store-val.hook";
 import { generateStaticPathsMap, patchToGlobalMap } from "./maps/maps";
@@ -28,7 +27,7 @@ import {
 } from "./utils";
 import { updateGlobalData, updateStore } from "./global/update";
 import { generateId } from "./global/generate-id";
-import { isClient } from "./utils/client";
+import { isClient, useLayoutEffect } from "./utils/client";
 
 const SSRType = "_" + GeneratedType.SR.toLowerCase();
 
@@ -41,7 +40,7 @@ export function createState<T extends IStore<T>>(): {
         params?: U,
         options?: Options<U & T>,
     ): IGenerate<
-        CreateResult<U>,
+        CreateResult<IStore<U> extends U ? U : T>,
         CreateResult<IsUndefined<U, keyof U, Partial<T>, T>>
     >;
 };

@@ -81,6 +81,9 @@ export const createCopy = (value: any) =>
 export const concat = (target: any[] | string, ...arrays: any): any =>
     target.concat(...arrays);
 
+const mergeMutate = (type: Maybe<StorageType>, target: any, source: any) =>
+    type && isAFunction(target) ? target(mutate(type, source)) : source;
+
 export const mergeDeep = (
     type: Maybe<StorageType>,
     target: any,
@@ -95,22 +98,18 @@ export const mergeDeep = (
             if (isObject(source[key])) {
                 if (!target[key]) assign(target, { [key]: {} });
                 if (!isDefaultObject(source[key])) {
-                    target[key] =
-                        type && isAFunction(target[key])
-                            ? target[key](mutate(type, source[key]))
-                            : source[key];
+                    target[key] = mergeMutate(type, target[key], source[key]);
                 } else {
                     mergeDeep(type, target[key], source[key]);
                 }
             } else {
                 assign(target, {
-                    [key]:
-                        type && isAFunction(target[key])
-                            ? target[key](mutate(type, source[key]))
-                            : source[key],
+                    [key]: mergeMutate(type, target[key], source[key]),
                 });
             }
         }
+    } else {
+        target = mergeMutate(type, target, source);
     }
     return mergeDeep(type, target, ...sources);
 };
@@ -180,8 +179,6 @@ export const capitalizeKeysToString = (arr: string[]) =>
 export const assign = Object.assign;
 
 export const entries = Object.entries;
-
-//export const values = Object.values;
 
 export const isArrayPathName = (name: string | string[]) =>
     name.includes(ArrayMapKey);
