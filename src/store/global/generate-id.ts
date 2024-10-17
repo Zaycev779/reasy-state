@@ -1,5 +1,5 @@
 import { Storage } from "./index";
-import { concat, isObject } from "../utils";
+import { isObject } from "../utils";
 
 export const generateId = (object: any, key?: string) => {
     if (key) return ("#" + key).replace(/[$]/g, "#");

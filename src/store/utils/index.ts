@@ -124,6 +124,7 @@ export const createNewArrayValues = (
     filterFunc?: Function,
 ) => {
     const l = keys.length - 1;
+
     if (isArray(prev) && l >= 0) {
         return prev.map((_prevVal: any) => {
             const prevVal = createCopy(_prevVal);
@@ -174,7 +175,7 @@ export const capitalizeName = (name: string) =>
     name.charAt(0).toUpperCase() + name.slice(1);
 
 export const capitalizeKeysToString = (arr: string[]) =>
-    pathToString(arr.map((k) => capitalizeName(k)));
+    pathToString(arr.map(capitalizeName));
 
 export const assign = Object.assign;
 

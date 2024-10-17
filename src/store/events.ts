@@ -4,11 +4,12 @@ import { IStore } from "./types/store";
 import { getAdditionalPaths, getRootPaths, getUpdatedPaths } from "./utils";
 import { isClient } from "./utils/client";
 
-export const PUSH_EV_NAME = "__PUSH_EV";
-export const PATH_MAP_EV_NAME = "__PATH_EV";
+const ev = "_EV";
+export const PUSH_EV_NAME = "__PUSH" + ev;
+export const PATH_MAP_EV_NAME = "__PATH" + ev;
 
 export const _updatePathEvent = (pathMap: string, p: string[]) =>
-    sendEvent(PATH_MAP_EV_NAME + pathMap, { p });
+    sendEvent(PATH_MAP_EV_NAME + pathMap, p);
 
 export const _pushStoreValueEvent = <T extends IStore<T>>(
     paths: string[],
@@ -19,23 +20,21 @@ export const _pushStoreValueEvent = <T extends IStore<T>>(
         getUpdatedPaths(updatedParams, prevValues, paths),
         getAdditionalPaths(paths),
     ) as string[][];
+    const rest = concat(paths);
 
     if (updatePaths.length) {
-        const rest = concat(paths);
         rest.splice(-1);
         updatePaths.push(...getRootPaths(rest));
     }
     updatePaths.forEach((pathVal) =>
-        sendEvent(PUSH_EV_NAME + pathToString(pathVal), {
-            p: getGlobalData(pathVal),
-        }),
+        sendEvent(PUSH_EV_NAME + pathToString(pathVal), getGlobalData(pathVal)),
     );
 };
 
-const sendEvent = (route: string, detail: any) =>
+const sendEvent = (route: string, p: any) =>
     isClient &&
     document.dispatchEvent(
         new CustomEvent(route, {
-            detail,
+            detail: { p },
         }),
     );

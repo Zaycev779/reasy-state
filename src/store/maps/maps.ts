@@ -19,9 +19,12 @@ export const generateStaticPathsMap = (
     const pathName = capitalizeName(path);
     if (isDefaultObject(data)) {
         for (const name in data) {
-            const keyName = pathName + capitalizeName(name);
-            setMap(keyName, prevPath);
-            generateStaticPathsMap(keyName, concat(prevPath, name), data[name]);
+            setMap(pathName + capitalizeName(name), prevPath);
+            generateStaticPathsMap(
+                pathName + capitalizeName(name),
+                concat(prevPath, name),
+                data[name],
+            );
         }
     }
 

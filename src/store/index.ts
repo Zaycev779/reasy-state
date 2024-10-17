@@ -86,15 +86,16 @@ export const createStateFn = <T extends IStore<T>>(
                 case SSRType:
                     return ({ value }: any) => {
                         const basePath = getMapByKey(mapKey);
+                        const storage = getGlobalBySrc(
+                            basePath,
+                            storeId,
+                            storageValues,
+                        );
+
                         if (basePath) {
                             updateGlobalData(basePath, value);
                             useLayoutEffect(() => {
                                 if (options && options.storage) {
-                                    const storage = getGlobalBySrc(
-                                        basePath,
-                                        storeId,
-                                        storageValues,
-                                    );
                                     if (storage) {
                                         updateStore(
                                             basePath,
@@ -119,15 +120,13 @@ export const createStateFn = <T extends IStore<T>>(
                     return (filterFunc: FType, arrValue?: any) => {
                         const basePath = getMapByKey(mapKey);
                         if (!basePath) return;
+
+                        const sliceIdx = findPathArrayIndex(basePath);
+                        const additionalPaths = basePath.slice(sliceIdx + 1);
+                        const arrRootPath = basePath.slice(0, sliceIdx);
+
                         if (arrValue) {
-                            const sliceIdx = findPathArrayIndex(basePath);
-
                             if (sliceIdx >= 0) {
-                                const additionalPaths = basePath.slice(
-                                    sliceIdx + 1,
-                                );
-                                const arrRootPath = basePath.slice(0, sliceIdx);
-
                                 updateStore(
                                     arrRootPath,
                                     createNewArrayValues(
