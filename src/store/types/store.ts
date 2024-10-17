@@ -142,11 +142,7 @@ type IStaticRes<
 
 type IFn<T, U> = {
     [P in keyof T as T[P] extends Function
-        ? keyof U extends `$${P extends string ? string : never}`
-            ? T extends U
-                ? IsArray<P, never, Uncapitalize<P & string>>
-                : never
-            : IsArray<P, never, Uncapitalize<P & string>>
+        ? IsArray<P, never, Uncapitalize<P & string>>
         : never]: T[P];
 } & {
     [P in keyof U as P extends `${string | ""}$${string}`

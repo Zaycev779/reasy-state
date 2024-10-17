@@ -249,6 +249,124 @@ it("create optional mutators", async () => {
     expect(renderCounts2).toBe(3);
 });
 
+it("create optional mutators without types", async () => {
+    type UserStore3 = {
+        userStore3?: {
+            id: number;
+            name: string;
+            settings: {
+                notification: {
+                    message: boolean;
+                };
+                notification2: {
+                    message?: boolean;
+                };
+            };
+        };
+    };
+
+    const state3 = createState<UserStore3>()({
+        userStore3: {
+            id: 1,
+            name: "test",
+            settings: {
+                notification: {
+                    message: true,
+                    mutators: {
+                        switch: ({ set }) =>
+                            set(({ message }) => ({ message: !message })),
+                    },
+                },
+                notification2: {
+                    mutators: {
+                        switch: ({ set }) =>
+                            set(({ message }) => ({ message: !message })),
+                    },
+                },
+                mutators: {
+                    switch2: ({ set }) =>
+                        set(({ notification, notification2 }) => ({
+                            notification,
+                            notification2,
+                        })),
+                },
+            },
+        },
+    });
+
+    let renderCounts1 = 0;
+    let renderCounts2 = 0;
+
+    const {
+        use$userStore3$settings$notification2$message,
+        $userStore3$settings$notification2$switch,
+        $userStore3$settings$notification$switch,
+        use$userStore3$settings$notification$message,
+        reset,
+    } = state3;
+
+    const Test1 = () => {
+        const message = use$userStore3$settings$notification$message();
+        renderCounts1++;
+        return (
+            <>
+                <p>message1: {String(message)}</p>
+                <button
+                    onClick={() => $userStore3$settings$notification$switch()}
+                >
+                    button 1
+                </button>
+            </>
+        );
+    };
+
+    const Test2 = () => {
+        const message2 = use$userStore3$settings$notification2$message();
+        renderCounts2++;
+        return (
+            <>
+                <p>message2: {String(message2)}</p>
+                <button
+                    onClick={() => $userStore3$settings$notification2$switch()}
+                >
+                    button 2
+                </button>
+            </>
+        );
+    };
+
+    const { getByText, findByText } = render(
+        <>
+            <Test1 />
+            <Test2 />
+        </>,
+    );
+
+    expect(renderCounts1).toBe(1);
+    expect(renderCounts2).toBe(1);
+
+    await findByText("message1: true");
+    fireEvent.click(getByText("button 1"));
+    await findByText("message1: false");
+
+    expect(renderCounts1).toBe(2);
+    expect(renderCounts2).toBe(1);
+
+    await findByText("message2: undefined");
+    fireEvent.click(getByText("button 2"));
+    await findByText("message2: true");
+
+    expect(renderCounts1).toBe(2);
+    expect(renderCounts2).toBe(2);
+
+    act(() => reset());
+    await findByText("message1: true");
+    await findByText("message2: undefined");
+
+    expect(renderCounts1).toBe(3);
+    expect(renderCounts2).toBe(3);
+});
+
 it("create root mutators", async () => {
     type State = {
         store: {

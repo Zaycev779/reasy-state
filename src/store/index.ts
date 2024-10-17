@@ -40,7 +40,11 @@ export function createState<T extends IStore<T>>(): {
         params?: U,
         options?: Options<U & T>,
     ): IGenerate<
-        CreateResult<IStore<U> extends U ? U : T>,
+        CreateResult<
+            U extends { [K in string]: unknown }
+                ? IsUndefined<T, keyof T, Partial<U>, U>
+                : T
+        >,
         CreateResult<IsUndefined<U, keyof U, Partial<T>, T>>
     >;
 };

@@ -292,7 +292,6 @@ it("create storage arrays store mutators set", async () => {
     });
     act(() => set([1, 2, 3]));
     expect(get()).toStrictEqual([1, 2, 3]);
-    console.log(localStorage.getItem(LOCAL_STORAGE_KEY_ARR));
     expect(
         JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY_ARR) || "{}"),
     ).toStrictEqual([2, 3, 4]);
@@ -321,10 +320,10 @@ it("create storage arrays store mutators get", async () => {
     });
     expect(get()).toStrictEqual([3, 4, 5]);
 });
+const LOCAL_STORAGE_KEY_PRIMITIVE = "_res#str_test";
 
-it("create storage primitive store mutators", async () => {
-    type Type = string;
-    const { set, get } = createState<Type>()(undefined, {
+it("create storage primitive store mutators set", async () => {
+    const { set, get } = createState<string>()("", {
         key: "str_test",
         storage: {
             type: localStorage,
@@ -332,4 +331,32 @@ it("create storage primitive store mutators", async () => {
         },
     });
     act(() => set("test"));
+
+    expect(get()).toStrictEqual("test");
+    expect(
+        JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY_PRIMITIVE) || "{}"),
+    ).toStrictEqual("test+");
+
+    expect(setItemSpy).toHaveBeenCalledWith(
+        LOCAL_STORAGE_KEY_PRIMITIVE,
+        JSON.stringify("test+"),
+    );
+
+    getItemSpy.mockReturnValueOnce(JSON.stringify("test+"));
+    expect(getItemSpy).toHaveBeenCalledWith(LOCAL_STORAGE_KEY_PRIMITIVE);
+});
+
+it("create storage primitive store mutators get", async () => {
+    const { get } = createState<string>()("", {
+        key: "str_test",
+        storage: {
+            type: localStorage,
+            mutators: (m) =>
+                m({
+                    put: (p) => p,
+                    get: (p) => p + "-",
+                }),
+        },
+    });
+    expect(get()).toStrictEqual("test+-");
 });
