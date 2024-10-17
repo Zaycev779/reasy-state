@@ -43,6 +43,7 @@ export const storageAction = <T extends IStore<T>>(
                             getGlobalData([key]),
                         ),
                     );
+
                     if (toString) {
                         type.setItem(name, toString);
                     }

@@ -278,3 +278,85 @@ it("create storage store mutators", async () => {
     await findByText("date: Tue Jan 01 2002");
     unmount();
 });
+
+const LOCAL_STORAGE_KEY_ARR = "_res#arr_test";
+
+it("create storage arrays store mutators set", async () => {
+    type Type = Array<number>;
+    const { set, get } = createState<Type>()([], {
+        key: "arr_test",
+        storage: {
+            type: localStorage,
+            mutators: (m) => m({ put: (p) => p.map((n) => n + 1) }),
+        },
+    });
+    act(() => set([1, 2, 3]));
+    expect(get()).toStrictEqual([1, 2, 3]);
+    expect(
+        JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY_ARR) || "{}"),
+    ).toStrictEqual([2, 3, 4]);
+
+    expect(setItemSpy).toHaveBeenCalledWith(
+        LOCAL_STORAGE_KEY_ARR,
+        JSON.stringify([2, 3, 4]),
+    );
+
+    getItemSpy.mockReturnValueOnce(JSON.stringify([2, 3, 4]));
+    expect(getItemSpy).toHaveBeenCalledWith(LOCAL_STORAGE_KEY_ARR);
+});
+
+it("create storage arrays store mutators get", async () => {
+    type Type = Array<number>;
+    const { get } = createState<Type>()([], {
+        key: "arr_test",
+        storage: {
+            type: localStorage,
+            mutators: (m) =>
+                m({
+                    put: (p) => p.map((n) => n + 1),
+                    get: (p) => p.map((n) => n + 1),
+                }),
+        },
+    });
+    expect(get()).toStrictEqual([3, 4, 5]);
+});
+const LOCAL_STORAGE_KEY_PRIMITIVE = "_res#str_test";
+
+it("create storage primitive store mutators set", async () => {
+    const { set, get } = createState<string>()("", {
+        key: "str_test",
+        storage: {
+            type: localStorage,
+            mutators: (m) => m({ put: (p) => p.concat("+") }),
+        },
+    });
+    act(() => set("test"));
+
+    expect(get()).toStrictEqual("test");
+    expect(
+        JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY_PRIMITIVE) || "{}"),
+    ).toStrictEqual("test+");
+
+    expect(setItemSpy).toHaveBeenCalledWith(
+        LOCAL_STORAGE_KEY_PRIMITIVE,
+        JSON.stringify("test+"),
+    );
+
+    getItemSpy.mockReturnValueOnce(JSON.stringify("test+"));
+    expect(getItemSpy).toHaveBeenCalledWith(LOCAL_STORAGE_KEY_PRIMITIVE);
+});
+
+it("create storage primitive store mutators get", async () => {
+    const { get } = createState<string>()("", {
+        key: "str_test",
+        storage: {
+            type: localStorage,
+            mutators: (m) =>
+                m({
+                    put: (p) => p,
+                    get: (p) => p + "-",
+                }),
+        },
+    });
+    expect(get()).toStrictEqual("test+-");
+});

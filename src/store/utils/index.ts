@@ -4,9 +4,9 @@ import { IStore, StorageType } from "../types/store";
 
 export type updatedParams = string | updatedParams[];
 export const Mutators = "mutators";
-export const SignRegExp = /[\s$]+/;
 export const ArrayMapKey = "[]";
 export const OptionalKey = "$";
+export const signSplit = (value: string) => value.split(/[\s$]+/);
 
 export const pathToString = (path: string[]) => path.join("");
 
@@ -81,6 +81,9 @@ export const createCopy = (value: any) =>
 export const concat = (target: any[] | string, ...arrays: any): any =>
     target.concat(...arrays);
 
+const mergeMutate = (type: Maybe<StorageType>, target: any, source: any) =>
+    type && isAFunction(target) ? target(mutate(type, source)) : source;
+
 export const mergeDeep = (
     type: Maybe<StorageType>,
     target: any,
@@ -95,22 +98,18 @@ export const mergeDeep = (
             if (isObject(source[key])) {
                 if (!target[key]) assign(target, { [key]: {} });
                 if (!isDefaultObject(source[key])) {
-                    target[key] =
-                        type && isAFunction(target[key])
-                            ? target[key](mutate(type, source[key]))
-                            : source[key];
+                    target[key] = mergeMutate(type, target[key], source[key]);
                 } else {
                     mergeDeep(type, target[key], source[key]);
                 }
             } else {
                 assign(target, {
-                    [key]:
-                        type && isAFunction(target[key])
-                            ? target[key](mutate(type, source[key]))
-                            : source[key],
+                    [key]: mergeMutate(type, target[key], source[key]),
                 });
             }
         }
+    } else {
+        target = mergeMutate(type, target, source);
     }
     return mergeDeep(type, target, ...sources);
 };
@@ -125,6 +124,7 @@ export const createNewArrayValues = (
     filterFunc?: Function,
 ) => {
     const l = keys.length - 1;
+
     if (isArray(prev) && l >= 0) {
         return prev.map((_prevVal: any) => {
             const prevVal = createCopy(_prevVal);
@@ -174,16 +174,12 @@ export const diffValuesBoolean = (prevObject: any, newObject: any) =>
 export const capitalizeName = (name: string) =>
     name.charAt(0).toUpperCase() + name.slice(1);
 
-export const capitalizeKeysToString = (arr: string[], ignoreFirst?: boolean) =>
-    pathToString(
-        arr.map((k, i) => (!i && ignoreFirst ? k : capitalizeName(k))),
-    );
+export const capitalizeKeysToString = (arr: string[]) =>
+    pathToString(arr.map(capitalizeName));
 
 export const assign = Object.assign;
 
 export const entries = Object.entries;
-
-export const values = Object.values;
 
 export const isArrayPathName = (name: string | string[]) =>
     name.includes(ArrayMapKey);

@@ -1,5 +1,5 @@
-import { useLayoutEffect } from "react";
 import { Maybe } from "../types";
+import { useLayoutEffect } from "../utils/client";
 
 export const useEvent = <T>(
     type: Maybe<string>,

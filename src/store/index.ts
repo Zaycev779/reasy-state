@@ -1,4 +1,3 @@
-import { useLayoutEffect } from "react";
 import { getGlobalBySrc, getGlobalData } from "./global/get";
 import { useStoreVal } from "./hooks/use-store-val.hook";
 import { generateStaticPathsMap, patchToGlobalMap } from "./maps/maps";
@@ -23,20 +22,14 @@ import {
     concat,
     createNewArrayValues,
     findPathArrayIndex,
-    OptionalKey,
     pathToString,
-    SignRegExp,
-    values,
+    signSplit,
 } from "./utils";
 import { updateGlobalData, updateStore } from "./global/update";
 import { generateId } from "./global/generate-id";
-import { isClient } from "./utils/client";
+import { isClient, useLayoutEffect } from "./utils/client";
 
 const SSRType = "_" + GeneratedType.SR.toLowerCase();
-const generatedTypes = concat(
-    values(GeneratedType),
-    SSRType,
-) as GeneratedType[];
 
 export function createState<T extends IStore<T>>(
     params: T,
@@ -47,7 +40,11 @@ export function createState<T extends IStore<T>>(): {
         params?: U,
         options?: Options<U & T>,
     ): IGenerate<
-        CreateResult<U>,
+        CreateResult<
+            U extends { [K in string]: unknown }
+                ? IsUndefined<T, keyof T, Partial<U>, U>
+                : T
+        >,
         CreateResult<IsUndefined<U, keyof U, Partial<T>, T>>
     >;
 };
@@ -71,42 +68,34 @@ export const createStateFn = <T extends IStore<T>>(
     updateGlobalData([storeId], storageValues || initialValues);
     generateStaticPathsMap(storeId);
 
-    const gen = generateMutators(storeId, initialValues || {}, options);
     const handler = {
         get(target: any, name: string): any {
+            if (name === "ssr") return new Proxy({}, handler);
+
             const [type, ...functionName] = name
                 .replace(GeneratedType.SR, SSRType)
                 .split(/(?=[A-Z$])/);
-            if (type === "ssr") return new Proxy({}, handler);
+
+            const splitName = capitalizeKeysToString(signSplit(name));
+            if (splitName in target) return target[splitName];
 
             const mapKey = concat(storeId, pathToString(functionName));
-
-            const splitName = capitalizeKeysToString(
-                name.slice(+(name[0] === OptionalKey)).split(SignRegExp),
-                true,
-            );
-
-            if (splitName in target) {
-                return target[splitName];
-            }
-
-            if (generatedTypes.some((val) => val.includes(type))) {
-                patchToGlobalMap(mapKey);
-            }
+            patchToGlobalMap(mapKey);
 
             switch (type) {
                 case SSRType:
                     return ({ value }: any) => {
                         const basePath = getMapByKey(mapKey);
+                        const storage = getGlobalBySrc(
+                            basePath,
+                            storeId,
+                            storageValues,
+                        );
+
                         if (basePath) {
                             updateGlobalData(basePath, value);
                             useLayoutEffect(() => {
                                 if (options && options.storage) {
-                                    const storage = getGlobalBySrc(
-                                        basePath,
-                                        storeId,
-                                        storageValues,
-                                    );
                                     if (storage) {
                                         updateStore(
                                             basePath,
@@ -131,15 +120,13 @@ export const createStateFn = <T extends IStore<T>>(
                     return (filterFunc: FType, arrValue?: any) => {
                         const basePath = getMapByKey(mapKey);
                         if (!basePath) return;
+
+                        const sliceIdx = findPathArrayIndex(basePath);
+                        const additionalPaths = basePath.slice(sliceIdx + 1);
+                        const arrRootPath = basePath.slice(0, sliceIdx);
+
                         if (arrValue) {
-                            const sliceIdx = findPathArrayIndex(basePath);
-
                             if (sliceIdx >= 0) {
-                                const additionalPaths = basePath.slice(
-                                    sliceIdx + 1,
-                                );
-                                const arrRootPath = basePath.slice(0, sliceIdx);
-
                                 updateStore(
                                     arrRootPath,
                                     createNewArrayValues(
@@ -167,5 +154,8 @@ export const createStateFn = <T extends IStore<T>>(
             }
         },
     };
-    return new Proxy(gen, handler);
+    return new Proxy(
+        generateMutators(storeId, initialValues || {}, options),
+        handler,
+    );
 };
