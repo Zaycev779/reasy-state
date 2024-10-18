@@ -2,6 +2,184 @@ import { expect, it } from "vitest";
 import { act, fireEvent, render } from "@testing-library/react";
 import { CreateState, createState } from "reasy-state";
 
+it("created root mutator with types", async () => {
+    type State = {
+        store?: {
+            value: number;
+        };
+        mutators: {
+            inc: void;
+        };
+    };
+    const { use$store$value, inc } = createState<State>()({
+        mutators: {
+            inc: ({ set, get }, { store }) =>
+                set({ store: { value: (store?.value ?? 0) + 1 } }),
+        },
+    });
+
+    function Page() {
+        const value = use$store$value();
+        return <div>value: {value}</div>;
+    }
+
+    function Button() {
+        return <button onClick={() => inc()}>inc</button>;
+    }
+
+    const { getByText, findByText } = render(
+        <>
+            <Page />
+            <Button />
+        </>,
+    );
+
+    await findByText("value:");
+
+    fireEvent.click(getByText("inc"));
+    await findByText("value: 1");
+});
+
+it("created root mutator without types", async () => {
+    type State = {
+        store?: {
+            value: number;
+        };
+    };
+    const { use$store$value, inc } = createState<State>()({
+        mutators: {
+            inc: ({ set, get }, { store }) =>
+                set({ store: { value: (store?.value ?? 0) + 1 } }),
+        },
+    });
+
+    function Page() {
+        const value = use$store$value();
+        return <div>value: {value}</div>;
+    }
+
+    function Button() {
+        return <button onClick={() => inc()}>inc</button>;
+    }
+
+    const { getByText, findByText } = render(
+        <>
+            <Page />
+            <Button />
+        </>,
+    );
+
+    await findByText("value:");
+
+    fireEvent.click(getByText("inc"));
+    await findByText("value: 1");
+});
+
+it("created root mutator without types 2", async () => {
+    const { useStoreValue, inc } = createState({
+        store: {
+            value: 1,
+        },
+        mutators: {
+            inc: ({ set, get }, { store }) => {
+                set({ store: { value: (store?.value ?? 0) + 1 } });
+                return true;
+            },
+        },
+    });
+
+    function Page() {
+        const value = useStoreValue();
+        return <div>value: {value}</div>;
+    }
+
+    function Button() {
+        return <button onClick={() => inc()}>inc</button>;
+    }
+
+    const { getByText, findByText } = render(
+        <>
+            <Page />
+            <Button />
+        </>,
+    );
+
+    await findByText("value: 1");
+
+    fireEvent.click(getByText("inc"));
+    await findByText("value: 2");
+});
+
+it("created root mutator without types 3", async () => {
+    const { useStoreValue, inc } = createState()({
+        store: {
+            value: 1,
+        },
+        mutators: {
+            inc: ({ set, get }, { store }) => {
+                set({ store: { value: (store?.value ?? 0) + 1 } });
+            },
+        },
+    });
+
+    function Page() {
+        const value = useStoreValue();
+        return <div>value: {value}</div>;
+    }
+
+    function Button() {
+        return <button onClick={() => inc()}>inc</button>;
+    }
+
+    const { getByText, findByText } = render(
+        <>
+            <Page />
+            <Button />
+        </>,
+    );
+
+    await findByText("value: 1");
+
+    fireEvent.click(getByText("inc"));
+    await findByText("value: 2");
+});
+
+it("use dont created mutator", async () => {
+    type State = {
+        store?: {
+            value: number;
+            mutators: {
+                inc: void;
+            };
+        };
+        mutators: {
+            inc: void;
+        };
+    };
+    const { use$store$value, $store$inc, inc } = createState<State>()();
+
+    function Page() {
+        const value = use$store$value() || "-";
+        return <div>value: {value}</div>;
+    }
+
+    function Button() {
+        return <button onClick={() => inc()}>inc</button>;
+    }
+
+    const { getByText, findByText } = render(
+        <>
+            <Page />
+            <Button />
+        </>,
+    );
+
+    await findByText("value: -");
+
+    fireEvent.click(getByText("inc"));
+    await findByText("value: -");
+});
+
 it("create mutators", async () => {
     type UserStore = {
         id: number;

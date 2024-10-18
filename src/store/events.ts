@@ -1,20 +1,19 @@
 import { getGlobalData } from "./global/get";
 import { concat, pathToString } from "./utils";
-import { IStore } from "./types/store";
 import { getAdditionalPaths, getRootPaths, getUpdatedPaths } from "./utils";
 import { isClient } from "./utils/client";
 
 const ev = "_EV";
-export const PUSH_EV_NAME = "__PUSH" + ev;
-export const PATH_MAP_EV_NAME = "__PATH" + ev;
+export const PUSH_EV_NAME = "_PUSH" + ev;
+export const PATH_MAP_EV_NAME = "_PATH" + ev;
 
 export const _updatePathEvent = (pathMap: string, p: string[]) =>
     sendEvent(PATH_MAP_EV_NAME + pathMap, p);
 
-export const _pushStoreValueEvent = <T extends IStore<T>>(
+export const _pushStoreValueEvent = (
     paths: string[],
-    updatedParams: T,
-    prevValues: T,
+    updatedParams: object,
+    prevValues: object,
 ) => {
     const updatePaths = concat(
         getUpdatedPaths(updatedParams, prevValues, paths),

@@ -3,7 +3,7 @@ import { getGlobalData } from "./get";
 import { patchToGlobalMap } from "../maps/maps";
 import { getMapByKey } from "../maps/utils";
 import { storageAction } from "../storage";
-import { IStore, Options, StorageType, UpdateType } from "../types/store";
+import { Options, StorageType, UpdateType } from "../types/store";
 import {
     createCopy,
     diffValuesBoolean,
@@ -14,11 +14,10 @@ import {
 } from "../utils";
 
 export const updateGlobalData = (
-    paths: string[],
-    data?: Partial<IStore>,
+    [path, ...rest]: string[],
+    data?: any,
     src: Record<string, any> = getGlobalData([]),
 ) => {
-    const [path, ...rest] = paths;
     if (!rest.length) {
         src[path] = createCopy(data);
         return;
@@ -49,9 +48,8 @@ export const updateStore = <T>(
     updatePathKeys.forEach((mapKey) => {
         const prevPath = getMapByKey(mapKey);
         patchToGlobalMap(mapKey);
-        if (diffValuesBoolean(prevPath, getMapByKey(mapKey))) {
+        diffValuesBoolean(prevPath, getMapByKey(mapKey)) &&
             _updatePathEvent(mapKey, getMapByKey(mapKey));
-        }
     });
     _pushStoreValueEvent(path, updatedParams, prevValues);
     storageAction(StorageType.P, options);

@@ -11,7 +11,6 @@ import {
     FType,
     GeneratedType,
     IGenerate,
-    IStore,
     Options,
     StorageType,
     UpdateType,
@@ -29,15 +28,13 @@ import { updateGlobalData, updateStore } from "./global/update";
 import { generateId } from "./global/generate-id";
 import { isClient, useLayoutEffect } from "./utils/client";
 
-const SSRType = "_" + GeneratedType.SR.toLowerCase();
-
-export function createState<T extends IStore<T>>(
-    params: T,
+export function createState<T>(
+    params: WithM<T>,
     options?: Options<T>,
 ): IGenerate<CreateResult<T>>;
-export function createState<T extends IStore<T>>(): {
+export function createState<T>(): {
     <U extends WithM<CreateState<T>>>(
-        params?: U,
+        params?: WithM<U>,
         options?: Options<U & T>,
     ): IGenerate<
         CreateResult<
@@ -48,18 +45,15 @@ export function createState<T extends IStore<T>>(): {
         CreateResult<IsUndefined<U, keyof U, Partial<T>, T>>
     >;
 };
-export function createState<T extends IStore<T>>(
-    params?: T,
-    options?: Options<T>,
-): any {
+export function createState<T>(params?: T, options?: Options<T>): any {
     return params ? createStateFn(params, options) : createStateFn;
 }
 
-export const createStateFn = <T extends IStore<T>>(
+export const createStateFn = <T>(
     initialValues?: T,
     options?: Options<T>,
 ): IGenerate<CreateResult<T>> => {
-    const storeId = generateId(initialValues, options?.key);
+    const storeId = generateId(initialValues, options && options.key);
     if (options) {
         options.key = storeId;
     }
@@ -70,10 +64,10 @@ export const createStateFn = <T extends IStore<T>>(
 
     const handler = {
         get(target: any, name: string): any {
-            if (name === "ssr") return new Proxy({}, handler);
+            if (name === GeneratedType.sr) return new Proxy({}, handler);
 
             const [type, ...functionName] = name
-                .replace(GeneratedType.SR, SSRType)
+                .replace(GeneratedType.SR, GeneratedType.sr)
                 .split(/(?=[A-Z$])/);
 
             const splitName = capitalizeKeysToString(signSplit(name));
@@ -83,7 +77,7 @@ export const createStateFn = <T extends IStore<T>>(
             patchToGlobalMap(mapKey);
 
             switch (type) {
-                case SSRType:
+                case GeneratedType.sr:
                     return ({ value }: any) => {
                         const basePath = getMapByKey(mapKey);
                         const storage = getGlobalBySrc(

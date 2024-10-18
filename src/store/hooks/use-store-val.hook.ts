@@ -14,19 +14,17 @@ import { getMapByKey } from "../maps/utils";
 import { useRef, useState } from "../utils/client";
 
 export const useStoreVal = (mapKey: string, filterFunc?: any) => {
-    const [path, setPath] = useState<string[]>(getMapByKey(mapKey));
+    const pathKey = getMapByKey(mapKey);
+    const [path, setPath] = useState<string[]>(pathKey);
     const getState = (newPath?: string[]) =>
         getGlobalData(newPath || path, true, filterFunc);
 
     const [state, setState] = useState(getState);
     const prevState = useRef<any>(state);
 
-    const _setState = (values: any) => {
-        if (diffValuesBoolean(prevState.current, values)) {
-            setState(values);
-            prevState.current = values;
-        }
-    };
+    const _setState = (values: any) =>
+        diffValuesBoolean(prevState.current, values) &&
+        (setState(values), (prevState.current = values));
 
     useEvent<{ p: IStore }>(
         path && PUSH_EV_NAME + pathToString(path),
@@ -49,12 +47,11 @@ export const useStoreVal = (mapKey: string, filterFunc?: any) => {
 
     useEvent<{
         p: string[];
-    }>(mapKey && PATH_MAP_EV_NAME + mapKey, ({ p }) => {
-        if (p) {
-            setPath(p);
-            _setState(getState(p));
-        }
-    });
+    }>(
+        mapKey && PATH_MAP_EV_NAME + mapKey,
+        ({ p }) => p && (setPath(p), _setState(getState(p))),
+        () => diffValuesBoolean(path, pathKey) && setPath(pathKey),
+    );
 
     return state;
 };

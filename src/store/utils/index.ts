@@ -1,6 +1,6 @@
 import { getMap } from "../maps/utils";
 import { Maybe } from "../types";
-import { IStore, StorageType } from "../types/store";
+import { StorageType } from "../types/store";
 
 export type updatedParams = string | updatedParams[];
 export const Mutators = "mutators";
@@ -17,9 +17,9 @@ export const getRootPaths = (paths: string[]) =>
         [] as string[][],
     );
 
-export const getUpdatedPaths = <T extends IStore>(
-    updatedParams: T,
-    prevValues: T,
+export const getUpdatedPaths = <T>(
+    updatedParams: object,
+    prevValues: object,
     paths: string[],
     res: string[][] = [],
 ) => {
@@ -29,14 +29,13 @@ export const getUpdatedPaths = <T extends IStore>(
             if (isObject(updatedParams[key])) {
                 const updated = createCopy(updatedParams[key]);
                 const prev = createCopy(prevValues[key] || {});
+
                 if (updated !== prev) {
                     res.push(propName);
                 }
                 getUpdatedPaths(updated, prev, propName, res);
-            } else {
-                if (prevValues?.[key] !== updatedParams[key]) {
-                    res.push(propName);
-                }
+            } else if (prevValues && prevValues[key] !== updatedParams[key]) {
+                res.push(propName);
             }
         }
         return concat([paths], res);
@@ -172,7 +171,7 @@ export const diffValuesBoolean = (prevObject: any, newObject: any) =>
     stringify(prevObject) !== stringify(newObject);
 
 export const capitalizeName = (name: string) =>
-    name.charAt(0).toUpperCase() + name.slice(1);
+    name && name[0].toUpperCase() + name.slice(1);
 
 export const capitalizeKeysToString = (arr: string[]) =>
     pathToString(arr.map(capitalizeName));
