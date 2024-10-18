@@ -1,6 +1,6 @@
 import { getGlobalData } from "./global/get";
 import { updateStore } from "./global/update";
-import { IStore, Options, UpdateType } from "./types/store";
+import { Options, UpdateType } from "./types/store";
 import {
     assign,
     capitalizeKeysToString,
@@ -11,50 +11,43 @@ import {
     Mutators,
 } from "./utils";
 
-const reduceMutators = <T extends IStore<T>>(
+const reduceMutators = <T extends object>(
     store: T,
     value: (key: string, val: any) => any,
 ) =>
-    entries(store).reduce(
-        (prev, [key, val]) => assign(prev, value(key, val)),
-        {},
-    );
+    entries(store).reduce((prev, entrie) => assign(prev, value(...entrie)), {});
 
-export const generateMutators = <T extends IStore<T>>(
+export const generateMutators = <T extends object>(
     storeId: string,
     values: T,
     options?: Options<any>,
     prevKey: string[] = [],
 ): any =>
-    reduceMutators(values, (key, val) =>
-        key === Mutators
-            ? createMutators(val, prevKey, concat([storeId], prevKey), options)
-            : isDefaultObject(val) &&
-              generateMutators<IStore<T>>(
-                  storeId,
-                  val,
-                  options,
-                  concat(prevKey, key),
-              ),
-    );
+    reduceMutators(values, (key, val) => {
+        if (key === Mutators) {
+            return reduceMutators(val, (key, fn) => ({
+                [capitalizeKeysToString(concat(prevKey, key))]: (
+                    ...args: any
+                ) => {
+                    const storePath = concat([storeId], prevKey),
+                        get = () => getGlobalData(storePath),
+                        set = (arg: any, type: UpdateType = UpdateType.S) => {
+                            updateStore(
+                                storePath,
+                                getParams(arg, get()),
+                                options,
+                                type,
+                            );
+                            return get();
+                        },
+                        patch = (arg: any) => set(arg, UpdateType.P);
 
-export const createMutators = (
-    values: Record<string, Function>,
-    path: string[],
-    storePath: string[],
-    options?: Options<any>,
-) => {
-    const get = () => getGlobalData(storePath);
-    const set = (arg: any, type: UpdateType = UpdateType.S) => {
-        updateStore(storePath, getParams(arg, get()), options, type);
-        return get();
-    };
-    const patch = (arg: any) => set(arg, UpdateType.P);
-
-    return reduceMutators(values, (key, val) => ({
-        [capitalizeKeysToString(concat(path, key))]: (...args: any) => {
-            const fn = val({ set, get, patch }, get());
-            return getParams(fn, ...args);
-        },
-    }));
-};
+                    return getParams(fn({ set, get, patch }, get()), ...args);
+                },
+            }));
+        }
+        return (
+            isDefaultObject(val) &&
+            generateMutators(storeId, val, options, concat(prevKey, key))
+        );
+    });

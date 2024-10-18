@@ -16,9 +16,8 @@ export const useEvent = <T>(
         }
         document.addEventListener(type, onTargetEvent);
 
-        return () => {
-            document.removeEventListener(type, onTargetEvent);
-        };
+        return () => document.removeEventListener(type, onTargetEvent);
+
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [type]);
 };

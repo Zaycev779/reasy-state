@@ -1,22 +1,20 @@
 import { getGlobalData } from "../global/get";
-import { IStore, Options, StorageOptions, StorageType } from "../types/store";
+import { Options, StorageOptions, StorageType } from "../types/store";
 import { isObject, mergeDeep, stringify } from "../utils";
 import { isClient } from "../utils/client";
 
-const storagePrefix = "_res";
-
-export const storageAction = <T extends IStore<T>>(
+export const storageAction = <T>(
     actionType: StorageType,
     options?: Options<T>,
     initial?: T,
-): IStore<T> | undefined => {
+): T | undefined => {
     if (options && options.storage && isClient) {
         const { key, storage } = options;
-        const { type, mutators } = (
-            isObject(storage) ? storage : { type: localStorage }
+        const { type = localStorage, mutators } = (
+            isObject(storage) ? storage : {}
         ) as StorageOptions<T>;
 
-        const name = storagePrefix + key;
+        const name = "E$" + key;
 
         try {
             switch (actionType) {

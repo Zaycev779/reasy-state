@@ -11,6 +11,7 @@ export enum GeneratedType {
     U = "use",
     R = "reset",
     SR = "SSR",
+    sr = "ssr",
 }
 
 export enum StorageType {
@@ -99,7 +100,7 @@ type SetM<T> = T extends (...args: any) => infer D
         ? D
         : () => D
     : T extends {
-          [K: string]: unknown;
+          [K in string]: unknown;
       }
     ? {
           [K in keyof T]: SetM<T[K]> extends infer Y ? Y : never;
@@ -109,18 +110,20 @@ type SetM<T> = T extends (...args: any) => infer D
 type PickObj<T> = {
     [K in keyof T as K extends M ? never : K]: PickM<T[K]>;
 };
-
 type PickM<T> = T extends {
     [K: string]: unknown;
 }
-    ? (T extends { [k in M]-?: any } ? T[M] : unknown) & PickObj<T>
+    ? (T extends { [k in M]?: unknown }
+          ? [] extends T[M]
+              ? unknown
+              : T[M]
+          : unknown) &
+          PickObj<T>
     : T;
 
 export type CreateResult<T> = PickM<SetM<T>>;
 
-export type IStore<T extends Record<string, any> = Record<string, any>> = {
-    [P in keyof T]: any | IStore<T>;
-};
+export type IStore<T = Record<string, any>> = T;
 
 type IStaticFunc<T, U, N extends GeneratedType> = {
     [P in keyof T as keyof U extends `$${P extends string ? string : never}`
@@ -140,16 +143,11 @@ type IStaticRes<
     N extends GeneratedType,
 > = N extends GeneratedType.S ? FuncSet<T, P> : FuncGet<T, P>;
 
+type FName<P> = IsArray<P, never, Uncapitalize<P & string>>;
 type IFn<T, U> = {
     [P in keyof T as T[P] extends Function
-        ? IsArray<P, never, Uncapitalize<P & string>>
-        : never]: T[P];
-} & {
-    [P in keyof U as P extends `${string | ""}$${string}`
-        ? U[P] extends void
-            ? IsArray<P, never, Uncapitalize<P & string>>
-            : never
-        : never]: () => U[P];
+        ? FName<P>
+        : never]: P extends keyof U ? () => U[P] : T[P];
 };
 
 type AnyFunc = (...args: any) => any;
@@ -172,7 +170,7 @@ type FuncGet<T, P extends keyof T> = IsArray<
               | (D extends any[] ? D : D[])
               | (P extends `${string}$${string}[]${string}` ? undefined : never)
         : never,
-    () => T[P]
+    () => T[P] | (P extends `${string}$${string}` ? undefined : never)
 >;
 
 type FuncSet<T, P extends keyof T> = IsArray<

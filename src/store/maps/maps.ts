@@ -51,7 +51,7 @@ export const patchToGlobalMap = (
                 prevPath,
                 ArrayMapKey,
                 firstKey,
-                length ? additionalKeys : [],
+                additionalKeys,
             ),
         );
 
@@ -61,8 +61,8 @@ export const patchToGlobalMap = (
 
     if (length) {
         patchToGlobalMap(
-            concat(OptionalKey, additionalKeys.join(OptionalKey)),
-            baseMap || mapKey,
+            OptionalKey + additionalKeys.join(OptionalKey),
+            baseMap,
             staticFromMap,
             concat(prevPath, firstKey),
         );
