@@ -1,56 +1,61 @@
-import { _pushStoreValueEvent, _updatePathEvent } from "../events";
+import { _pushStoreValueEvent, PATH_MAP_EV_NAME, sendEvent } from "../events";
 import { getGlobalData } from "./get";
 import { patchToGlobalMap } from "../maps/maps";
 import { getMapByKey } from "../maps/utils";
 import { storageAction } from "../storage";
 import { Options, StorageType, UpdateType } from "../types/store";
 import {
+    concat,
     createCopy,
     diffValuesBoolean,
     getAdditionalKeys,
     getParams,
-    isObject,
     mergeDeep,
 } from "../utils";
+import { EStorage } from ".";
 
 export const updateGlobalData = (
+    src: Record<string, any>,
     [path, ...rest]: string[],
     data?: any,
-    src: Record<string, any> = getGlobalData([]),
 ) => {
     if (!rest.length) {
         src[path] = createCopy(data);
         return;
     }
-    if (!src[path]) {
-        src[path] = {};
-    }
-    updateGlobalData(rest, data, src[path]);
+    if (!src[path]) src[path] = {};
+
+    updateGlobalData(src[path], rest, data);
 };
 
 export const updateStore = <T>(
+    storage: EStorage,
     path: string[],
     params?: Partial<T> | ((prev: T) => Partial<T>),
     options?: Options<T>,
     type: UpdateType = UpdateType.S,
+    prevValues = getGlobalData(storage.s, path),
+    updatedParams = getParams(params, prevValues),
 ) => {
-    const prevValues = getGlobalData(path);
-    const updatedParams = getParams(params, prevValues);
-    updateGlobalData(
-        path,
-        type === UpdateType.P && isObject(updatedParams) && isObject(prevValues)
-            ? mergeDeep(undefined, {}, prevValues, updatedParams)
-            : updatedParams,
-    );
+    if (path) {
+        updateGlobalData(
+            storage,
+            concat(["s"], path),
+            type === UpdateType.P
+                ? mergeDeep(undefined, {}, prevValues, updatedParams)
+                : updatedParams,
+        );
 
-    const updatePathKeys = getAdditionalKeys(path);
-
-    updatePathKeys.forEach((mapKey) => {
-        const prevPath = getMapByKey(mapKey);
-        patchToGlobalMap(mapKey);
-        diffValuesBoolean(prevPath, getMapByKey(mapKey)) &&
-            _updatePathEvent(mapKey, getMapByKey(mapKey));
-    });
-    _pushStoreValueEvent(path, updatedParams, prevValues);
-    storageAction(StorageType.P, options);
+        getAdditionalKeys(storage, path).forEach((mapKey) => {
+            const prevPath = getMapByKey(storage, mapKey);
+            patchToGlobalMap(storage, mapKey);
+            diffValuesBoolean(prevPath, getMapByKey(storage, mapKey)) &&
+                sendEvent(
+                    PATH_MAP_EV_NAME + mapKey,
+                    getMapByKey(storage, mapKey),
+                );
+        });
+        _pushStoreValueEvent(storage, path, updatedParams, prevValues);
+        storageAction<any>(StorageType.P, options, storage.s);
+    }
 };

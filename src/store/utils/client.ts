@@ -1,4 +1,4 @@
 import react from "react";
 
-export const isClient = typeof window !== "undefined" && window;
+export const isClient = typeof window !== "undefined";
 export const { useRef, useState, useLayoutEffect } = react;

@@ -7,17 +7,24 @@ import {
     findPathArrayIndex,
     getFiltred,
     isArray,
+    isArrayPathName,
     pathToString,
+    slice,
 } from "../utils";
 import { useEvent } from "./use-event.hook";
 import { getMapByKey } from "../maps/utils";
 import { useRef, useState } from "../utils/client";
+import { EStorage } from "../global";
 
-export const useStoreVal = (mapKey: string, filterFunc?: any) => {
-    const pathKey = getMapByKey(mapKey);
+export const useStoreVal = (
+    storage: EStorage,
+    mapKey: string,
+    filterFunc?: any,
+) => {
+    const pathKey = getMapByKey(storage, mapKey);
     const [path, setPath] = useState<string[]>(pathKey);
     const getState = (newPath?: string[]) =>
-        getGlobalData(newPath || path, true, filterFunc);
+        getGlobalData(storage.s, newPath || path, true, filterFunc);
 
     const [state, setState] = useState(getState);
     const prevState = useRef<any>(state);
@@ -27,21 +34,16 @@ export const useStoreVal = (mapKey: string, filterFunc?: any) => {
         (setState(values), (prevState.current = values));
 
     useEvent<{ p: IStore }>(
-        path && PUSH_EV_NAME + pathToString(path),
-        ({ p }) => {
-            const sliceIdx = findPathArrayIndex(path);
-            if (sliceIdx < 0 || !isArray(p)) _setState(createCopy(p));
-            else {
-                _setState(
-                    path
-                        .slice(sliceIdx + 1)
-                        .reduce(
-                            (prev, key) => prev.flatMap((val: any) => val[key]),
-                            getFiltred(p, filterFunc),
-                        ),
-                );
-            }
-        },
+        path && PUSH_EV_NAME + storage.id + pathToString(path),
+        ({ p }) =>
+            _setState(
+                !isArrayPathName(path) || !isArray(p)
+                    ? createCopy(p)
+                    : slice(path, findPathArrayIndex(path) + 1).reduce(
+                          (prev, key) => prev.flatMap((val: any) => val[key]),
+                          getFiltred(p, filterFunc),
+                      ),
+            ),
         () => _setState(getState()),
     );
 

@@ -1,6 +1,6 @@
-import { getGlobalBySrc, getGlobalData } from "./global/get";
+import { getGlobalData } from "./global/get";
 import { useStoreVal } from "./hooks/use-store-val.hook";
-import { generateStaticPathsMap, patchToGlobalMap } from "./maps/maps";
+import { patchToGlobalMap } from "./maps/maps";
 import { getMapByKey } from "./maps/utils";
 import { generateMutators } from "./mutators";
 import { storageAction } from "./storage";
@@ -18,15 +18,17 @@ import {
 } from "./types/store";
 import {
     capitalizeKeysToString,
-    concat,
+    createCopy,
     createNewArrayValues,
     findPathArrayIndex,
     pathToString,
-    signSplit,
+    split,
+    slice,
 } from "./utils";
-import { updateGlobalData, updateStore } from "./global/update";
+import { updateStore } from "./global/update";
 import { generateId } from "./global/generate-id";
 import { isClient, useLayoutEffect } from "./utils/client";
+import { createStorage } from "./global";
 
 export function createState<T>(
     params: WithM<T>,
@@ -46,97 +48,91 @@ export function createState<T>(): {
     >;
 };
 export function createState<T>(params?: T, options?: Options<T>): any {
-    return params ? createStateFn(params, options) : createStateFn;
+    return params ? _createState(params, options) : _createState;
 }
 
-export const createStateFn = <T>(
+export const _createState = <T>(
     initialValues?: T,
     options?: Options<T>,
 ): IGenerate<CreateResult<T>> => {
-    const storeId = generateId(initialValues, options && options.key);
-    if (options) {
-        options.key = storeId;
-    }
-    const storageValues = storageAction(StorageType.G, options, initialValues);
-
-    updateGlobalData([storeId], storageValues || initialValues);
-    generateStaticPathsMap(storeId);
+    const storeId = generateId<T>(options),
+        storageValues = storageAction(StorageType.G, options, initialValues),
+        storage = createStorage(
+            storeId,
+            storageValues || createCopy(initialValues),
+        );
 
     const handler = {
         get(target: any, name: string): any {
             if (name === GeneratedType.sr) return new Proxy({}, handler);
 
-            const [type, ...functionName] = name
-                .replace(GeneratedType.SR, GeneratedType.sr)
-                .split(/(?=[A-Z$])/);
-
-            const splitName = capitalizeKeysToString(signSplit(name));
+            const splitName = capitalizeKeysToString(split(name));
             if (splitName in target) return target[splitName];
 
-            const mapKey = concat(storeId, pathToString(functionName));
-            patchToGlobalMap(mapKey);
+            const [type, ...functionName] = split(
+                name.replace(GeneratedType.SR, GeneratedType.sr),
+                /(?=[A-Z$])/,
+            );
+
+            const mapKey = storeId + pathToString(functionName);
+            patchToGlobalMap(storage, mapKey);
 
             switch (type) {
                 case GeneratedType.sr:
-                    return ({ value }: any) => {
-                        const basePath = getMapByKey(mapKey);
-                        const storage = getGlobalBySrc(
-                            basePath,
-                            storeId,
+                    return (params: any) => {
+                        const basePath = getMapByKey(storage, mapKey);
+                        const storageVal = getGlobalData<any>(
                             storageValues,
+                            basePath,
+                            true,
                         );
 
-                        if (basePath) {
-                            updateGlobalData(basePath, value);
-                            useLayoutEffect(() => {
-                                if (options && options.storage) {
-                                    if (storage) {
-                                        updateStore(
-                                            basePath,
-                                            storage,
-                                            undefined,
-                                            UpdateType.P,
-                                        );
-                                    }
-                                }
-                            }, []);
-                        }
+                        updateStore(storage, basePath, params.value);
+                        // eslint-disable-next-line react-hooks/rules-of-hooks
+                        useLayoutEffect(() => {
+                            storageVal &&
+                                updateStore(
+                                    storage,
+                                    basePath,
+                                    storageVal,
+                                    undefined,
+                                    UpdateType.P,
+                                );
+                        }, []);
                     };
                 case GeneratedType.U:
                     if (isClient)
                         return (filterFunc?: FType) =>
-                            useStoreVal(mapKey, filterFunc);
+                            // eslint-disable-next-line react-hooks/rules-of-hooks
+                            useStoreVal(storage, mapKey, filterFunc);
                 case GeneratedType.G:
                     return (filterFunc?: FType) =>
-                        getGlobalData(getMapByKey(mapKey), true, filterFunc);
+                        getGlobalData(
+                            storage.s,
+                            getMapByKey(storage, mapKey),
+                            true,
+                            filterFunc,
+                        );
                 case GeneratedType.R:
                 case GeneratedType.S:
-                    return (filterFunc: FType, arrValue?: any) => {
-                        const basePath = getMapByKey(mapKey);
-                        if (!basePath) return;
+                    return (filterFunc: FType, arrParams?: any) => {
+                        const basePath = getMapByKey(storage, mapKey),
+                            arrIdx = findPathArrayIndex(basePath),
+                            path = arrParams
+                                ? slice(basePath, 0, arrIdx)
+                                : basePath;
 
-                        const sliceIdx = findPathArrayIndex(basePath);
-                        const additionalPaths = basePath.slice(sliceIdx + 1);
-                        const arrRootPath = basePath.slice(0, sliceIdx);
-
-                        if (arrValue) {
-                            if (sliceIdx >= 0) {
-                                updateStore(
-                                    arrRootPath,
-                                    createNewArrayValues(
-                                        additionalPaths,
-                                        getGlobalData(arrRootPath),
-                                        arrValue,
-                                        filterFunc,
-                                    ),
-                                    options,
-                                );
-                            }
-                            return;
-                        }
                         updateStore(
-                            basePath,
-                            type === GeneratedType.R
+                            storage,
+                            path,
+                            arrParams
+                                ? createNewArrayValues(
+                                      slice(basePath, arrIdx + 1),
+                                      getGlobalData(storage.s, path),
+                                      arrParams,
+                                      filterFunc,
+                                  )
+                                : type === GeneratedType.R
                                 ? initialValues
                                 : filterFunc,
                             options,
@@ -148,8 +144,9 @@ export const createStateFn = <T>(
             }
         },
     };
+
     return new Proxy(
-        generateMutators(storeId, initialValues || {}, options),
+        generateMutators(storage, initialValues, options),
         handler,
     );
 };

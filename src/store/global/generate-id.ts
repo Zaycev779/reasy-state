@@ -1,13 +1,9 @@
-import { Storage } from "./index";
-import { isObject } from "../utils";
+import { Options } from "../types/store";
 
-export const generateId = (s: any, key?: string) => {
-    if (key) return ("#" + key).replace(/[$]/g, "#");
+const H = "#";
+let EStateId = 0;
 
-    const { mId } = Storage;
-    const value = isObject(s) ? s : { s };
-    if (!mId.has(value)) {
-        mId.set(value, ++Storage.id);
-    }
-    return "#" + mId.get(value);
-};
+export const generateId = <T>(options?: Options<T>) =>
+    options && options.key
+        ? (options.key = H + options.key.replace(/[$]/g, H))
+        : H + ++EStateId;

@@ -1,45 +1,38 @@
-import { getGlobalData } from "../global/get";
 import { Options, StorageOptions, StorageType } from "../types/store";
-import { isObject, mergeDeep, stringify } from "../utils";
+import { isObject, mergeDeep, Mutators, stringify } from "../utils";
 import { isClient } from "../utils/client";
 
 export const storageAction = <T>(
-    actionType: StorageType,
-    options?: Options<T>,
-    initial?: T,
+    actionType: StorageType = StorageType.G,
+    options: Options<T> | undefined,
+    mergeValue: T | undefined,
 ): T | undefined => {
     if (options && options.storage && isClient) {
         const { key, storage } = options;
-        const { type = localStorage, mutators } = (
+        const { type = localStorage } = (
             isObject(storage) ? storage : {}
         ) as StorageOptions<T>;
-
+        const mutators = (storage as StorageOptions<T>)[Mutators];
         const name = "E$" + key;
 
         try {
             switch (actionType) {
                 case StorageType.G: {
                     const data = type.getItem(name);
-
-                    if (data) {
-                        return mergeDeep(
-                            actionType,
-                            {},
-                            initial,
-                            mutators,
-                            JSON.parse(data || "{}"),
-                        );
-                    }
-                    return;
-                }
-                case StorageType.P: {
-                    const toString = stringify(
+                    return (
+                        data &&
                         mergeDeep(
                             actionType,
                             {},
+                            mergeValue,
                             mutators,
-                            getGlobalData([key]),
-                        ),
+                            JSON.parse(data),
+                        )
+                    );
+                }
+                case StorageType.P: {
+                    const toString = stringify(
+                        mergeDeep(actionType, {}, mutators, mergeValue),
                     );
 
                     if (toString) {

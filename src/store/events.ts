@@ -1,3 +1,4 @@
+import { EStorage } from "./global";
 import { getGlobalData } from "./global/get";
 import { concat, pathToString } from "./utils";
 import { getAdditionalPaths, getRootPaths, getUpdatedPaths } from "./utils";
@@ -7,30 +8,24 @@ const ev = "_EV";
 export const PUSH_EV_NAME = "_PUSH" + ev;
 export const PATH_MAP_EV_NAME = "_PATH" + ev;
 
-export const _updatePathEvent = (pathMap: string, p: string[]) =>
-    sendEvent(PATH_MAP_EV_NAME + pathMap, p);
-
 export const _pushStoreValueEvent = (
+    storage: EStorage,
     paths: string[],
-    updatedParams: object,
-    prevValues: object,
-) => {
-    const updatePaths = concat(
+    updatedParams: any,
+    prevValues: any,
+) =>
+    concat(
+        getRootPaths(paths.slice(0, -1)),
         getUpdatedPaths(updatedParams, prevValues, paths),
-        getAdditionalPaths(paths),
-    ) as string[][];
-    const rest = concat(paths);
-
-    if (updatePaths.length) {
-        rest.splice(-1);
-        updatePaths.push(...getRootPaths(rest));
-    }
-    updatePaths.forEach((pathVal) =>
-        sendEvent(PUSH_EV_NAME + pathToString(pathVal), getGlobalData(pathVal)),
+        getAdditionalPaths(storage, paths),
+    ).forEach((pathVal: string[]) =>
+        sendEvent(
+            PUSH_EV_NAME + storage.id + pathToString(pathVal),
+            getGlobalData(storage.s, pathVal),
+        ),
     );
-};
 
-const sendEvent = (route: string, p: any) =>
+export const sendEvent = (route: string, p: any) =>
     isClient &&
     document.dispatchEvent(
         new CustomEvent(route, {

@@ -108,7 +108,7 @@ it("create optional store width CreateState type", async () => {
     expect(renderCountsRating).toBe(2);
 });
 
-it("create optional store width any types", async () => {
+it("create optional store with any types", async () => {
     const state = createState<Record<string, any>>({ userStore: {} });
 
     function Page() {
@@ -135,4 +135,36 @@ it("create optional store width any types", async () => {
     fireEvent.click(getByText("button"));
     expect(state?.get$userStore$value()).toBe("new value");
     await findByText("value: new value");
+    act(() => state.set(undefined));
+    expect(state?.get$userStore$value()).toBe(undefined);
+    expect(state?.get()).toBe(undefined);
+});
+
+it("create emty primitive store", async () => {
+    type TStore = number;
+    const { get, use, set } = createState<TStore>()();
+
+    function Page() {
+        const value = use() || 0;
+
+        return <div>value: {value}</div>;
+    }
+    function Button() {
+        return (
+            <button onClick={() => set((prev) => (prev || 0) + 1)}>
+                button
+            </button>
+        );
+    }
+
+    const { getByText, findByText } = render(
+        <>
+            <Page />
+            <Button />
+        </>,
+    );
+    expect(get()).toBe(undefined);
+    await findByText("value: 0");
+    fireEvent.click(getByText("button"));
+    await findByText("value: 1");
 });
