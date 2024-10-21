@@ -17,9 +17,9 @@ export const getRootPaths = (paths: string[]) =>
         [] as string[][],
     );
 
-export const getUpdatedPaths = <T>(
-    updatedParams: object,
-    prevValues: object,
+export const getUpdatedPaths = <T extends object>(
+    updatedParams: T,
+    prevValues: T,
     paths: string[],
     res: string[][] = [],
 ) => {
@@ -88,10 +88,10 @@ const mergeMutate = (type: Maybe<StorageType>, target: any, source: any) =>
 export const mergeDeep = (
     type: Maybe<StorageType>,
     target: any,
-    ...sources: any
+    source?: any,
+    ...sources: any[]
 ): any => {
-    if (!sources.length) return target;
-    const source = sources.shift();
+    if (!source && !sources.length) return target;
 
     if (isObject(target) && isObject(source)) {
         for (const key in source) {

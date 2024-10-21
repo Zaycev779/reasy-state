@@ -63,7 +63,7 @@ export const _createState = <T>(
         );
 
     const handler = {
-        get(target: object, name: string): any {
+        get(target: any, name: string): any {
             if (name === GeneratedType.sr) return new Proxy({}, handler);
 
             const splitName = capitalizeKeysToString(split(name));
@@ -79,31 +79,31 @@ export const _createState = <T>(
 
             switch (type) {
                 case GeneratedType.sr:
-                    return (value: any) => {
+                    return (params: any) => {
                         const basePath = getMapByKey(storage, mapKey);
-                        const storageVal = getGlobalData(
+                        const storageVal = getGlobalData<any>(
                             storageValues,
                             basePath,
                             true,
                         );
 
-                        updateStore(storage, basePath, value);
-                        useLayoutEffect(
-                            () =>
-                                storageVal &&
+                        updateStore(storage, basePath, params.value);
+                        // eslint-disable-next-line react-hooks/rules-of-hooks
+                        useLayoutEffect(() => {
+                            storageVal &&
                                 updateStore(
                                     storage,
                                     basePath,
                                     storageVal,
                                     undefined,
                                     UpdateType.P,
-                                ),
-                            [],
-                        );
+                                );
+                        }, []);
                     };
                 case GeneratedType.U:
                     if (isClient)
                         return (filterFunc?: FType) =>
+                            // eslint-disable-next-line react-hooks/rules-of-hooks
                             useStoreVal(storage, mapKey, filterFunc);
                 case GeneratedType.G:
                     return (filterFunc?: FType) =>

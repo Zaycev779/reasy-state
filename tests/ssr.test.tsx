@@ -22,7 +22,7 @@ it("imitate ssr initial", async () => {
 
         return (
             <>
-                <SSR$user {...data} />
+                <SSR$user value={data} />
             </>
         );
     };
@@ -58,7 +58,7 @@ it("imitate ssr initial2", async () => {
 
         return (
             <>
-                <SSRUser {...data} />
+                <SSRUser value={data} />
             </>
         );
     };

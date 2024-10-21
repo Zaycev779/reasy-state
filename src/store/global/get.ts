@@ -1,7 +1,7 @@
 import { EStorage } from "./index";
 import { getFiltred, isArray, isArrayPathName, slice } from "../utils";
 
-export const getGlobalData = <T = EStorage["s"]>(
+export const getGlobalData = <T extends EStorage["s"]>(
     src: T,
     path?: string[],
     forArray?: boolean,

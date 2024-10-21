@@ -14,7 +14,11 @@ import {
 } from "../utils";
 import { getMapByKey } from "./utils";
 
-export const getStaticPath = (store: any, id: string, path: string[] = []) =>
+export const getStaticPath = (
+    store: any,
+    id: string,
+    path: string[] = [],
+): Record<string, string[]> =>
     reduceAssign(
         store,
         (key, val, name = id + capitalizeName(key)) =>
@@ -42,15 +46,16 @@ export const patchToGlobalMap = (
 
         if (isArray(getGlobalData(storage.s, c)))
             setMap(concat(c, ArrayMapKey, firstKey, additionalKeys));
-        else
-            setMap(concat(c, firstKey)),
-                additionalKeys.length &&
-                    patchToGlobalMap(
-                        storage,
-                        OptionalKey + additionalKeys.join(OptionalKey),
-                        baseMap,
-                        staticFromMap,
-                        concat(prevPath, firstKey),
-                    );
+        else {
+            setMap(concat(c, firstKey));
+            additionalKeys.length &&
+                patchToGlobalMap(
+                    storage,
+                    OptionalKey + additionalKeys.join(OptionalKey),
+                    baseMap,
+                    staticFromMap,
+                    concat(prevPath, firstKey),
+                );
+        }
     }
 };

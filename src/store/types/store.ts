@@ -199,7 +199,7 @@ export type IGenerate<T, U = unknown> = IGenerateFn<Flatten<T>, Flatten<U>> &
 
 export type ISSR<T, U> = { ssr: ISSRFunc<T, U> };
 
-type ISSRComp<T> = React.FC<T>;
+type ISSRComp<T> = React.FC<{ value: T }>;
 
 type ISSRFunc<T, U, N extends GeneratedType = GeneratedType.SR> = {
     [P in keyof T as keyof U extends `$${P extends string ? string : never}`

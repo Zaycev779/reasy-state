@@ -1,5 +1,5 @@
 import { Options, StorageOptions, StorageType } from "../types/store";
-import { isObject, mergeDeep, stringify } from "../utils";
+import { isObject, mergeDeep, Mutators, stringify } from "../utils";
 import { isClient } from "../utils/client";
 
 export const storageAction = <T>(
@@ -9,10 +9,10 @@ export const storageAction = <T>(
 ): T | undefined => {
     if (options && options.storage && isClient) {
         const { key, storage } = options;
-        const { type = localStorage, mutators } = (
+        const { type = localStorage } = (
             isObject(storage) ? storage : {}
         ) as StorageOptions<T>;
-
+        const mutators = (storage as StorageOptions<T>)[Mutators];
         const name = "E$" + key;
 
         try {
