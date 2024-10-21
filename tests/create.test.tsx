@@ -47,6 +47,7 @@ it("set store value", async () => {
         getStore,
         getStoreValue,
         useStoreOther,
+        getStoreOther,
         setStoreOther,
     } = createState({
         store: { value: 1, other: "test" },
@@ -123,8 +124,10 @@ it("set store value", async () => {
     expect(renderCounts).toBe(1);
     expect(renderCountsOther).toBe(1);
     expect(renderCountsValue).toBe(1);
+    expect(getStoreOther()).toBe("test");
 
     act(() => setStoreOther("new value"));
+    expect(getStoreOther()).toBe("new value");
     await findByText("other: new value");
     expect(getStore().other).toBe("new value");
     expect(renderCountsOther).toBe(2);

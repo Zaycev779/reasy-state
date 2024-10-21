@@ -1,16 +1,11 @@
-import { Storage } from "./index";
-import { getFiltred, isArray, isArrayPathName } from "../utils";
+import { EStorage } from "./index";
+import { getFiltred, isArray, isArrayPathName, slice } from "../utils";
 
-export const getGlobalBySrc = (path: string[], storeId: string, src: any) =>
-    getGlobalData(path, true, undefined, {
-        [storeId]: src,
-    });
-
-export const getGlobalData = (
+export const getGlobalData = <T = EStorage["s"]>(
+    src: T,
     path?: string[],
     forArray?: boolean,
     filterFunc?: () => void,
-    src = Storage.store,
 ) => {
     if (!path) return {};
     for (let i = 0; i < path.length; i++) {
@@ -29,14 +24,12 @@ export const getGlobalData = (
 
 const arrayPathReduce = (value: any[], path: string[], index: number): any =>
     value.flatMap((e: any) =>
-        path
-            .slice(index)
-            .reduce(
-                (prev, key, idx) =>
-                    prev &&
-                    (isArray(prev)
-                        ? arrayPathReduce(prev, path, index + idx)
-                        : prev[key]),
-                e,
-            ),
+        slice(path, index).reduce(
+            (prev, key, idx) =>
+                prev &&
+                (isArray(prev)
+                    ? arrayPathReduce(prev, path, index + idx)
+                    : prev[key]),
+            e,
+        ),
     );

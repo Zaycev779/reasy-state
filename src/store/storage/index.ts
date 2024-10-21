@@ -1,12 +1,11 @@
-import { getGlobalData } from "../global/get";
 import { Options, StorageOptions, StorageType } from "../types/store";
 import { isObject, mergeDeep, stringify } from "../utils";
 import { isClient } from "../utils/client";
 
 export const storageAction = <T>(
-    actionType: StorageType,
-    options?: Options<T>,
-    initial?: T,
+    actionType: StorageType = StorageType.G,
+    options: Options<T> | undefined,
+    mergeValue: T | undefined,
 ): T | undefined => {
     if (options && options.storage && isClient) {
         const { key, storage } = options;
@@ -20,26 +19,20 @@ export const storageAction = <T>(
             switch (actionType) {
                 case StorageType.G: {
                     const data = type.getItem(name);
-
-                    if (data) {
-                        return mergeDeep(
-                            actionType,
-                            {},
-                            initial,
-                            mutators,
-                            JSON.parse(data || "{}"),
-                        );
-                    }
-                    return;
-                }
-                case StorageType.P: {
-                    const toString = stringify(
+                    return (
+                        data &&
                         mergeDeep(
                             actionType,
                             {},
+                            mergeValue,
                             mutators,
-                            getGlobalData([key]),
-                        ),
+                            JSON.parse(data),
+                        )
+                    );
+                }
+                case StorageType.P: {
+                    const toString = stringify(
+                        mergeDeep(actionType, {}, mutators, mergeValue),
                     );
 
                     if (toString) {

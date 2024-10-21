@@ -156,7 +156,8 @@ it("use dont created mutator", async () => {
             inc: void;
         };
     };
-    const { use$store$value, $store$inc, inc } = createState<State>()();
+    const { use$store$value, $store$inc, get$store, inc } =
+        createState<State>()();
 
     function Page() {
         const value = use$store$value() || "-";
@@ -174,6 +175,7 @@ it("use dont created mutator", async () => {
         </>,
     );
 
+    expect(get$store()).toBe(undefined);
     await findByText("value: -");
 
     fireEvent.click(getByText("inc"));

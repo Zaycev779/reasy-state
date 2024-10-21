@@ -1,6 +1,3 @@
-import { Storage } from "../global";
+import { EStorage } from "../global";
 
-export const getMapByKey = (key: string) => Storage.map[key];
-export const getMap = () => Storage.map;
-export const setMap = (key: string, value: string[]) =>
-    (Storage.map[key] = value);
+export const getMapByKey = (storage: EStorage, key: string) => storage.m[key];

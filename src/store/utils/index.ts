@@ -1,4 +1,4 @@
-import { getMap } from "../maps/utils";
+import { EStorage } from "../global";
 import { Maybe } from "../types";
 import { StorageType } from "../types/store";
 
@@ -6,7 +6,7 @@ export type updatedParams = string | updatedParams[];
 export const Mutators = "mutators";
 export const ArrayMapKey = "[]";
 export const OptionalKey = "$";
-export const signSplit = (value: string) => value.split(/[\s$]+/);
+export const split = (value: string, type = /[\s$]+/) => value.split(type);
 
 export const pathToString = (path: string[]) => path.join("");
 
@@ -24,17 +24,18 @@ export const getUpdatedPaths = <T>(
     res: string[][] = [],
 ) => {
     if (isObject(updatedParams)) {
-        for (const key in assign({}, prevValues || {}, updatedParams)) {
-            const propName = paths ? concat(paths, key) : [key];
-            if (isObject(updatedParams[key])) {
-                const updated = createCopy(updatedParams[key]);
+        for (const key in assign({}, prevValues, updatedParams)) {
+            const propName = paths ? concat(paths, key) : [key],
+                u = updatedParams[key];
+            if (isObject(u)) {
+                const updated = createCopy(u);
                 const prev = createCopy(prevValues[key] || {});
 
                 if (updated !== prev) {
                     res.push(propName);
                 }
                 getUpdatedPaths(updated, prev, propName, res);
-            } else if (prevValues && prevValues[key] !== updatedParams[key]) {
+            } else if (prevValues && prevValues[key] !== u) {
                 res.push(propName);
             }
         }
@@ -45,11 +46,12 @@ export const getUpdatedPaths = <T>(
 };
 
 export const getAdditionalPaths = (
+    storage: EStorage,
     paths: string[],
     filter = isArrayPathName,
     type = 1,
 ) =>
-    entries(getMap())
+    entries(storage.m)
         .filter(
             (entry) =>
                 pathToString(entry[1]).startsWith(pathToString(paths)) &&
@@ -113,31 +115,29 @@ export const mergeDeep = (
     return mergeDeep(type, target, ...sources);
 };
 
-export const getAdditionalKeys = (paths: string[]) =>
-    getAdditionalPaths(paths, isOptionalPathName, 0) as string[];
+export const getAdditionalKeys = (storage: EStorage, paths: string[]) =>
+    getAdditionalPaths(storage, paths, isOptionalPathName, 0) as string[];
 
 export const createNewArrayValues = (
     keys: string[],
     prev: any,
     newValue: any,
     filterFunc?: Function,
+    l = keys.length - 1,
 ) => {
-    const l = keys.length - 1;
-
     if (isArray(prev) && l >= 0) {
         return prev.map((_prevVal: any) => {
             const prevVal = createCopy(_prevVal);
-            if (isAFunction(filterFunc) && !filterFunc!(prevVal)) {
-                return prevVal;
-            }
-            const e = keys[l],
-                targetObj = keys.reduce(
-                    (prev, key, idx) => (idx === l ? prev : prev[key]),
-                    prevVal,
-                );
+            if (!isAFunction(filterFunc) || filterFunc!(prevVal)) {
+                const e = keys[l],
+                    targetObj = keys.reduce(
+                        (prev, key, idx) => (idx === l ? prev : prev[key]),
+                        prevVal,
+                    );
 
-            if (targetObj) {
-                targetObj[e] = getParams(newValue, targetObj[e]);
+                if (targetObj) {
+                    targetObj[e] = getParams(newValue, targetObj[e]);
+                }
             }
             return prevVal;
         });
@@ -147,6 +147,12 @@ export const createNewArrayValues = (
 
 export const findPathArrayIndex = (array?: string[]) =>
     (array && array.findIndex((val) => val === ArrayMapKey)) || -1;
+
+export const slice = <T extends string | any[]>(
+    value: T,
+    start?: number,
+    end?: number,
+) => value.slice(start, end) as T;
 
 export const isAFunction = (value: any) => typeof value === "function";
 
@@ -164,14 +170,11 @@ export const stringify = (value: any) => {
     }
 };
 
-export const diffValues = (prevObject: any, newObject: any) =>
-    diffValuesBoolean(prevObject, newObject) ? newObject : prevObject;
-
 export const diffValuesBoolean = (prevObject: any, newObject: any) =>
     stringify(prevObject) !== stringify(newObject);
 
 export const capitalizeName = (name: string) =>
-    name && name[0].toUpperCase() + name.slice(1);
+    name && name[0].toUpperCase() + slice(name, 1);
 
 export const capitalizeKeysToString = (arr: string[]) =>
     pathToString(arr.map(capitalizeName));
@@ -184,3 +187,13 @@ export const isArrayPathName = (name: string | string[]) =>
     name.includes(ArrayMapKey);
 export const isOptionalPathName = (name: string | string[]) =>
     name.includes(OptionalKey);
+
+export const reduceAssign = <T extends any>(
+    store: T,
+    value: (key: string, val: any) => any,
+    init = {},
+) =>
+    entries(store || {}).reduce(
+        (prev, entrie) => assign(prev, value(...entrie)),
+        init,
+    );

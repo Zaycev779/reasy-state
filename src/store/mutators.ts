@@ -1,53 +1,45 @@
+import { EStorage } from "./global";
 import { getGlobalData } from "./global/get";
 import { updateStore } from "./global/update";
 import { Options, UpdateType } from "./types/store";
 import {
-    assign,
     capitalizeKeysToString,
     concat,
-    entries,
     getParams,
     isDefaultObject,
     Mutators,
+    reduceAssign,
 } from "./utils";
 
-const reduceMutators = <T extends object>(
-    store: T,
-    value: (key: string, val: any) => any,
-) =>
-    entries(store).reduce((prev, entrie) => assign(prev, value(...entrie)), {});
-
-export const generateMutators = <T extends object>(
-    storeId: string,
+export const generateMutators = <T extends any>(
+    storage: EStorage,
     values: T,
     options?: Options<any>,
     prevKey: string[] = [],
 ): any =>
-    reduceMutators(values, (key, val) => {
-        if (key === Mutators) {
-            return reduceMutators(val, (key, fn) => ({
-                [capitalizeKeysToString(concat(prevKey, key))]: (
-                    ...args: any
-                ) => {
-                    const storePath = concat([storeId], prevKey),
-                        get = () => getGlobalData(storePath),
-                        set = (arg: any, type: UpdateType = UpdateType.S) => {
-                            updateStore(
-                                storePath,
-                                getParams(arg, get()),
-                                options,
-                                type,
-                            );
-                            return get();
-                        },
-                        patch = (arg: any) => set(arg, UpdateType.P);
+    reduceAssign(values, (key, val) =>
+        key === Mutators
+            ? reduceAssign(val, (key, fn) => ({
+                  [capitalizeKeysToString(concat(prevKey, key))]: (
+                      ...args: any
+                  ) => {
+                      const storePath = concat([], prevKey),
+                          get = () => getGlobalData(storage.s, storePath),
+                          set = (arg: any, type: UpdateType = UpdateType.S) => {
+                              updateStore(
+                                  storage,
+                                  storePath,
+                                  getParams(arg, get()),
+                                  options,
+                                  type,
+                              );
+                              return get();
+                          },
+                          patch = (arg: any) => set(arg, UpdateType.P);
 
-                    return getParams(fn({ set, get, patch }, get()), ...args);
-                },
-            }));
-        }
-        return (
-            isDefaultObject(val) &&
-            generateMutators(storeId, val, options, concat(prevKey, key))
-        );
-    });
+                      return getParams(fn({ set, get, patch }, get()), ...args);
+                  },
+              }))
+            : isDefaultObject(val) &&
+              generateMutators(storage, val, options, concat(prevKey, key)),
+    );

@@ -1,70 +1,56 @@
+import { EStorage } from "../global";
 import { getGlobalData } from "../global/get";
 import {
     ArrayMapKey,
+    assign,
     capitalizeName,
     concat,
     isArray,
     isDefaultObject,
     isOptionalPathName,
     OptionalKey,
-    signSplit,
+    reduceAssign,
+    split,
 } from "../utils";
-import { getMapByKey, setMap } from "./utils";
+import { getMapByKey } from "./utils";
 
-export const generateStaticPathsMap = (
-    path: string,
-    prevPath: string[] = [path],
-    data = getGlobalData(prevPath),
-): any => {
-    const pathName = capitalizeName(path);
-    if (isDefaultObject(data)) {
-        for (const name in data) {
-            setMap(pathName + capitalizeName(name), prevPath);
-            generateStaticPathsMap(
-                pathName + capitalizeName(name),
-                concat(prevPath, name),
-                data[name],
-            );
-        }
-    }
-
-    setMap(pathName, prevPath);
-};
+export const getStaticPath = (store: any, id: string, path: string[] = []) =>
+    reduceAssign(
+        store,
+        (key, val, name = id + capitalizeName(key)) =>
+            assign(
+                { [name]: concat(path, key) },
+                isDefaultObject(val) &&
+                    getStaticPath(val, name, concat(path, key)),
+            ),
+        { [id]: path },
+    );
 
 export const patchToGlobalMap = (
+    storage: EStorage,
     mapKey: string,
     baseMap: string = mapKey,
     staticPath?: string[],
     prevPath: string[] = [],
 ) => {
-    if (!isOptionalPathName(mapKey)) return;
-    const [staticName, firstKey, ...additionalKeys] = signSplit(mapKey);
+    if (isOptionalPathName(mapKey)) {
+        const [staticName, firstKey, ...additionalKeys] = split(mapKey);
+        const staticFromMap =
+                staticPath || getMapByKey(storage, staticName) || [],
+            c = concat(staticFromMap, prevPath);
+        const setMap = (value: string[]) => (storage.m[baseMap] = value);
 
-    const staticFromMap = staticPath || getMapByKey(staticName) || [];
-    const length = additionalKeys.length;
-
-    if (isArray(getGlobalData(concat(staticFromMap, prevPath)))) {
-        setMap(
-            baseMap,
-            concat(
-                staticFromMap,
-                prevPath,
-                ArrayMapKey,
-                firstKey,
-                additionalKeys,
-            ),
-        );
-
-        return;
-    }
-    setMap(baseMap, concat(staticFromMap, prevPath, firstKey));
-
-    if (length) {
-        patchToGlobalMap(
-            OptionalKey + additionalKeys.join(OptionalKey),
-            baseMap,
-            staticFromMap,
-            concat(prevPath, firstKey),
-        );
+        if (isArray(getGlobalData(storage.s, c)))
+            setMap(concat(c, ArrayMapKey, firstKey, additionalKeys));
+        else
+            setMap(concat(c, firstKey)),
+                additionalKeys.length &&
+                    patchToGlobalMap(
+                        storage,
+                        OptionalKey + additionalKeys.join(OptionalKey),
+                        baseMap,
+                        staticFromMap,
+                        concat(prevPath, firstKey),
+                    );
     }
 };
