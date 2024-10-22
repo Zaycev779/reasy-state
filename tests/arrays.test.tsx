@@ -810,6 +810,32 @@ it("deep array store 3", async () => {
     };
 
     const arrayStore = createState<Store>()();
+
+    function Page() {
+        const value = arrayStore.use$arrs$id();
+        return (
+            <div>
+                ids: {!Array.isArray(value) ? "-" : value?.join(",") ?? "-"}
+            </div>
+        );
+    }
+
+    function Page2() {
+        const value = arrayStore.use$arrs$obj$objArr$value();
+        return (
+            <div>
+                objArr: {!Array.isArray(value) ? "-" : value?.join(",") ?? "-"}
+            </div>
+        );
+    }
+
+    const { getByText, findByText } = render(
+        <>
+            <Page />
+            <Page2 />
+        </>,
+    );
+
     //@ts-ignore
     act(() => arrayStore.set$arrs$id(() => true, undefined));
     //@ts-ignore
@@ -824,6 +850,9 @@ it("deep array store 3", async () => {
     expect(arrayStore.get$arrs$obj$objArr$value()).toStrictEqual(undefined);
     //@ts-ignore
     expect(arrayStore.get()).toStrictEqual(undefined);
+
+    await findByText("ids: -");
+    await findByText("objArr: -");
 
     arrayStore.set$arrs([
         {
@@ -846,6 +875,9 @@ it("deep array store 3", async () => {
         },
     ]);
 
+    await findByText("ids: 1,2");
+    await findByText("objArr: 321,456");
+
     act(() =>
         arrayStore.set$arrs$id(
             () => true,
@@ -853,6 +885,7 @@ it("deep array store 3", async () => {
         ),
     );
     expect(arrayStore.get$arrs$id()).toStrictEqual([2, 3]);
+    await findByText("ids: 2,3");
 
     act(() =>
         arrayStore.set$arrs$obj$val(
@@ -883,6 +916,8 @@ it("deep array store 3", async () => {
         { s: { d: 1 }, value: 322 },
         { s: { d: 2 }, value: 457 },
     ]);
+    await findByText("objArr: 322,457");
+
     act(() =>
         arrayStore.set$arrs$obj$objArr$value(
             () => true,
@@ -890,6 +925,7 @@ it("deep array store 3", async () => {
         ),
     );
     expect(arrayStore.get$arrs$obj$objArr$value()).toStrictEqual([323, 458]);
+    await findByText("objArr: 323,458");
 
     act(() => arrayStore.set$arrs$obj$objArr$s(() => true, { d: 1 }));
     expect(arrayStore.get$arrs$obj$objArr$s()).toStrictEqual([

@@ -114,13 +114,13 @@ export const createNewArrayValues = (
     keys: string[],
     prev: any,
     newValue: any,
-    filterFunc?: Function,
+    filterFunc: Function = () => 1,
     l = keys.length,
 ) => {
     if (isArray(prev) && l) {
         return prev.map((_prevVal: any) => {
             const prevVal = createCopy(_prevVal);
-            if (!isAFunction(filterFunc) || filterFunc!(prevVal))
+            if (filterFunc(prevVal))
                 keys.reduce(
                     (pr, key, idx) =>
                         pr &&
@@ -132,7 +132,6 @@ export const createNewArrayValues = (
                                       slice(keys, idx + 1),
                                       pr[key],
                                       newValue,
-                                      filterFunc,
                                   )
                                 : pr[key]),
                     prevVal,
