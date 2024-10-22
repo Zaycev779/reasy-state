@@ -584,3 +584,116 @@ it("create root mutators", async () => {
     fireEvent.click(getByText("inc"));
     await findByText("value: 2");
 });
+
+it("result mutators", async () => {
+    type State = {
+        store: {
+            value: number;
+        };
+    };
+    const { useStoreValue, inc, dec, getStore } = createState<State>()({
+        store: {
+            value: 1,
+        },
+        mutators: {
+            inc: ({ set, get }, { store: { value } }) =>
+                set({ store: { value: value + 1 } }),
+            dec: ({ set, get }, { store: { value } }) => "dec",
+        },
+    });
+
+    function Page() {
+        const value = useStoreValue();
+        return <div>value: {value}</div>;
+    }
+
+    function Button() {
+        return <button onClick={() => inc()}>inc</button>;
+    }
+
+    const { getByText, findByText } = render(
+        <>
+            <Page />
+            <Button />
+        </>,
+    );
+
+    await findByText("value: 1");
+
+    fireEvent.click(getByText("inc"));
+    await findByText("value: 2");
+
+    act(() => {
+        const res = inc().store.value;
+        expect(res).toBe(3);
+        const res2 = dec();
+        expect(res2).toBe("dec");
+    });
+});
+
+it("patch mutators", async () => {
+    type State = {
+        store: {
+            value: number;
+            other: number;
+        };
+    };
+    const { useStoreValue, useStoreOther, inc, useStore } =
+        createState<State>()({
+            store: {
+                value: 1,
+                other: 2,
+            },
+            mutators: {
+                inc: ({ patch, get }) =>
+                    patch({ store: { value: get().store.value + 1 } }),
+            },
+        });
+
+    function Page() {
+        const value = useStoreValue();
+        return <div>value: {value}</div>;
+    }
+
+    function Page2() {
+        const other = useStoreOther();
+        return <div>other: {other}</div>;
+    }
+
+    function Page3() {
+        const data = useStore();
+        return (
+            <div>
+                data: {data.value},{data.other}
+            </div>
+        );
+    }
+
+    function Button() {
+        return <button onClick={() => inc()}>inc</button>;
+    }
+
+    const { getByText, findByText } = render(
+        <>
+            <Page />
+            <Page2 />
+            <Page3 />
+            <Button />
+        </>,
+    );
+
+    await findByText("value: 1");
+    await findByText("other: 2");
+    await findByText("data: 1,2");
+
+    fireEvent.click(getByText("inc"));
+    await findByText("value: 2");
+    await findByText("other: 2");
+    await findByText("data: 2,2");
+
+    act(() => {
+        const res = inc().store;
+        expect(res).toStrictEqual({ value: 3, other: 2 });
+    });
+    await findByText("data: 3,2");
+});

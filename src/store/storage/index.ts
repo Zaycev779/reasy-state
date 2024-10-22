@@ -1,5 +1,5 @@
 import { Options, StorageOptions, StorageType } from "../types/store";
-import { isObject, mergeDeep, Mutators, stringify } from "../utils";
+import { isObject, mergeDeep, Mutators, parse, stringify } from "../utils";
 import { isClient } from "../utils/client";
 
 export const storageAction = <T>(
@@ -26,7 +26,7 @@ export const storageAction = <T>(
                             {},
                             mergeValue,
                             mutators,
-                            JSON.parse(data),
+                            parse(data),
                         )
                     );
                 }

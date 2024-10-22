@@ -204,16 +204,14 @@ export const UserRating = () => {
             <div>
                 <button
                     onClick={async () => {
-                        const response = await userStoreDataRemove(5);
-                        return response; // "success"
+                        await userStoreDataRemove(5); // return "success"
                     }}
                 >
                     -5
                 </button>
                 <button
                     onClick={async () => {
-                        const response = await userStoreDataDec();
-                        return response; // true
+                        await userStoreDataDec(); // return true
                     }}
                 >
                     -

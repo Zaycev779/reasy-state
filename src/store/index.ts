@@ -115,28 +115,31 @@ export const _createState = <T>(
                         );
                 case GeneratedType.R:
                 case GeneratedType.S:
-                    return (filterFunc: FType, arrParams?: any) => {
-                        const basePath = getMapByKey(storage, mapKey),
+                    return (...args: any) => {
+                        const [filterFunc, arrParams] = args,
+                            basePath = getMapByKey(storage, mapKey),
                             arrIdx = findPathArrayIndex(basePath),
+                            isUpdate = args.length < 2 || arrIdx >= 0,
                             path = arrParams
                                 ? slice(basePath, 0, arrIdx)
                                 : basePath;
 
-                        updateStore(
-                            storage,
-                            path,
-                            arrParams
-                                ? createNewArrayValues(
-                                      slice(basePath, arrIdx + 1),
-                                      getGlobalData(storage.s, path),
-                                      arrParams,
-                                      filterFunc,
-                                  )
-                                : type === GeneratedType.R
-                                ? initialValues
-                                : filterFunc,
-                            options,
-                        );
+                        isUpdate &&
+                            updateStore(
+                                storage,
+                                path,
+                                arrParams
+                                    ? createNewArrayValues(
+                                          slice(basePath, arrIdx + 1),
+                                          getGlobalData(storage.s, path),
+                                          arrParams,
+                                          filterFunc,
+                                      )
+                                    : type === GeneratedType.R
+                                    ? initialValues
+                                    : filterFunc,
+                                options,
+                            );
                     };
 
                 default:

@@ -14,12 +14,15 @@ type EscapeArrayKey<TKey extends string> =
         ? never
         : TKey extends `${infer TKeyBefore}$[${bigint}]${infer TKeyAfter}`
         ? TKeyBefore extends `${infer X}[]${infer Y}`
-            ? EscapeArrayKey<`${TKeyBefore}${TKeyAfter}`>
+            ? TKeyAfter extends ""
+                ? never
+                : EscapeArrayKey<`${TKeyBefore}${TKeyAfter}`>
             : EscapeArrayKey<`${TKeyBefore}[]${TKeyAfter}`>
         : TKey;
 
 type EscapeArray<
     E,
+    D,
     TKey extends string,
     TValue,
 > = TKey extends `${string}[${bigint}]`
@@ -37,13 +40,14 @@ type EscapeArray<
 type CollapseEntries<TEntry extends Entry> = {
     [E in TEntry as EscapeArrayKey<E["key"]>]: EscapeArray<
         TEntry,
+        E,
         E["key"],
         E["value"]
     >;
 };
 
 type CreateEntry<TValue, TInit, TPrevKey> = OmitItself<
-    TValue extends unknown[] ? { [k: `[${bigint}]`]: TValue[number] } : TValue,
+    TValue extends (infer X)[] ? { [k: `[${bigint}]`]: X } : TValue,
     TInit,
     TPrevKey
 >;

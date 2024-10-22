@@ -7,8 +7,9 @@ export const Mutators = "mutators";
 export const ArrayMapKey = "[]";
 export const OptionalKey = "$";
 export const split = (value: string, type = /[\s$]+/) => value.split(type);
-
 export const pathToString = (path: string[]) => path.join("");
+export const { assign, entries, getPrototypeOf } = Object;
+export const { stringify, parse } = JSON;
 
 export const getRootPaths = (paths: string[]) =>
     paths.reduce(
@@ -20,32 +21,30 @@ export const getRootPaths = (paths: string[]) =>
 export const getUpdatedPaths = <T extends object>(
     updatedParams: T,
     prevValues: T,
-    paths: string[],
-    res: string[][] = [],
+    paths: string[] = [],
+    res: string[][] = [paths],
 ) => {
-    if (isObject(updatedParams)) {
-        for (const key in assign({}, prevValues, updatedParams)) {
-            const propName = paths ? concat(paths, key) : [key],
-                u = updatedParams[key];
-            if (isObject(u)) {
-                const updated = createCopy(u);
-                const prev = createCopy(prevValues[key] || {});
+    if (!isObject(updatedParams))
+        return prevValues !== updatedParams ? [paths] : [];
 
-                if (updated !== prev) {
-                    res.push(propName);
-                }
-                getUpdatedPaths(updated, prev, propName, res);
-            } else if (prevValues && prevValues[key] !== u) {
-                res.push(propName);
-            }
+    for (let key in assign({}, prevValues, updatedParams)) {
+        const propName = concat(paths, key);
+        if (isObject(updatedParams[key])) {
+            res.push(propName);
+            getUpdatedPaths(
+                updatedParams[key] as object,
+                prevValues[key] || {},
+                propName,
+                res,
+            );
+        } else if (prevValues && prevValues[key] !== updatedParams[key]) {
+            res.push(propName);
         }
-        return concat([paths], res);
     }
-
-    return prevValues !== updatedParams ? [paths] : [];
+    return res;
 };
 
-export const getAdditionalPaths = (
+export const getAdditional = (
     storage: EStorage,
     paths: string[],
     filter = isArrayPathName,
@@ -65,16 +64,10 @@ export const isObject = (value: any) =>
 
 export const isArray = (value: any) => Array.isArray(value);
 
-const getPrototypeOf = Object.getPrototypeOf;
-
-export const defaultObjectProto = getPrototypeOf({});
+const defaultObjectProto = getPrototypeOf({});
 
 export const isDefaultObject = (value: any) =>
     isObject(value) && defaultObjectProto === getPrototypeOf(value);
-
-const mutate =
-    (type: StorageType, val: any) => (fn: Record<StorageType, any>) =>
-        fn[type](val);
 
 export const createCopy = (value: any) =>
     isDefaultObject(value) ? mergeDeep(undefined, {}, value) : value;
@@ -83,7 +76,9 @@ export const concat = (target: any[] | string, ...arrays: any): any =>
     target.concat(...arrays);
 
 const mergeMutate = (type: Maybe<StorageType>, target: any, source: any) =>
-    type && isAFunction(target) ? target(mutate(type, source)) : source;
+    type && isAFunction(target)
+        ? target((fn: Record<StorageType, any>) => fn[type](source))
+        : source;
 
 export const mergeDeep = (
     type: Maybe<StorageType>,
@@ -94,7 +89,7 @@ export const mergeDeep = (
     if (!source && !sources.length) return target;
 
     if (isObject(target) && isObject(source)) {
-        for (const key in source) {
+        for (let key in source) {
             if (key === Mutators) continue;
             if (isObject(source[key])) {
                 if (!target[key]) assign(target, { [key]: {} });
@@ -115,30 +110,34 @@ export const mergeDeep = (
     return mergeDeep(type, target, ...sources);
 };
 
-export const getAdditionalKeys = (storage: EStorage, paths: string[]) =>
-    getAdditionalPaths(storage, paths, isOptionalPathName, 0) as string[];
-
 export const createNewArrayValues = (
     keys: string[],
     prev: any,
     newValue: any,
     filterFunc?: Function,
-    l = keys.length - 1,
+    l = keys.length,
 ) => {
-    if (isArray(prev) && l >= 0) {
+    if (isArray(prev) && l) {
         return prev.map((_prevVal: any) => {
             const prevVal = createCopy(_prevVal);
-            if (!isAFunction(filterFunc) || filterFunc!(prevVal)) {
-                const e = keys[l],
-                    targetObj = keys.reduce(
-                        (prev, key, idx) => (idx === l ? prev : prev[key]),
-                        prevVal,
-                    );
+            if (!isAFunction(filterFunc) || filterFunc!(prevVal))
+                keys.reduce(
+                    (pr, key, idx) =>
+                        pr &&
+                        (pr[key] =
+                            idx + 1 === l
+                                ? getParams(newValue, pr[key])
+                                : isArray(pr[key])
+                                ? createNewArrayValues(
+                                      slice(keys, idx + 1),
+                                      pr[key],
+                                      newValue,
+                                      filterFunc,
+                                  )
+                                : pr[key]),
+                    prevVal,
+                );
 
-                if (targetObj) {
-                    targetObj[e] = getParams(newValue, targetObj[e]);
-                }
-            }
             return prevVal;
         });
     }
@@ -162,14 +161,6 @@ export const getParams = (params: any, ...args: any[]) =>
 export const getFiltred = (params: any, filterFunc: any) =>
     isAFunction(filterFunc) ? params.filter(filterFunc) : params;
 
-export const stringify = (value: any) => {
-    try {
-        return JSON.stringify(value);
-    } catch {
-        return;
-    }
-};
-
 export const diffValuesBoolean = (prevObject: any, newObject: any) =>
     stringify(prevObject) !== stringify(newObject);
 
@@ -178,10 +169,6 @@ export const capitalizeName = (name: string) =>
 
 export const capitalizeKeysToString = (arr: string[]) =>
     pathToString(arr.map(capitalizeName));
-
-export const assign = Object.assign;
-
-export const entries = Object.entries;
 
 export const isArrayPathName = (name: string | string[]) =>
     name.includes(ArrayMapKey);

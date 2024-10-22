@@ -570,35 +570,63 @@ it("deep array store", async () => {
         const value = arrayStore.use$arrs();
         renderCounts++;
         return (
-            <div>val: {value?.map(({ obj }) => obj.val).join(",") ?? "-"}</div>
+            <div>
+                val:{" "}
+                {!Array.isArray(value)
+                    ? "-"
+                    : value?.map(({ obj }) => obj.val).join(",") ?? "-"}
+            </div>
         );
     }
 
     function Page2() {
         const value = arrayStore.use$arrs();
-        return <div>ids: {value?.map(({ id }) => id).join(",") ?? "-"}</div>;
+        return (
+            <div>
+                ids:{" "}
+                {!Array.isArray(value)
+                    ? "-"
+                    : value?.map(({ id }) => id).join(",") ?? "-"}
+            </div>
+        );
     }
 
     function Page3() {
         const value = arrayStore.use$arrs$arr((val) => val.arr);
-        return <div>arr: {value?.join(",") ?? "-"}</div>;
+        return (
+            <div>
+                arr: {!Array.isArray(value) ? "-" : value?.join(",") ?? "-"}
+            </div>
+        );
     }
 
     function Page4() {
         const value = arrayStore.use$arrs$obj$oarr((val) => val.obj.oarr);
-        return <div>oarr: {value?.join(",") ?? "-"}</div>;
+        return (
+            <div>
+                oarr: {!Array.isArray(value) ? "-" : value?.join(",") ?? "-"}
+            </div>
+        );
     }
 
     function Page5() {
         const value = arrayStore.use$arrs$obj$objArr$value(
             ({ obj: { objArr } }) => objArr,
         );
-        return <div>objarr: {value?.join(",") ?? "-"}</div>;
+        return (
+            <div>
+                objarr: {!Array.isArray(value) ? "-" : value?.join(",") ?? "-"}
+            </div>
+        );
     }
 
     function Page6() {
         const value = arrayStore.use$arrs$arr2(({ arr2 }) => arr2);
-        return <div>arr2: {value?.join(",") ?? "-"}</div>;
+        return (
+            <div>
+                arr2: {!Array.isArray(value) ? "-" : value?.join(",") ?? "-"}
+            </div>
+        );
     }
 
     function Button() {
@@ -722,4 +750,184 @@ it("deep array store", async () => {
         arrayStore.get$arrs$arr(({ id, arr }) => id === 2 && arr),
     ).toStrictEqual([]);
     expect(renderCounts).toBe(3);
+    //@ts-ignore
+    act(() => arrayStore.set(undefined));
+    //    act(() => arrayStore.set$arrs(undefined));
+    //@ts-ignore
+    expect(arrayStore.get()).toStrictEqual(undefined);
+    expect(arrayStore.get$arrs()).toStrictEqual(undefined);
+    expect(arrayStore.get$arrs$id()).toStrictEqual(undefined);
+    expect(arrayStore.get$arrs$arr()).toStrictEqual(undefined);
+    expect(arrayStore.get$arrs$obj()).toStrictEqual(undefined);
+    expect(arrayStore.get$arrs$obj$objArr()).toStrictEqual(undefined);
+    expect(arrayStore.get$arrs$obj$objArr$value()).toStrictEqual(undefined);
+    expect(
+        arrayStore.get$arrs$obj$objArr$value(({ obj: { objArr } }) => objArr),
+    ).toStrictEqual(undefined);
+    act(() => arrayStore.set$arrs$id(() => true, 1));
+    expect(arrayStore.get$arrs()).toStrictEqual(undefined);
+    act(() => arrayStore.set$arrs$obj$objArr(() => true, [{ value: 1 }]));
+    expect(arrayStore.get$arrs$obj$objArr()).toStrictEqual(undefined);
+    //    expect(arrayStore.get$arrs()).toStrictEqual(undefined);
+
+    //    act(() => arrayStore.set$arrs$obj$objArr$value(() => true, 1));
+    //    expect(arrayStore.get$arrs$obj$objArr$value()).toStrictEqual(undefined);
+});
+
+it("deep array store 2", async () => {
+    type Store = {
+        arrs: {
+            id: number;
+            obj: { val: any; oarr?: number[]; objArr?: { value: number }[] };
+            arr?: number[];
+            arr2?: number[][];
+        }[];
+    };
+
+    const arrayStore = createState<Store>()();
+    act(() => arrayStore.set$arrs$id(() => true, 1));
+    expect(arrayStore.get$arrs()).toStrictEqual(undefined);
+    act(() => arrayStore.set$arrs$obj$objArr(() => true, [{ value: 1 }]));
+    expect(arrayStore.get$arrs$obj$objArr()).toStrictEqual(undefined);
+    act(() => arrayStore.set$arrs$obj$objArr$value(() => true, 1));
+    expect(arrayStore.get$arrs$obj$objArr$value()).toStrictEqual(undefined);
+    //@ts-ignore
+    expect(arrayStore.get()).toStrictEqual(undefined);
+});
+
+it("deep array store 3", async () => {
+    type Store = {
+        arrs: {
+            id: number;
+            obj: {
+                val: number;
+                barr?: number[];
+                objArr?: { value: number; s: { d: number } }[];
+            };
+            arr?: number[];
+            arr2?: number[][];
+        }[];
+    };
+
+    const arrayStore = createState<Store>()();
+    //@ts-ignore
+    act(() => arrayStore.set$arrs$id(() => true, undefined));
+    //@ts-ignore
+    expect(arrayStore.get()).toStrictEqual(undefined);
+    expect(arrayStore.get$arrs()).toStrictEqual(undefined);
+    act(() => arrayStore.set$arrs$obj$objArr(() => true, undefined));
+    //@ts-ignore
+    expect(arrayStore.get()).toStrictEqual(undefined);
+    expect(arrayStore.get$arrs$obj$objArr()).toStrictEqual(undefined);
+    //@ts-ignore
+    act(() => arrayStore.set$arrs$obj$objArr$value(() => true, undefined));
+    expect(arrayStore.get$arrs$obj$objArr$value()).toStrictEqual(undefined);
+    //@ts-ignore
+    expect(arrayStore.get()).toStrictEqual(undefined);
+
+    arrayStore.set$arrs([
+        {
+            id: 1,
+            obj: {
+                val: 123,
+                barr: [2],
+                objArr: [{ value: 321, s: { d: 1 } }],
+            },
+            arr2: [[11]],
+        },
+        {
+            id: 2,
+            obj: {
+                val: 234,
+                barr: [3],
+                objArr: [{ value: 456, s: { d: 2 } }],
+            },
+            arr2: [],
+        },
+    ]);
+
+    act(() =>
+        arrayStore.set$arrs$id(
+            () => true,
+            (prev) => prev + 1,
+        ),
+    );
+    expect(arrayStore.get$arrs$id()).toStrictEqual([2, 3]);
+
+    act(() =>
+        arrayStore.set$arrs$obj$val(
+            () => true,
+            (prev) => prev + 1,
+        ),
+    );
+    expect(arrayStore.get$arrs$obj$val()).toStrictEqual([124, 235]);
+
+    act(() =>
+        arrayStore.set$arrs$obj$barr(
+            () => true,
+
+            //@ts-ignore
+            (prev) => prev?.map((v) => v + 1),
+        ),
+    );
+    expect(arrayStore.get$arrs$obj$barr()).toStrictEqual([3, 4]);
+
+    act(() =>
+        arrayStore.set$arrs$obj$objArr(
+            () => true,
+            (prev) => prev?.map(({ value, s }) => ({ value: value + 1, s })),
+        ),
+    );
+
+    expect(arrayStore.get$arrs$obj$objArr()).toStrictEqual([
+        { s: { d: 1 }, value: 322 },
+        { s: { d: 2 }, value: 457 },
+    ]);
+    act(() =>
+        arrayStore.set$arrs$obj$objArr$value(
+            () => true,
+            (p) => p + 1,
+        ),
+    );
+    expect(arrayStore.get$arrs$obj$objArr$value()).toStrictEqual([323, 458]);
+
+    act(() => arrayStore.set$arrs$obj$objArr$s(() => true, { d: 1 }));
+    expect(arrayStore.get$arrs$obj$objArr$s()).toStrictEqual([
+        { d: 1 },
+        { d: 1 },
+    ]);
+
+    act(() =>
+        arrayStore.set$arrs$obj$objArr$s$d(
+            () => true,
+            (p) => p + 2,
+        ),
+    );
+    expect(arrayStore.get$arrs$obj$objArr$s()).toStrictEqual([
+        { d: 3 },
+        { d: 3 },
+    ]);
+
+    expect(JSON.stringify(arrayStore.get$arrs())).toStrictEqual(
+        JSON.stringify([
+            {
+                id: 2,
+                obj: {
+                    val: 124,
+                    barr: [3],
+                    objArr: [{ value: 323, s: { d: 3 } }],
+                },
+                arr2: [[11]],
+            },
+            {
+                id: 3,
+                obj: {
+                    val: 235,
+                    barr: [4],
+                    objArr: [{ value: 458, s: { d: 3 } }],
+                },
+                arr2: [],
+            },
+        ]),
+    );
 });

@@ -8,8 +8,9 @@ import {
     concat,
     createCopy,
     diffValuesBoolean,
-    getAdditionalKeys,
+    getAdditional,
     getParams,
+    isOptionalPathName,
     mergeDeep,
 } from "../utils";
 import { EStorage } from ".";
@@ -46,7 +47,9 @@ export const updateStore = <T>(
                 : updatedParams,
         );
 
-        getAdditionalKeys(storage, path).forEach((mapKey) => {
+        (
+            getAdditional(storage, path, isOptionalPathName, 0) as string[]
+        ).forEach((mapKey) => {
             const prevPath = getMapByKey(storage, mapKey);
             patchToGlobalMap(storage, mapKey);
             diffValuesBoolean(prevPath, getMapByKey(storage, mapKey)) &&
