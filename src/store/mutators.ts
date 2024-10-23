@@ -23,18 +23,17 @@ export const generateMutators = <T extends any>(
                   [capitalizeKeysToString(concat(prevKey, key))]: (
                       ...args: any
                   ) => {
-                      const storePath = concat([], prevKey),
-                          get = () => getGlobalData(storage.s, storePath),
-                          set = (arg: any, type: UpdateType = UpdateType.S) => {
+                      const get = () => getGlobalData(storage.s, prevKey),
+                          set = (arg: any, type: UpdateType) => (
                               updateStore(
                                   storage,
-                                  storePath,
+                                  prevKey,
                                   getParams(arg, get()),
                                   options,
                                   type,
-                              );
-                              return get();
-                          },
+                              ),
+                              get()
+                          ),
                           patch = (arg: any) => set(arg, UpdateType.P);
 
                       return getParams(fn({ set, get, patch }, get()), ...args);

@@ -1,5 +1,5 @@
 import { Options, StorageOptions, StorageType } from "../types/store";
-import { isObject, mergeDeep, Mutators, stringify } from "../utils";
+import { isObject, mergeDeep, Mutators, parse, stringify } from "../utils";
 import { isClient } from "../utils/client";
 
 export const storageAction = <T>(
@@ -26,19 +26,17 @@ export const storageAction = <T>(
                             {},
                             mergeValue,
                             mutators,
-                            JSON.parse(data),
+                            parse(data),
                         )
                     );
                 }
-                case StorageType.P: {
-                    const toString = stringify(
-                        mergeDeep(actionType, {}, mutators, mergeValue),
+                case StorageType.P:
+                    type.setItem(
+                        name,
+                        stringify(
+                            mergeDeep(actionType, {}, mutators, mergeValue),
+                        ),
                     );
-
-                    if (toString) {
-                        type.setItem(name, toString);
-                    }
-                }
             }
         } catch {}
     }

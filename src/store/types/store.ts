@@ -53,8 +53,8 @@ type PartialObject<T> = Partial<
 >;
 
 type SetFn<PT> = {
-    set: (prev: Param<PT>) => PT & void;
-    patch: (prev: Param<PT, PartialObject<PT>>) => PT & void;
+    [UpdateType.S]: (prev: Param<PT>) => PT & void;
+    [UpdateType.P]: (prev: Param<PT, PartialObject<PT>>) => PT & void;
     get: () => PT;
 };
 

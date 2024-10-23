@@ -114,7 +114,11 @@ it("create optional store with any types", async () => {
     function Page() {
         const value = state?.use$userStore$value();
 
-        return <div>value: {value || "-"}</div>;
+        return (
+            <>
+                <div>value: {value || "-"}</div>
+            </>
+        );
     }
 
     function Button() {
@@ -137,7 +141,41 @@ it("create optional store with any types", async () => {
     await findByText("value: new value");
     act(() => state.set(undefined));
     expect(state?.get$userStore$value()).toBe(undefined);
+    expect(state?.get$userStore()).toBe(undefined);
     expect(state?.get()).toBe(undefined);
+
+    act(() => state.set$userStore({ value: "new value2" }));
+    act(() => state.set$userStore$ab({ b: 1 }));
+    expect(state?.get$userStore$ab$b()).toStrictEqual(1);
+    expect(state?.get$userStore$value()).toBe("new value2");
+    expect(state?.get$userStore()).toStrictEqual({
+        ab: { b: 1 },
+        value: "new value2",
+    });
+    act(() => state.set$userStore$ab({ b: 2 }));
+    expect(state?.get$userStore$value()).toBe("new value2");
+    expect(state?.get$userStore()).toStrictEqual({
+        ab: { b: 2 },
+        value: "new value2",
+    });
+    expect(state?.get$userStore$ab()).toStrictEqual({ b: 2 });
+    expect(state?.get$userStore$ab$b()).toStrictEqual(2);
+
+    act(() => state.set$userStore$ab(undefined));
+    expect(state?.get$userStore$ab$b()).toStrictEqual(undefined);
+    expect(state?.get$userStore$ab()).toStrictEqual(undefined);
+    expect(state?.get$userStore()).toStrictEqual({
+        ab: undefined,
+        value: "new value2",
+    });
+    act(() => state.set$userStore$ab({ b: 1 }));
+    expect(state?.get$userStore$ab$b()).toStrictEqual(1);
+    act(() => state.set$userStore(undefined));
+
+    expect(state?.get$userStore$value()).toStrictEqual(undefined);
+    expect(state?.get$userStore$ab$b()).toStrictEqual(undefined);
+    expect(state?.get$userStore$ab()).toStrictEqual(undefined);
+    expect(state?.get$userStore()).toStrictEqual(undefined);
 });
 
 it("create emty primitive store", async () => {

@@ -19,7 +19,7 @@ import {
 import {
     capitalizeKeysToString,
     createCopy,
-    createNewArrayValues,
+    generateArray,
     findPathArrayIndex,
     pathToString,
     split,
@@ -67,14 +67,15 @@ export const _createState = <T>(
             if (name === GeneratedType.sr) return new Proxy({}, handler);
 
             const splitName = capitalizeKeysToString(split(name));
-            if (splitName in target) return target[splitName];
-
             const [type, ...functionName] = split(
                 name.replace(GeneratedType.SR, GeneratedType.sr),
                 /(?=[A-Z$])/,
             );
 
             const mapKey = storeId + pathToString(functionName);
+
+            if (splitName in target) return target[splitName];
+
             patchToGlobalMap(storage, mapKey);
 
             switch (type) {
@@ -115,28 +116,31 @@ export const _createState = <T>(
                         );
                 case GeneratedType.R:
                 case GeneratedType.S:
-                    return (filterFunc: FType, arrParams?: any) => {
-                        const basePath = getMapByKey(storage, mapKey),
+                    return (...args: any) => {
+                        const [filterFunc, arrParams] = args,
+                            basePath = getMapByKey(storage, mapKey),
                             arrIdx = findPathArrayIndex(basePath),
+                            isUpdate = args.length < 2 || arrIdx,
                             path = arrParams
-                                ? slice(basePath, 0, arrIdx)
+                                ? slice(basePath, 0, arrIdx - 1)
                                 : basePath;
 
-                        updateStore(
-                            storage,
-                            path,
-                            arrParams
-                                ? createNewArrayValues(
-                                      slice(basePath, arrIdx + 1),
-                                      getGlobalData(storage.s, path),
-                                      arrParams,
-                                      filterFunc,
-                                  )
-                                : type === GeneratedType.R
-                                ? initialValues
-                                : filterFunc,
-                            options,
-                        );
+                        isUpdate &&
+                            updateStore(
+                                storage,
+                                path,
+                                type === GeneratedType.R
+                                    ? initialValues
+                                    : arrParams
+                                    ? generateArray(
+                                          slice(basePath, arrIdx),
+                                          getGlobalData(storage.s, path),
+                                          arrParams,
+                                          filterFunc,
+                                      )
+                                    : filterFunc,
+                                options,
+                            );
                     };
 
                 default:
