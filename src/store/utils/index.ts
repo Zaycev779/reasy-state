@@ -114,26 +114,28 @@ export const generateArray = (
     l = keys.length,
 ) =>
     isArray(prev) && l
-        ? prev.map((_prevVal, _1, _2, prevVal = createCopy(_prevVal)) => {
-              filterFunc(prevVal) &&
-                  keys.reduce(
-                      (pr, key, idx) =>
-                          pr &&
-                          (pr[key] =
-                              idx + 1 === l
-                                  ? getParams(newValue, pr[key])
-                                  : isArray(pr[key])
-                                  ? generateArray(
-                                        slice(keys, idx + 1),
-                                        pr[key],
-                                        newValue,
-                                    )
-                                  : pr[key]),
-                      prevVal,
-                  );
+        ? (prev as any[]).map(
+              (_prevVal, _1, _2, prevVal = createCopy(_prevVal)) => {
+                  filterFunc(prevVal) &&
+                      keys.reduce(
+                          (pr, key, idx) =>
+                              pr &&
+                              (pr[key] =
+                                  idx + 1 === l
+                                      ? getParams(newValue, pr[key])
+                                      : isArray(pr[key])
+                                      ? generateArray(
+                                            slice(keys, idx + 1),
+                                            pr[key],
+                                            newValue,
+                                        )
+                                      : pr[key]),
+                          prevVal,
+                      );
 
-              return prevVal;
-          })
+                  return prevVal;
+              },
+          )
         : prev;
 
 export const findPathArrayIndex = (array?: string[]) =>
