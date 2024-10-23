@@ -8,17 +8,17 @@ export const getGlobalData = <T extends EStorage["s"]>(
     filterFunc?: () => void,
 ) => {
     if (!path) return {};
-    for (let i = 0; i < path.length; i++) {
-        if (isArrayPathName(path[i])) {
+    path.every((p, i) => {
+        if (isArrayPathName(p)) {
             if (forArray) {
                 src =
                     isArray(src) &&
                     arrayPathReduce(getFiltred(src, filterFunc), path, i + 1);
             }
-            break;
+            return 0;
         }
-        src = src && src[path[i]];
-    }
+        return (src = src && src[p]);
+    });
     return src;
 };
 

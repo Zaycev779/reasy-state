@@ -854,26 +854,28 @@ it("deep array store 3", async () => {
     await findByText("ids: -");
     await findByText("objArr: -");
 
-    arrayStore.set$arrs([
-        {
-            id: 1,
-            obj: {
-                val: 123,
-                barr: [2],
-                objArr: [{ value: 321, s: { d: 1 } }],
+    act(() =>
+        arrayStore.set$arrs([
+            {
+                id: 1,
+                obj: {
+                    val: 123,
+                    barr: [2],
+                    objArr: [{ value: 321, s: { d: 1 } }],
+                },
+                arr2: [[11]],
             },
-            arr2: [[11]],
-        },
-        {
-            id: 2,
-            obj: {
-                val: 234,
-                barr: [3],
-                objArr: [{ value: 456, s: { d: 2 } }],
+            {
+                id: 2,
+                obj: {
+                    val: 234,
+                    barr: [3],
+                    objArr: [{ value: 456, s: { d: 2 } }],
+                },
+                arr2: [],
             },
-            arr2: [],
-        },
-    ]);
+        ]),
+    );
 
     await findByText("ids: 1,2");
     await findByText("objArr: 321,456");
@@ -898,8 +900,6 @@ it("deep array store 3", async () => {
     act(() =>
         arrayStore.set$arrs$obj$barr(
             () => true,
-
-            //@ts-ignore
             (prev) => prev?.map((v) => v + 1),
         ),
     );

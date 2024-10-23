@@ -39,7 +39,7 @@ export const useStoreVal = (
             _setState(
                 !isArrayPathName(path) || !isArray(p)
                     ? createCopy(p)
-                    : slice(path, findPathArrayIndex(path) + 1).reduce(
+                    : slice(path, findPathArrayIndex(path)).reduce(
                           (prev, key) => prev.flatMap((val: any) => val[key]),
                           getFiltred(p, filterFunc),
                       ),

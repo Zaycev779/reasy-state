@@ -30,15 +30,13 @@ export const storageAction = <T>(
                         )
                     );
                 }
-                case StorageType.P: {
-                    const toString = stringify(
-                        mergeDeep(actionType, {}, mutators, mergeValue),
+                case StorageType.P:
+                    type.setItem(
+                        name,
+                        stringify(
+                            mergeDeep(actionType, {}, mutators, mergeValue),
+                        ),
                     );
-
-                    if (toString) {
-                        type.setItem(name, toString);
-                    }
-                }
             }
         } catch {}
     }

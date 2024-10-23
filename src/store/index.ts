@@ -19,7 +19,7 @@ import {
 import {
     capitalizeKeysToString,
     createCopy,
-    createNewArrayValues,
+    generateArray,
     findPathArrayIndex,
     pathToString,
     split,
@@ -67,14 +67,15 @@ export const _createState = <T>(
             if (name === GeneratedType.sr) return new Proxy({}, handler);
 
             const splitName = capitalizeKeysToString(split(name));
-            if (splitName in target) return target[splitName];
-
             const [type, ...functionName] = split(
                 name.replace(GeneratedType.SR, GeneratedType.sr),
                 /(?=[A-Z$])/,
             );
 
             const mapKey = storeId + pathToString(functionName);
+
+            if (splitName in target) return target[splitName];
+
             patchToGlobalMap(storage, mapKey);
 
             switch (type) {
@@ -119,24 +120,24 @@ export const _createState = <T>(
                         const [filterFunc, arrParams] = args,
                             basePath = getMapByKey(storage, mapKey),
                             arrIdx = findPathArrayIndex(basePath),
-                            isUpdate = args.length < 2 || arrIdx >= 0,
+                            isUpdate = args.length < 2 || arrIdx,
                             path = arrParams
-                                ? slice(basePath, 0, arrIdx)
+                                ? slice(basePath, 0, arrIdx - 1)
                                 : basePath;
 
                         isUpdate &&
                             updateStore(
                                 storage,
                                 path,
-                                arrParams
-                                    ? createNewArrayValues(
-                                          slice(basePath, arrIdx + 1),
+                                type === GeneratedType.R
+                                    ? initialValues
+                                    : arrParams
+                                    ? generateArray(
+                                          slice(basePath, arrIdx),
                                           getGlobalData(storage.s, path),
                                           arrParams,
                                           filterFunc,
                                       )
-                                    : type === GeneratedType.R
-                                    ? initialValues
                                     : filterFunc,
                                 options,
                             );

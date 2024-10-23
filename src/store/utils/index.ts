@@ -27,20 +27,16 @@ export const getUpdatedPaths = <T extends object>(
     if (!isObject(updatedParams))
         return prevValues !== updatedParams ? [paths] : [];
 
-    for (let key in assign({}, prevValues, updatedParams)) {
-        const propName = concat(paths, key);
-        if (isObject(updatedParams[key])) {
-            res.push(propName);
+    for (let key in assign({}, prevValues, updatedParams))
+        ((isObject(updatedParams[key]) &&
             getUpdatedPaths(
                 updatedParams[key] as object,
                 prevValues[key] || {},
-                propName,
+                concat(paths, key),
                 res,
-            );
-        } else if (prevValues && prevValues[key] !== updatedParams[key]) {
-            res.push(propName);
-        }
-    }
+            )) ||
+            (prevValues && prevValues[key] !== updatedParams[key])) &&
+            res.push(concat(paths, key));
     return res;
 };
 
@@ -110,41 +106,38 @@ export const mergeDeep = (
     return mergeDeep(type, target, ...sources);
 };
 
-export const createNewArrayValues = (
+export const generateArray = (
     keys: string[],
     prev: any,
     newValue: any,
     filterFunc: Function = () => 1,
     l = keys.length,
-) => {
-    if (isArray(prev) && l) {
-        return prev.map((_prevVal: any) => {
-            const prevVal = createCopy(_prevVal);
-            if (filterFunc(prevVal))
-                keys.reduce(
-                    (pr, key, idx) =>
-                        pr &&
-                        (pr[key] =
-                            idx + 1 === l
-                                ? getParams(newValue, pr[key])
-                                : isArray(pr[key])
-                                ? createNewArrayValues(
-                                      slice(keys, idx + 1),
-                                      pr[key],
-                                      newValue,
-                                  )
-                                : pr[key]),
-                    prevVal,
-                );
+) =>
+    isArray(prev) && l
+        ? prev.map((_prevVal, _1, _2, prevVal = createCopy(_prevVal)) => {
+              filterFunc(prevVal) &&
+                  keys.reduce(
+                      (pr, key, idx) =>
+                          pr &&
+                          (pr[key] =
+                              idx + 1 === l
+                                  ? getParams(newValue, pr[key])
+                                  : isArray(pr[key])
+                                  ? generateArray(
+                                        slice(keys, idx + 1),
+                                        pr[key],
+                                        newValue,
+                                    )
+                                  : pr[key]),
+                      prevVal,
+                  );
 
-            return prevVal;
-        });
-    }
-    return prev;
-};
+              return prevVal;
+          })
+        : prev;
 
 export const findPathArrayIndex = (array?: string[]) =>
-    (array && array.findIndex((val) => val === ArrayMapKey)) || -1;
+    (array && array.findIndex((val) => val === ArrayMapKey) + 1) || 0;
 
 export const slice = <T extends string | any[]>(
     value: T,
