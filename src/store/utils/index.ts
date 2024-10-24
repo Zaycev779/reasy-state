@@ -10,6 +10,7 @@ export const split = (value: string, type = /[\s$]+/) => value.split(type);
 export const pathToString = (path: string[]) => path.join("");
 export const { assign, entries, getPrototypeOf } = Object;
 export const { stringify, parse } = JSON;
+export const isArray = Array.isArray;
 
 export const getPaths = (
     storage: EStorage,
@@ -66,8 +67,6 @@ export const getAdditional = <T>(
 export const isObject = (value: any) =>
     value && typeof value === "object" && !isArray(value);
 
-export const isArray = (value: any) => Array.isArray(value);
-
 const defaultObjectProto = getPrototypeOf({});
 
 export const isDefaultObject = (value: any) =>
@@ -90,7 +89,7 @@ export const mergeDeep = (
     source?: any,
     ...sources: any[]
 ): any => {
-    if (!source && !sources[0]) return target;
+    if (!source && !sources.length) return target;
 
     if (isObject(target) && isObject(source)) {
         for (let key in source) {

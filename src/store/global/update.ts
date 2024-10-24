@@ -21,7 +21,7 @@ export const updateGlobalData = (
     src: Record<string, any>,
     [path, ...rest]: string[],
     data?: any,
-) =>
+): any =>
     !rest[0]
         ? (src[path] = createCopy(data))
         : (!src[path] && (src[path] = {}),
@@ -35,36 +35,31 @@ export const updateStore = <T>(
     type: UpdateType = UpdateType.S,
     prevValues = getGlobalData(storage.s, path),
     updatedParams = getParams(params, prevValues),
-) => {
-    if (path) {
-        updateGlobalData(
-            storage,
-            concat(["s"], path),
-            type === UpdateType.P
-                ? mergeDeep(undefined, {}, prevValues, updatedParams)
-                : updatedParams,
-        );
-
-        getAdditional<string[]>(storage, path, isOptionalPathName, 0).forEach(
-            (mapKey) => {
-                const prevPath = getMapByKey(storage, mapKey);
-                patchToGlobalMap(storage, mapKey);
-                diffValuesBoolean(prevPath, getMapByKey(storage, mapKey)) &&
-                    sendEvent(
-                        PATH_MAP_EV_NAME + mapKey,
-                        getMapByKey(storage, mapKey),
-                    );
-            },
-        );
-
-        getPaths(storage, path, updatedParams, prevValues).every(
-            (pathVal: string[]) =>
+) =>
+    path &&
+    (updateGlobalData(
+        storage,
+        concat(["s"], path),
+        type === UpdateType.P
+            ? mergeDeep(undefined, {}, prevValues, updatedParams)
+            : updatedParams,
+    ),
+    getAdditional<string[]>(storage, path, isOptionalPathName, 0).forEach(
+        (mapKey) => {
+            const prevPath = getMapByKey(storage, mapKey);
+            patchToGlobalMap(storage, mapKey);
+            diffValuesBoolean(prevPath, getMapByKey(storage, mapKey)) &&
                 sendEvent(
-                    PUSH_EV_NAME + storage.id + pathToString(pathVal),
-                    getGlobalData(storage.s, pathVal),
-                ),
-        );
-
-        storageAction<any>(StorageType.P, options, storage.s);
-    }
-};
+                    PATH_MAP_EV_NAME + mapKey,
+                    getMapByKey(storage, mapKey),
+                );
+        },
+    ),
+    getPaths(storage, path, updatedParams, prevValues).every(
+        (pathVal: string[]) =>
+            sendEvent(
+                PUSH_EV_NAME + storage.id + pathToString(pathVal),
+                getGlobalData(storage.s, pathVal),
+            ),
+    ),
+    storageAction<any>(StorageType.P, options, storage.s));

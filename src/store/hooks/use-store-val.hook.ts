@@ -20,18 +20,17 @@ export const useStoreVal = (
     storage: EStorage,
     mapKey: string,
     filterFunc?: any,
+
+    pathKey = getMapByKey(storage, mapKey),
 ) => {
-    const pathKey = getMapByKey(storage, mapKey);
-    const [path, setPath] = useState<string[]>(pathKey);
-    const getState = (newPath?: string[]) =>
-        getGlobalData(storage.s, newPath || path, true, filterFunc);
-
-    const [state, setState] = useState(getState);
-    const prevState = useRef<any>(state);
-
-    const _setState = (values: any) =>
-        diffValuesBoolean(prevState.current, values) &&
-        (setState(values), (prevState.current = values));
+    const [path, setPath] = useState<string[]>(pathKey),
+        getState = (newPath?: string[]) =>
+            getGlobalData(storage.s, newPath || path, true, filterFunc),
+        [state, setState] = useState(getState),
+        prevState = useRef<any>(state),
+        _setState = (values: any = getState()) =>
+            diffValuesBoolean(prevState.current, values) &&
+            (setState(values), (prevState.current = values));
 
     useEvent<{ p: IStore }>(
         path && PUSH_EV_NAME + storage.id + pathToString(path),
@@ -44,7 +43,7 @@ export const useStoreVal = (
                           getFiltred(p, filterFunc),
                       ),
             ),
-        () => _setState(getState()),
+        _setState,
     );
 
     useEvent<{
