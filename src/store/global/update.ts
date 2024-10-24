@@ -33,6 +33,7 @@ export const updateStore = <T>(
     params?: Partial<T> | ((prev: T) => Partial<T>),
     options?: Options<T>,
     type: UpdateType = UpdateType.S,
+    update = true,
     prevValues = getGlobalData(storage.s, path),
     updatedParams = getParams(params, prevValues),
 ) =>
@@ -44,22 +45,23 @@ export const updateStore = <T>(
             ? mergeDeep(undefined, {}, prevValues, updatedParams)
             : updatedParams,
     ),
-    getAdditional<string[]>(storage, path, isOptionalPathName, 0).forEach(
-        (mapKey) => {
-            const prevPath = getMapByKey(storage, mapKey);
-            patchToGlobalMap(storage, mapKey);
-            diffValuesBoolean(prevPath, getMapByKey(storage, mapKey)) &&
+    update &&
+        (getAdditional<string[]>(storage, path, isOptionalPathName, 0).forEach(
+            (mapKey) => {
+                const prevPath = getMapByKey(storage, mapKey);
+                patchToGlobalMap(storage, mapKey);
+                diffValuesBoolean(prevPath, getMapByKey(storage, mapKey)) &&
+                    sendEvent(
+                        PATH_MAP_EV_NAME + mapKey,
+                        getMapByKey(storage, mapKey),
+                    );
+            },
+        ),
+        getPaths(storage, path, updatedParams, prevValues).every(
+            (pathVal: string[]) =>
                 sendEvent(
-                    PATH_MAP_EV_NAME + mapKey,
-                    getMapByKey(storage, mapKey),
-                );
-        },
-    ),
-    getPaths(storage, path, updatedParams, prevValues).every(
-        (pathVal: string[]) =>
-            sendEvent(
-                PUSH_EV_NAME + storage.id + pathToString(pathVal),
-                getGlobalData(storage.s, pathVal),
-            ),
-    ),
-    storageAction<any>(StorageType.P, options, storage.s));
+                    PUSH_EV_NAME + storage.id + pathToString(pathVal),
+                    getGlobalData(storage.s, pathVal),
+                ),
+        ),
+        storageAction<any>(StorageType.P, options, storage.s)));

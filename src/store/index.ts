@@ -91,7 +91,14 @@ export const _createState = <T>(
                                   true,
                               );
 
-                              updateStore(storage, basePath, filterFunc.value);
+                              updateStore(
+                                  storage,
+                                  basePath,
+                                  filterFunc.value,
+                                  options,
+                                  UpdateType.S,
+                                  false,
+                              );
                               // eslint-disable-next-line react-hooks/rules-of-hooks
                               return (
                                   storageVal &&
