@@ -36,26 +36,21 @@ export const patchToGlobalMap = (
     baseMap: string = mapKey,
     staticPath?: string[],
     prevPath: string[] = [],
-) => {
-    if (isOptionalPathName(mapKey)) {
-        const [staticName, firstKey, ...additionalKeys] = split(mapKey);
-        const staticFromMap =
-                staticPath || getMapByKey(storage, staticName) || [],
-            c = concat(staticFromMap, prevPath);
-        const setMap = (value: string[]) => (storage.m[baseMap] = value);
-
-        if (isArray(getGlobalData(storage.s, c)))
-            setMap(concat(c, ArrayMapKey, firstKey, additionalKeys));
-        else {
-            setMap(concat(c, firstKey));
-            additionalKeys.length &&
-                patchToGlobalMap(
-                    storage,
-                    OptionalKey + additionalKeys.join(OptionalKey),
-                    baseMap,
-                    staticFromMap,
-                    concat(prevPath, firstKey),
-                );
-        }
-    }
-};
+    [staticName, firstKey, ...additionalKeys] = split(mapKey),
+    staticFromMap = staticPath || getMapByKey(storage, staticName) || [],
+    c = concat(staticFromMap, prevPath),
+    isArr = isArray(getGlobalData(storage.s, c)),
+): any =>
+    isOptionalPathName(mapKey) &&
+    ((storage.m[baseMap] = isArr
+        ? concat(c, ArrayMapKey, firstKey, additionalKeys)
+        : concat(c, firstKey)),
+    !isArr &&
+        additionalKeys[0] &&
+        patchToGlobalMap(
+            storage,
+            OptionalKey + additionalKeys.join(OptionalKey),
+            baseMap,
+            staticFromMap,
+            concat(prevPath, firstKey),
+        ));

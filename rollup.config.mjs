@@ -22,6 +22,7 @@ export default [{
                     toplevel: true,
                     unsafe_arrows: true,
                     drop_console: true,  
+                    passes: 2,
                 },
                 output: { quote_style: 1 },
                 }),
@@ -40,6 +41,7 @@ export default [{
                     toplevel: true,
                     unsafe_arrows: true,
                     drop_console: true,
+                    passes: 2,
                 },
                 output: { quote_style: 1 }
                 })
