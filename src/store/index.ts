@@ -26,9 +26,10 @@ import {
     slice,
 } from "./utils";
 import { updateStore } from "./global/update";
-import { generateId } from "./global/generate-id";
 import { isClient, useLayoutEffect } from "./utils/client";
 import { createStorage } from "./global";
+
+let EStateId = 0;
 
 export function createState<T>(
     params: WithM<T>,
@@ -55,7 +56,10 @@ export const _createState = <T>(
     initialValues?: T,
     options?: Options<T>,
 ): IGenerate<CreateResult<T>> => {
-    const storeId = generateId<T>(options),
+    const storeId =
+            options && options.key
+                ? (options.key = "#" + options.key.replace(/[$]/g, "#"))
+                : "#" + ++EStateId,
         storageValues = storageAction(StorageType.G, options, initialValues),
         storage = createStorage(
             storeId,

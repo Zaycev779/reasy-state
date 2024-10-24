@@ -8,12 +8,12 @@ export const storageAction = <T>(
     mergeValue: T | undefined,
 ): T | undefined => {
     if (options && options.storage && isClient) {
-        const { key, storage } = options;
+        const storage = options.storage;
         const { type = localStorage } = (
             isObject(storage) ? storage : {}
         ) as StorageOptions<T>;
         const mutators = (storage as StorageOptions<T>)[Mutators];
-        const name = "E$" + key;
+        const name = "E$" + options.key;
 
         try {
             switch (actionType) {

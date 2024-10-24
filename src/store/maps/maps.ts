@@ -48,7 +48,7 @@ export const patchToGlobalMap = (
             setMap(concat(c, ArrayMapKey, firstKey, additionalKeys));
         else {
             setMap(concat(c, firstKey));
-            additionalKeys.length &&
+            additionalKeys[0] &&
                 patchToGlobalMap(
                     storage,
                     OptionalKey + additionalKeys.join(OptionalKey),

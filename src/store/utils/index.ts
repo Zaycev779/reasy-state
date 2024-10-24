@@ -11,18 +11,26 @@ export const pathToString = (path: string[]) => path.join("");
 export const { assign, entries, getPrototypeOf } = Object;
 export const { stringify, parse } = JSON;
 
-export const getRootPaths = (paths: string[]) =>
+export const getPaths = (
+    storage: EStorage,
+    paths: string[],
+    updatedValues: any,
+    prevValues: any,
+) =>
     paths.reduce(
         (prev, val, idx) =>
             concat(prev, [concat((prev && prev[idx - 1]) || [], val)]),
-        [] as string[][],
+        concat(
+            getUpdatedPaths(paths, updatedValues, prevValues),
+            getAdditional(storage, paths),
+        ) as string[][],
     );
 
-export const getUpdatedPaths = <T extends object>(
+const getUpdatedPaths = <T extends object>(
+    paths: string[] = [],
     updatedParams: T,
     prevValues: T,
-    paths: string[] = [],
-    res: string[][] = [paths],
+    res: string[][] = [],
 ) => {
     if (!isObject(updatedParams))
         return prevValues !== updatedParams ? [paths] : [];
@@ -30,9 +38,9 @@ export const getUpdatedPaths = <T extends object>(
     for (let key in assign({}, prevValues, updatedParams))
         ((isObject(updatedParams[key]) &&
             getUpdatedPaths(
+                concat(paths, key),
                 updatedParams[key] as object,
                 prevValues[key] || {},
-                concat(paths, key),
                 res,
             )) ||
             (prevValues && prevValues[key] !== updatedParams[key])) &&
@@ -40,7 +48,7 @@ export const getUpdatedPaths = <T extends object>(
     return res;
 };
 
-export const getAdditional = (
+export const getAdditional = <T>(
     storage: EStorage,
     paths: string[],
     filter = isArrayPathName,
@@ -50,10 +58,10 @@ export const getAdditional = (
         .filter(
             (entry) =>
                 pathToString(entry[1]).startsWith(pathToString(paths)) &&
-                entry[1].length > paths.length &&
+                entry[1][paths.length] &&
                 filter(entry[type]),
         )
-        .map((entrie) => entrie[type]);
+        .map((entrie) => entrie[type]) as T;
 
 export const isObject = (value: any) =>
     value && typeof value === "object" && !isArray(value);
@@ -82,7 +90,7 @@ export const mergeDeep = (
     source?: any,
     ...sources: any[]
 ): any => {
-    if (!source && !sources.length) return target;
+    if (!source && !sources[0]) return target;
 
     if (isObject(target) && isObject(source)) {
         for (let key in source) {
@@ -139,7 +147,7 @@ export const generateArray = (
         : prev;
 
 export const findPathArrayIndex = (array?: string[]) =>
-    (array && array.findIndex((val) => val === ArrayMapKey) + 1) || 0;
+    (array && array.indexOf(ArrayMapKey) + 1) || 0;
 
 export const slice = <T extends string | any[]>(
     value: T,

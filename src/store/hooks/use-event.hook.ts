@@ -7,12 +7,13 @@ export const useEvent = <T>(
     onChangeType: () => void,
     onTargetEvent = (ev: Event) => onChange((ev as CustomEvent<T>).detail),
 ) =>
-    useLayoutEffect(() => {
-        if (type) {
-            onChangeType();
-            doc.addEventListener(type, onTargetEvent);
-
-            return () => doc.removeEventListener(type, onTargetEvent);
-        }
+    useLayoutEffect(
+        () =>
+            type
+                ? (onChangeType(),
+                  doc.addEventListener(type, onTargetEvent),
+                  () => doc.removeEventListener(type, onTargetEvent))
+                : () => 0,
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [type]);
+        [type],
+    );

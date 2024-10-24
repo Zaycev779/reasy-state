@@ -17,28 +17,31 @@ export const generateMutators = <T extends any>(
     options?: Options<any>,
     prevKey: string[] = [],
 ): any =>
-    reduceAssign(values, (key, val) =>
+    reduceAssign<any>(values, (key, val) =>
         key === Mutators
-            ? reduceAssign(val, (key, fn) => ({
-                  [capitalizeKeysToString(concat(prevKey, key))]: (
-                      ...args: any
-                  ) => {
-                      const get = () => getGlobalData(storage.s, prevKey),
-                          set = (arg: any, type: UpdateType) => (
-                              updateStore(
-                                  storage,
-                                  prevKey,
-                                  getParams(arg, get()),
-                                  options,
-                                  type,
-                              ),
-                              get()
+            ? reduceAssign(
+                  val,
+                  (
+                      key,
+                      fn,
+                      get = () => getGlobalData(storage.s, prevKey),
+                      set = (arg: any, type: UpdateType) => (
+                          updateStore(
+                              storage,
+                              prevKey,
+                              getParams(arg, get()),
+                              options,
+                              type,
                           ),
-                          patch = (arg: any) => set(arg, UpdateType.P);
-
-                      return getParams(fn({ set, get, patch }, get()), ...args);
-                  },
-              }))
+                          get()
+                      ),
+                      patch = (arg: any) => set(arg, UpdateType.P),
+                  ) => ({
+                      [capitalizeKeysToString(concat(prevKey, key))]: (
+                          ...args: any
+                      ) => getParams(fn({ set, get, patch }, get()), ...args),
+                  }),
+              )
             : isDefaultObject(val) &&
               generateMutators(storage, val, options, concat(prevKey, key)),
     );

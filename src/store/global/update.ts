@@ -1,4 +1,4 @@
-import { _pushStoreValueEvent, PATH_MAP_EV_NAME, sendEvent } from "../events";
+import { PATH_MAP_EV_NAME, PUSH_EV_NAME, sendEvent } from "../events";
 import { getGlobalData } from "./get";
 import { patchToGlobalMap } from "../maps/maps";
 import { getMapByKey } from "../maps/utils";
@@ -10,8 +10,10 @@ import {
     diffValuesBoolean,
     getAdditional,
     getParams,
+    getPaths,
     isOptionalPathName,
     mergeDeep,
+    pathToString,
 } from "../utils";
 import { EStorage } from ".";
 
@@ -19,15 +21,11 @@ export const updateGlobalData = (
     src: Record<string, any>,
     [path, ...rest]: string[],
     data?: any,
-) => {
-    if (!rest.length) {
-        src[path] = createCopy(data);
-        return;
-    }
-    if (!src[path]) src[path] = {};
-
-    updateGlobalData(src[path], rest, data);
-};
+) =>
+    !rest[0]
+        ? (src[path] = createCopy(data))
+        : (!src[path] && (src[path] = {}),
+          updateGlobalData(src[path], rest, data));
 
 export const updateStore = <T>(
     storage: EStorage,
@@ -47,18 +45,26 @@ export const updateStore = <T>(
                 : updatedParams,
         );
 
-        (
-            getAdditional(storage, path, isOptionalPathName, 0) as string[]
-        ).forEach((mapKey) => {
-            const prevPath = getMapByKey(storage, mapKey);
-            patchToGlobalMap(storage, mapKey);
-            diffValuesBoolean(prevPath, getMapByKey(storage, mapKey)) &&
+        getAdditional<string[]>(storage, path, isOptionalPathName, 0).forEach(
+            (mapKey) => {
+                const prevPath = getMapByKey(storage, mapKey);
+                patchToGlobalMap(storage, mapKey);
+                diffValuesBoolean(prevPath, getMapByKey(storage, mapKey)) &&
+                    sendEvent(
+                        PATH_MAP_EV_NAME + mapKey,
+                        getMapByKey(storage, mapKey),
+                    );
+            },
+        );
+
+        getPaths(storage, path, updatedParams, prevValues).every(
+            (pathVal: string[]) =>
                 sendEvent(
-                    PATH_MAP_EV_NAME + mapKey,
-                    getMapByKey(storage, mapKey),
-                );
-        });
-        _pushStoreValueEvent(storage, path, updatedParams, prevValues);
+                    PUSH_EV_NAME + storage.id + pathToString(pathVal),
+                    getGlobalData(storage.s, pathVal),
+                ),
+        );
+
         storageAction<any>(StorageType.P, options, storage.s);
     }
 };
