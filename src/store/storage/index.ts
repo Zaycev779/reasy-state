@@ -1,6 +1,12 @@
 import { Options, StorageOptions, StorageType } from "../types/store";
-import { isObject, mergeDeep, Mutators, parse, stringify } from "../utils";
-import { isClient } from "../utils/client";
+import {
+    isObject,
+    mergeDeep,
+    Mutators,
+    parse,
+    stringify,
+    isClient,
+} from "../utils";
 
 export const storageAction = <T>(
     actionType: StorageType = StorageType.G,
@@ -14,7 +20,6 @@ export const storageAction = <T>(
         ) as StorageOptions<T>;
         const mutators = (storage as StorageOptions<T>)[Mutators];
         const name = "E$" + options.key;
-
         try {
             switch (actionType) {
                 case StorageType.G: {

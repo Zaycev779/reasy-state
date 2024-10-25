@@ -10,8 +10,8 @@ export enum GeneratedType {
     S = "set",
     U = "use",
     R = "reset",
-    SR = "SSR",
-    sr = "ssr",
+    H = "SSR",
+    h = "ssr",
 }
 
 export enum StorageType {
@@ -201,7 +201,7 @@ export type ISSR<T, U> = { ssr: ISSRFunc<T, U> };
 
 type ISSRComp<T> = React.FC<{ value: T }>;
 
-type ISSRFunc<T, U, N extends GeneratedType = GeneratedType.SR> = {
+type ISSRFunc<T, U, N extends GeneratedType = GeneratedType.H> = {
     [P in keyof T as keyof U extends `$${P extends string ? string : never}`
         ? T extends U
             ? T[P] extends AnyFunc
@@ -224,6 +224,10 @@ export type Options<T> = {
      * @default false
      */
     storage?: boolean | StorageOptions<T>;
+    /** Specify ssr: true if using state with storage in server component
+     * @default false
+     */
+    [GeneratedType.h]?: boolean;
 };
 
 export type StorageOptions<T> = {

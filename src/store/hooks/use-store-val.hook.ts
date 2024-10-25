@@ -13,8 +13,9 @@ import {
 } from "../utils";
 import { useEvent } from "./use-event.hook";
 import { getMapByKey } from "../maps/utils";
-import { useRef, useState } from "../utils/client";
 import { EStorage } from "../global";
+import React from "react";
+const { useState } = React;
 
 export const useStoreVal = (
     storage: EStorage,
@@ -27,7 +28,7 @@ export const useStoreVal = (
         getState = (newPath?: string[]) =>
             getGlobalData(storage.s, newPath || path, true, filterFunc),
         [state, setState] = useState(getState),
-        prevState = useRef<any>(state),
+        prevState = React.useRef<any>(state),
         _setState = (values: any = getState()) =>
             diffValuesBoolean(prevState.current, values) &&
             (setState(values), (prevState.current = values));

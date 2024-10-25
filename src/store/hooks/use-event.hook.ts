@@ -1,5 +1,5 @@
+import React from "react";
 import { Maybe } from "../types";
-import { useLayoutEffect } from "../utils/client";
 
 export const useEvent = <T>(
     type: Maybe<string>,
@@ -8,7 +8,7 @@ export const useEvent = <T>(
     onTargetEvent = (ev: Event) => onChange((ev as CustomEvent<T>).detail),
     doc = document,
 ) =>
-    useLayoutEffect(
+    React.useLayoutEffect(
         () =>
             type
                 ? (onChangeType(),
