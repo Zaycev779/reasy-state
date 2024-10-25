@@ -21,11 +21,10 @@ export const getStaticPath = (
 ): Record<string, string[]> =>
     reduceAssign(
         store,
-        (key, val, name = id + capitalizeName(key)) =>
+        (key, val, name = id + capitalizeName(key), p = concat(path, key)) =>
             assign(
-                { [name]: concat(path, key) },
-                isDefaultObject(val) &&
-                    getStaticPath(val, name, concat(path, key)),
+                { [name]: p },
+                isDefaultObject(val) && getStaticPath(val, name, p),
             ),
         { [id]: path },
     );

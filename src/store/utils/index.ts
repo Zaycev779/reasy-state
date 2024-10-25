@@ -11,6 +11,8 @@ export const pathToString = (path: string[]) => path.join("");
 export const { assign, entries, getPrototypeOf } = Object;
 export const { stringify, parse } = JSON;
 export const isArray = Array.isArray;
+export const t_object = "object";
+export const isClient = typeof window == t_object;
 
 export const getPaths = (
     storage: EStorage,
@@ -41,7 +43,7 @@ const getUpdatedPaths = <T extends object>(
             getUpdatedPaths(
                 concat(paths, key),
                 updatedParams[key] as object,
-                prevValues[key] || {},
+                (prevValues && prevValues[key]) || {},
                 res,
             )) ||
             (prevValues && prevValues[key] !== updatedParams[key])) &&
@@ -65,7 +67,7 @@ export const getAdditional = <T>(
         .map((entrie) => entrie[type]) as T;
 
 export const isObject = (value: any) =>
-    value && typeof value === "object" && !isArray(value);
+    value && typeof value === t_object && !isArray(value);
 
 const defaultObjectProto = getPrototypeOf({});
 

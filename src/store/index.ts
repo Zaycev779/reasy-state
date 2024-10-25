@@ -8,7 +8,6 @@ import { IsUndefined } from "./types/flatten";
 import {
     CreateResult,
     CreateState,
-    FType,
     GeneratedType,
     IGenerate,
     Options,
@@ -24,9 +23,9 @@ import {
     pathToString,
     split,
     slice,
+    isClient,
 } from "./utils";
 import { updateStore } from "./global/update";
-import { isClient, useLayoutEffect } from "./utils/client";
 import { createStorage } from "./global";
 
 let EStateId = 0;
@@ -59,9 +58,10 @@ export const _createState = <T>(
         ? (options.key = "#" + options.key.replace(/[$]/g, "#"))
         : "#" + ++EStateId,
     storageValues = storageAction(StorageType.G, options, initialValues),
+    isInit: any = options && options.ssr,
     storage = createStorage(
         storeId,
-        storageValues || createCopy(initialValues),
+        createCopy((!isInit && storageValues) || initialValues),
     ),
 ): IGenerate<CreateResult<T>> =>
     new Proxy(generateMutators(storage, initialValues, options), {
@@ -69,29 +69,30 @@ export const _createState = <T>(
             target: any,
             name: string,
             proxy: typeof Proxy,
-            splitName = capitalizeKeysToString(split(name)),
             [type, ...functionName] = split(
-                name.replace(GeneratedType.SR, GeneratedType.sr),
+                name.replace(GeneratedType.H, GeneratedType.h),
                 /(?=[A-Z$])/,
             ),
             mapKey = storeId + pathToString(functionName),
+            storageInit = () => (
+                (isInit = 0),
+                isClient &&
+                    storageValues &&
+                    requestAnimationFrame(() =>
+                        updateStore<T>(storage, [], storageValues),
+                    )
+            ),
         ): any =>
-            name === GeneratedType.sr
+            name === GeneratedType.h
                 ? proxy
-                : splitName in target
-                ? target[splitName]
-                : (patchToGlobalMap(storage, mapKey),
+                : target[capitalizeKeysToString(split(name))] ||
+                  (patchToGlobalMap(storage, mapKey),
                   (...[filterFunc, ...args]: any) => {
                       const basePath = getMapByKey(storage, mapKey);
+                      isInit && storageInit();
                       switch (type) {
-                          case GeneratedType.sr: {
-                              const storageVal = getGlobalData<any>(
-                                  storageValues,
-                                  basePath,
-                                  true,
-                              );
-
-                              updateStore(
+                          case GeneratedType.h:
+                              return updateStore(
                                   storage,
                                   basePath,
                                   filterFunc.value,
@@ -99,20 +100,7 @@ export const _createState = <T>(
                                   UpdateType.S,
                                   false,
                               );
-                              // eslint-disable-next-line react-hooks/rules-of-hooks
-                              return (
-                                  storageVal &&
-                                  useLayoutEffect(() => {
-                                      updateStore(
-                                          storage,
-                                          basePath,
-                                          storageVal,
-                                          undefined,
-                                          UpdateType.P,
-                                      );
-                                  }, [])
-                              );
-                          }
+
                           case GeneratedType.U:
                               if (isClient)
                                   // eslint-disable-next-line react-hooks/rules-of-hooks
