@@ -386,11 +386,15 @@ export const ClientPage = () => {
 You can save the state in the store( `localStorage` (default), `sessionStorage` )
 To do this, specify a unique `key` and configure saving if necessary
 
-:warning: If SSR is used together with storage, the latter will be initialized only after the component is rendered to avoid hydration warning
+```jsx
+    const { ... } = createState({ store: { value: "value" } }, { key: "storage_state_1", storage: true });
+```
+
+:warning: If SSR is used together with storage, the latter will be initialized only after the component is rendered to avoid hydration warning.
+To do this, specify the `ssr: true` parameter.
 
 ```jsx
-    const store = { value: "value" }
-    const { ... } = createState({ store }, { key: "storage_state_1", storage: true });
+    const { ... } = createState({ store: { value: "value" } }, { key: "storage_state_2", storage: true, ssr: true });
 ```
 
 If necessary, you can mutate the data on read and write like this (This can be useful when using momentjs for example):
