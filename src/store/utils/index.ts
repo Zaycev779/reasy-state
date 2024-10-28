@@ -9,11 +9,11 @@ export const OptionalKey = "$";
 export const split = (value: string, type: string | RegExp = OptionalKey) =>
     value.split(type);
 export const pathToString = (path: string[]) => path.join("");
-export const { assign, entries, getPrototypeOf } = Object;
+
+export const { assign, entries } = Object;
 export const { stringify, parse } = JSON;
 export const isArray = Array.isArray;
-export const t_object = "object";
-export const isClient = typeof window == t_object;
+export const isClient = typeof window == "object";
 
 export const getPaths = (
     map: EStorage["m"],
@@ -66,13 +66,8 @@ export const getAdditional = <T>(
             filter(entry[type]),
     ).map((entrie: Record<string, string[]>) => entrie[type]) as T;
 
-export const isObject = (value: any) =>
-    value && typeof value === t_object && !isArray(value);
-
-const defaultObjectProto = getPrototypeOf({});
-
 export const isDefaultObject = (value: any) =>
-    isObject(value) && defaultObjectProto === getPrototypeOf(value);
+    value && value.constructor === Object;
 
 export const createCopy = (value: any) =>
     isDefaultObject(value) ? mergeDeep(0, {}, value) : value;
@@ -93,7 +88,7 @@ export const mergeDeep = (
 ): any => {
     if (!source && !sources.length) return target;
 
-    if (isObject(target) && isObject(source)) {
+    if (isDefaultObject(target) && isDefaultObject(source)) {
         for (let key in source) {
             if (key === Mutators) continue;
             if (isDefaultObject(source[key])) {

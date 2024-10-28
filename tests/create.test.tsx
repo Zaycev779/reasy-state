@@ -19,6 +19,23 @@ it("create store", async () => {
 
     await findByText("value: 1");
 });
+it("create store 2", async () => {
+    const { useStore } = createState(Object.create({ store: { value: 1 } }));
+
+    function Page() {
+        const store = useStore();
+
+        return <div>value: {store.value}</div>;
+    }
+
+    const { findByText } = render(
+        <>
+            <Page />
+        </>,
+    );
+
+    await findByText("value: 1");
+});
 
 it("create primitive store", async () => {
     const { use } = createState(1);
