@@ -12,7 +12,6 @@ import {
     slice,
 } from "../utils";
 import { useEvent } from "./use-event.hook";
-import { getMapByKey } from "../maps/utils";
 import { EStorage } from "../global";
 import React from "react";
 const { useState } = React;
@@ -22,16 +21,16 @@ export const useStoreVal = (
     mapKey: string,
     filterFunc?: any,
 
-    pathKey = getMapByKey(storage, mapKey),
+    pathKey = storage.m[mapKey],
+    prevState?: any,
 ) => {
     const [path, setPath] = useState<string[]>(pathKey),
         getState = (newPath?: string[]) =>
             getGlobalData(storage.s, newPath || path, true, filterFunc),
-        [state, setState] = useState(getState),
-        prevState = React.useRef<any>(state),
+        [state, setState] = useState((prevState = getState())),
         _setState = (values: any = getState()) =>
-            diffValuesBoolean(prevState.current, values) &&
-            (setState(values), (prevState.current = values));
+            diffValuesBoolean(prevState, values) &&
+            (setState(values), (prevState = values));
 
     useEvent<{ p: IStore }>(
         path && PUSH_EV_NAME + storage.id + pathToString(path),
@@ -50,7 +49,7 @@ export const useStoreVal = (
     useEvent<{
         p: string[];
     }>(
-        mapKey && PATH_MAP_EV_NAME + mapKey,
+        PATH_MAP_EV_NAME + storage.id + mapKey,
         ({ p }) => p && (setPath(p), _setState(getState(p))),
         () => diffValuesBoolean(path, pathKey) && setPath(pathKey),
     );

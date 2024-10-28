@@ -1,7 +1,6 @@
 import { PATH_MAP_EV_NAME, PUSH_EV_NAME, sendEvent } from "../events";
 import { getGlobalData } from "./get";
 import { patchToGlobalMap } from "../maps/maps";
-import { getMapByKey } from "../maps/utils";
 import { storageAction } from "../storage";
 import { Options, StorageType, UpdateType } from "../types/store";
 import {
@@ -30,12 +29,13 @@ export const updateGlobalData = (
 export const updateStore = <T>(
     storage: EStorage,
     path: string[],
+    options: Options<T>,
     params?: Partial<T> | ((prev: T) => Partial<T>),
-    options?: Options<T>,
     type: UpdateType = UpdateType.S,
     update = true,
     prevValues = getGlobalData(storage.s, path),
     updatedParams = getParams(params, prevValues),
+    { id, m } = storage,
 ) =>
     path &&
     (updateGlobalData(
@@ -46,21 +46,18 @@ export const updateStore = <T>(
             : updatedParams,
     ),
     update &&
-        (getAdditional<string[]>(storage, path, isOptionalPathName, 0).forEach(
+        (getAdditional<string[]>(m, path, isOptionalPathName, 0).forEach(
             (mapKey) => {
-                const prevPath = getMapByKey(storage, mapKey);
+                const prevPath = m[mapKey];
                 patchToGlobalMap(storage, mapKey);
-                diffValuesBoolean(prevPath, getMapByKey(storage, mapKey)) &&
-                    sendEvent(
-                        PATH_MAP_EV_NAME + mapKey,
-                        getMapByKey(storage, mapKey),
-                    );
+                diffValuesBoolean(prevPath, m[mapKey]) &&
+                    sendEvent(PATH_MAP_EV_NAME + id + mapKey, m[mapKey]);
             },
         ),
-        getPaths(storage, path, updatedParams, prevValues).every(
+        getPaths(m, path, updatedParams, prevValues).every(
             (pathVal: string[]) =>
                 sendEvent(
-                    PUSH_EV_NAME + storage.id + pathToString(pathVal),
+                    PUSH_EV_NAME + id + pathToString(pathVal),
                     getGlobalData(storage.s, pathVal),
                 ),
         ),
