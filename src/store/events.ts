@@ -5,7 +5,7 @@ export const PATH_MAP_EV_NAME = "_PATH";
 
 export const sendEvent = (route: string, p: any) =>
     isClient &&
-    document.dispatchEvent(
+    dispatchEvent(
         new CustomEvent(route, {
             detail: { p },
         }),

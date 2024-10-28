@@ -32,9 +32,9 @@ export const useStoreVal = (
             diffValuesBoolean(prevState, values) &&
             (setState(values), (prevState = values));
 
-    useEvent<{ p: IStore }>(
+    useEvent<IStore>(
         path && PUSH_EV_NAME + storage.id + pathToString(path),
-        ({ p }) =>
+        (p) =>
             _setState(
                 !isArrayPathName(path) || !isArray(p)
                     ? createCopy(p)
@@ -46,11 +46,9 @@ export const useStoreVal = (
         _setState,
     );
 
-    useEvent<{
-        p: string[];
-    }>(
+    useEvent<string[]>(
         PATH_MAP_EV_NAME + storage.id + mapKey,
-        ({ p }) => p && (setPath(p), _setState(getState(p))),
+        (p) => p && (setPath(p), _setState(getState(p))),
         () => diffValuesBoolean(path, pathKey) && setPath(pathKey),
     );
 

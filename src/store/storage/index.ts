@@ -1,12 +1,5 @@
 import { Options, StorageOptions, StorageType } from "../types/store";
-import {
-    isObject,
-    mergeDeep,
-    Mutators,
-    parse,
-    stringify,
-    isClient,
-} from "../utils";
+import { mergeDeep, Mutators, parse, stringify, isClient } from "../utils";
 
 export const storageAction = <T>(
     actionType: StorageType = StorageType.G,

@@ -42,7 +42,7 @@ export const updateStore = <T>(
         storage,
         concat(["s"], path),
         type === UpdateType.P
-            ? mergeDeep(undefined, {}, prevValues, updatedParams)
+            ? mergeDeep(0, {}, prevValues, updatedParams)
             : updatedParams,
     ),
     update &&

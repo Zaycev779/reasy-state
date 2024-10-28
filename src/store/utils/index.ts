@@ -36,11 +36,11 @@ const getUpdatedPaths = <T extends object>(
     prevValues: T,
     res: string[][] = [],
 ) => {
-    if (!isObject(updatedParams))
+    if (!isDefaultObject(updatedParams))
         return prevValues !== updatedParams ? [paths] : [];
 
     for (let key in assign({}, prevValues, updatedParams))
-        ((isObject(updatedParams[key]) &&
+        ((isDefaultObject(updatedParams[key]) &&
             getUpdatedPaths(
                 concat(paths, key),
                 updatedParams[key] as object,
@@ -58,14 +58,13 @@ export const getAdditional = <T>(
     filter = isArrayPathName,
     type = 1,
 ) =>
-    entries(map)
-        .filter(
-            (entry) =>
-                pathToString(entry[1]).startsWith(pathToString(paths)) &&
-                entry[1][paths.length] &&
-                filter(entry[type]),
-        )
-        .map((entrie) => entrie[type]) as T;
+    getFiltred(
+        entries(map),
+        (entry: Record<string, string[]>) =>
+            pathToString(entry[1]).startsWith(pathToString(paths)) &&
+            entry[1] > paths &&
+            filter(entry[type]),
+    ).map((entrie: Record<string, string[]>) => entrie[type]) as T;
 
 export const isObject = (value: any) =>
     value && typeof value === t_object && !isArray(value);
@@ -76,18 +75,18 @@ export const isDefaultObject = (value: any) =>
     isObject(value) && defaultObjectProto === getPrototypeOf(value);
 
 export const createCopy = (value: any) =>
-    isDefaultObject(value) ? mergeDeep(undefined, {}, value) : value;
+    isDefaultObject(value) ? mergeDeep(0, {}, value) : value;
 
 export const concat = (target: any[] | string, ...arrays: any): any =>
     target.concat(...arrays);
 
-const mergeMutate = (type: Maybe<StorageType>, target: any, source: any) =>
+const mergeMutate = (type: Maybe<StorageType> | 0, target: any, source: any) =>
     type && isAFunction(target)
         ? target((fn: Record<StorageType, any>) => fn[type](source))
         : source;
 
 export const mergeDeep = (
-    type: Maybe<StorageType>,
+    type: Maybe<StorageType> | 0,
     target: any,
     source?: any,
     ...sources: any[]
@@ -97,13 +96,9 @@ export const mergeDeep = (
     if (isObject(target) && isObject(source)) {
         for (let key in source) {
             if (key === Mutators) continue;
-            if (isObject(source[key])) {
+            if (isDefaultObject(source[key])) {
                 if (!target[key]) assign(target, { [key]: {} });
-                if (!isDefaultObject(source[key])) {
-                    target[key] = mergeMutate(type, target[key], source[key]);
-                } else {
-                    mergeDeep(type, target[key], source[key]);
-                }
+                mergeDeep(type, target[key], source[key]);
             } else {
                 assign(target, {
                     [key]: mergeMutate(type, target[key], source[key]),

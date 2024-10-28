@@ -51,7 +51,7 @@ export function createState<T>(params?: T, options?: Options<T>): any {
     return params ? _createState(params, options) : _createState;
 }
 
-export const _createState = <T>(
+const _createState = <T>(
     initialValues?: T,
     options: Options<T> = {} as Options<T>,
     id = options.key ? (options.key = E + options.key) : E + ++EStateId,
