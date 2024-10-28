@@ -52,7 +52,7 @@ export const updateStore = <T>(
                 patchToGlobalMap(storage, mapKey);
                 diffValuesBoolean(prevPath, getMapByKey(storage, mapKey)) &&
                     sendEvent(
-                        PATH_MAP_EV_NAME + mapKey,
+                        PATH_MAP_EV_NAME + storage.id + mapKey,
                         getMapByKey(storage, mapKey),
                     );
             },

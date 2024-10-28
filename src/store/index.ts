@@ -54,15 +54,13 @@ export function createState<T>(params?: T, options?: Options<T>): any {
 export const _createState = <T>(
     initialValues?: T,
     options: Options<T> = {} as Options<T>,
-    id = options.key
-        ? (options.key = "#" + pathToString(split(options.key)))
-        : "#" + ++EStateId,
+    id = options.key ? (options.key = "#" + options.key) : "#" + ++EStateId,
     storageValues = storageAction(StorageType.G, options, initialValues),
     isInit: any = options.ssr,
     s = createCopy((!isInit && storageValues) || initialValues),
     storage: EStorage = {
         s,
-        m: getStaticPath(s, id),
+        m: getStaticPath(s),
         id,
     },
 ): IGenerate<CreateResult<T>> =>
@@ -75,7 +73,7 @@ export const _createState = <T>(
                 name.replace(GeneratedType.H, GeneratedType.h),
                 /(?=[A-Z$])/,
             ),
-            mapKey = id + pathToString(functionName),
+            mapKey = pathToString(functionName),
             storageInit = () => (
                 (isInit = 0),
                 isClient &&

@@ -16,7 +16,7 @@ import { getMapByKey } from "./utils";
 
 export const getStaticPath = (
     store: any,
-    id: string,
+    id: string = "",
     path: string[] = [],
 ): Record<string, string[]> =>
     reduceAssign(
