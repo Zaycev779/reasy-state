@@ -12,21 +12,20 @@ import {
     reduceAssign,
     split,
 } from "../utils";
-import { getMapByKey } from "./utils";
 
 export const getStaticPath = (
     store: any,
-    id: string = "",
+    prev: string = "",
     path: string[] = [],
 ): Record<string, string[]> =>
     reduceAssign(
         store,
-        (key, val, name = id + capitalizeName(key), p = concat(path, key)) =>
+        (key, val, name = prev + capitalizeName(key), p = concat(path, key)) =>
             assign(
                 { [name]: p },
                 isDefaultObject(val) && getStaticPath(val, name, p),
             ),
-        { [id]: path },
+        { [prev]: path },
     );
 
 export const patchToGlobalMap = (
@@ -36,7 +35,7 @@ export const patchToGlobalMap = (
     staticPath?: string[],
     prevPath: string[] = [],
     [staticName, firstKey, ...additionalKeys] = split(mapKey),
-    staticFromMap = staticPath || getMapByKey(storage, staticName) || [],
+    staticFromMap = staticPath || storage.m[staticName] || [],
     c = concat(staticFromMap, prevPath),
     isArr = isArray(getGlobalData(storage.s, c)),
 ): any =>

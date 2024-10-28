@@ -12,7 +12,6 @@ import {
     slice,
 } from "../utils";
 import { useEvent } from "./use-event.hook";
-import { getMapByKey } from "../maps/utils";
 import { EStorage } from "../global";
 import React from "react";
 const { useState } = React;
@@ -22,7 +21,7 @@ export const useStoreVal = (
     mapKey: string,
     filterFunc?: any,
 
-    pathKey = getMapByKey(storage, mapKey),
+    pathKey = storage.m[mapKey],
     prevState?: any,
 ) => {
     const [path, setPath] = useState<string[]>(pathKey),

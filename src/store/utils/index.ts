@@ -16,7 +16,7 @@ export const t_object = "object";
 export const isClient = typeof window == t_object;
 
 export const getPaths = (
-    storage: EStorage,
+    map: EStorage["m"],
     paths: string[],
     updatedValues: any,
     prevValues: any,
@@ -26,7 +26,7 @@ export const getPaths = (
             concat(prev, [concat((prev && prev[idx - 1]) || [], val)]),
         concat(
             getUpdatedPaths(paths, updatedValues, prevValues),
-            getAdditional(storage, paths),
+            getAdditional(map, paths),
         ) as string[][],
     );
 
@@ -53,12 +53,12 @@ const getUpdatedPaths = <T extends object>(
 };
 
 export const getAdditional = <T>(
-    storage: EStorage,
+    map: EStorage["m"],
     paths: string[],
     filter = isArrayPathName,
     type = 1,
 ) =>
-    entries(storage.m)
+    entries(map)
         .filter(
             (entry) =>
                 pathToString(entry[1]).startsWith(pathToString(paths)) &&
@@ -175,9 +175,9 @@ export const capitalizeKeysToString = (arr: string[]) =>
     pathToString(arr.map(capitalizeName));
 
 export const isArrayPathName = (name: string | string[]) =>
-    name.includes(ArrayMapKey);
-export const isOptionalPathName = (name: string | string[]) =>
-    name.includes(OptionalKey);
+    isOptionalPathName(name, ArrayMapKey);
+export const isOptionalPathName = (name: string | string[], t = OptionalKey) =>
+    name.includes(t);
 
 export const reduceAssign = <T extends any>(
     store: T,

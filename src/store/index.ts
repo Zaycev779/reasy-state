@@ -1,7 +1,6 @@
 import { getGlobalData } from "./global/get";
 import { useStoreVal } from "./hooks/use-store-val.hook";
 import { getStaticPath, patchToGlobalMap } from "./maps/maps";
-import { getMapByKey } from "./maps/utils";
 import { generateMutators } from "./mutators";
 import { storageAction } from "./storage";
 import { IsUndefined } from "./types/flatten";
@@ -29,6 +28,7 @@ import { updateStore } from "./global/update";
 import { EStorage } from "./global";
 
 let EStateId = 0;
+const E = "E#";
 
 export function createState<T>(
     params: WithM<T>,
@@ -54,7 +54,7 @@ export function createState<T>(params?: T, options?: Options<T>): any {
 export const _createState = <T>(
     initialValues?: T,
     options: Options<T> = {} as Options<T>,
-    id = options.key ? (options.key = "#" + options.key) : "#" + ++EStateId,
+    id = options.key ? (options.key = E + options.key) : E + ++EStateId,
     storageValues = storageAction(StorageType.G, options, initialValues),
     isInit: any = options.ssr,
     s = createCopy((!isInit && storageValues) || initialValues),
@@ -88,7 +88,7 @@ export const _createState = <T>(
                 target[capitalizeKeysToString(split(name))] ||
                 (patchToGlobalMap(storage, mapKey),
                 (...[filterFunc, ...args]: any) => {
-                    const basePath = getMapByKey(storage, mapKey);
+                    const basePath = storage.m[mapKey];
                     isInit && storageInit();
                     switch (type) {
                         case GeneratedType.h:

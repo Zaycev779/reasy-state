@@ -10,17 +10,16 @@ import {
 
 export const storageAction = <T>(
     actionType: StorageType = StorageType.G,
-    options: Options<T>,
+    { storage, key }: Options<T>,
     mergeValue: T | undefined,
-    storage = options.storage,
 ): T | undefined => {
     if (storage && isClient) {
-        const type = (storage as StorageOptions<T>).type || localStorage;
-        const mutators = (storage as StorageOptions<T>)[Mutators];
-        const name = "E$" + options.key;
         try {
+            const type = (storage as StorageOptions<T>).type || localStorage;
+            const mutators = (storage as StorageOptions<T>)[Mutators];
+
             if (actionType === StorageType.G) {
-                const data = type.getItem(name);
+                const data = type.getItem(key);
                 return (
                     data &&
                     mergeDeep(actionType, {}, mergeValue, mutators, parse(data))
@@ -28,7 +27,7 @@ export const storageAction = <T>(
             }
 
             type.setItem(
-                name,
+                key,
                 stringify(mergeDeep(actionType, {}, mutators, mergeValue)),
             );
         } catch {}

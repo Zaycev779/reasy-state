@@ -1,7 +1,7 @@
 import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render } from "@testing-library/react";
 import { CreateState, createState } from "reasy-state";
-const LOCAL_STORAGE_KEY = "E$#storage$_test1";
+const LOCAL_STORAGE_KEY = "E#storage$_test1";
 
 const getItemSpy = vi.spyOn(Storage.prototype, "getItem");
 const setItemSpy = vi.spyOn(Storage.prototype, "setItem");
@@ -120,7 +120,7 @@ it("load storage store", async () => {
     await findByText("other: test2");
 });
 
-const LOCAL_STORAGE_KEY_MUT = "E$#storage_mut";
+const LOCAL_STORAGE_KEY_MUT = "E#storage_mut";
 
 it("create storage store mutators", async () => {
     const { getStore, setStore, useStoreValue, useStoreOther } = createState(
@@ -277,7 +277,7 @@ it("create storage store mutators", async () => {
     unmount();
 });
 
-const LOCAL_STORAGE_KEY_ARR = "E$#arr_test";
+const LOCAL_STORAGE_KEY_ARR = "E#arr_test";
 
 it("create storage arrays store mutators set", async () => {
     type Type = Array<number>;
@@ -318,7 +318,7 @@ it("create storage arrays store mutators get", async () => {
     });
     expect(get()).toStrictEqual([3, 4, 5]);
 });
-const LOCAL_STORAGE_KEY_PRIMITIVE = "E$#str_test";
+const LOCAL_STORAGE_KEY_PRIMITIVE = "E#str_test";
 
 it("create storage primitive store mutators set", async () => {
     const { set, get } = createState<string>()("", {
