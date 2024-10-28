@@ -14,7 +14,7 @@ import {
 export const generateMutators = <T extends any>(
     storage: EStorage,
     values: T,
-    options?: Options<any>,
+    options: Options<any>,
     prevKey: string[] = [],
 ): any =>
     reduceAssign<any>(values, (key, val) =>
@@ -29,8 +29,8 @@ export const generateMutators = <T extends any>(
                           updateStore(
                               storage,
                               prevKey,
-                              getParams(arg, get()),
                               options,
+                              getParams(arg, get()),
                               type,
                           ),
                           get()

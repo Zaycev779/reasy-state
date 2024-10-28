@@ -1,6 +1,6 @@
 import { getGlobalData } from "./global/get";
 import { useStoreVal } from "./hooks/use-store-val.hook";
-import { patchToGlobalMap } from "./maps/maps";
+import { getStaticPath, patchToGlobalMap } from "./maps/maps";
 import { getMapByKey } from "./maps/utils";
 import { generateMutators } from "./mutators";
 import { storageAction } from "./storage";
@@ -26,7 +26,7 @@ import {
     isClient,
 } from "./utils";
 import { updateStore } from "./global/update";
-import { createStorage } from "./global";
+import { EStorage } from "./global";
 
 let EStateId = 0;
 
@@ -53,16 +53,18 @@ export function createState<T>(params?: T, options?: Options<T>): any {
 
 export const _createState = <T>(
     initialValues?: T,
-    options?: Options<T>,
-    storeId = options && options.key
-        ? (options.key = "#" + options.key.replace(/[$]/g, "#"))
+    options: Options<T> = {} as Options<T>,
+    id = options.key
+        ? (options.key = "#" + pathToString(split(options.key)))
         : "#" + ++EStateId,
     storageValues = storageAction(StorageType.G, options, initialValues),
-    isInit: any = options && options.ssr,
-    storage = createStorage(
-        storeId,
-        createCopy((!isInit && storageValues) || initialValues),
-    ),
+    isInit: any = options.ssr,
+    s = createCopy((!isInit && storageValues) || initialValues),
+    storage: EStorage = {
+        s,
+        m: getStaticPath(s, id),
+        id,
+    },
 ): IGenerate<CreateResult<T>> =>
     new Proxy(generateMutators(storage, initialValues, options), {
         get: (
@@ -73,75 +75,73 @@ export const _createState = <T>(
                 name.replace(GeneratedType.H, GeneratedType.h),
                 /(?=[A-Z$])/,
             ),
-            mapKey = storeId + pathToString(functionName),
+            mapKey = id + pathToString(functionName),
             storageInit = () => (
                 (isInit = 0),
                 isClient &&
                     storageValues &&
                     requestAnimationFrame(() =>
-                        updateStore<T>(storage, [], storageValues),
+                        updateStore<T>(storage, [], options, storageValues),
                     )
             ),
-        ): any =>
-            name === GeneratedType.h
-                ? proxy
-                : target[capitalizeKeysToString(split(name))] ||
-                  (patchToGlobalMap(storage, mapKey),
-                  (...[filterFunc, ...args]: any) => {
-                      const basePath = getMapByKey(storage, mapKey);
-                      isInit && storageInit();
-                      switch (type) {
-                          case GeneratedType.h:
-                              return updateStore(
-                                  storage,
-                                  basePath,
-                                  filterFunc.value,
-                                  options,
-                                  UpdateType.S,
-                                  false,
-                              );
+        ): any => {
+            if (name === GeneratedType.h) return proxy;
+            return (
+                target[capitalizeKeysToString(split(name))] ||
+                (patchToGlobalMap(storage, mapKey),
+                (...[filterFunc, ...args]: any) => {
+                    const basePath = getMapByKey(storage, mapKey);
+                    isInit && storageInit();
+                    switch (type) {
+                        case GeneratedType.h:
+                            return updateStore(
+                                storage,
+                                basePath,
+                                options,
+                                filterFunc.value,
+                                UpdateType.S,
+                                false,
+                            );
 
-                          case GeneratedType.U:
-                              if (isClient)
-                                  // eslint-disable-next-line react-hooks/rules-of-hooks
-                                  return useStoreVal(
-                                      storage,
-                                      mapKey,
-                                      filterFunc,
-                                  );
+                        case GeneratedType.U:
+                            if (isClient)
+                                // eslint-disable-next-line react-hooks/rules-of-hooks
+                                return useStoreVal(storage, mapKey, filterFunc);
 
-                          case GeneratedType.G:
-                              return getGlobalData(
-                                  storage.s,
-                                  basePath,
-                                  true,
-                                  filterFunc,
-                              );
-                          case GeneratedType.R:
-                          case GeneratedType.S: {
-                              const [arrParams] = args,
-                                  arrIdx = findPathArrayIndex(basePath),
-                                  path = arrParams
-                                      ? slice(basePath, 0, arrIdx - 1)
-                                      : basePath;
+                        case GeneratedType.G:
+                            return getGlobalData(
+                                storage.s,
+                                basePath,
+                                true,
+                                filterFunc,
+                            );
+                        case GeneratedType.R:
+                        case GeneratedType.S: {
+                            const [arrParams] = args,
+                                arrIdx = findPathArrayIndex(basePath),
+                                path = arrParams
+                                    ? slice(basePath, 0, arrIdx - 1)
+                                    : basePath;
 
-                              (!args.length || arrIdx) &&
-                                  updateStore(
-                                      storage,
-                                      path,
-                                      type === GeneratedType.R
-                                          ? initialValues
-                                          : arrParams
-                                          ? generateArray(
-                                                slice(basePath, arrIdx),
-                                                getGlobalData(storage.s, path),
-                                                arrParams,
-                                                filterFunc,
-                                            )
-                                          : filterFunc,
-                                      options,
-                                  );
-                          }
-                      }
-                  }),
+                            (!args.length || arrIdx) &&
+                                updateStore(
+                                    storage,
+                                    path,
+                                    options,
+                                    type === GeneratedType.R
+                                        ? initialValues
+                                        : arrParams
+                                        ? generateArray(
+                                              slice(basePath, arrIdx),
+                                              getGlobalData(storage.s, path),
+                                              arrParams,
+                                              filterFunc,
+                                          )
+                                        : filterFunc,
+                                );
+                        }
+                    }
+                })
+            );
+        },
     });

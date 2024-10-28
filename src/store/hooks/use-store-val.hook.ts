@@ -50,7 +50,7 @@ export const useStoreVal = (
     useEvent<{
         p: string[];
     }>(
-        mapKey && PATH_MAP_EV_NAME + mapKey,
+        PATH_MAP_EV_NAME + mapKey,
         ({ p }) => p && (setPath(p), _setState(getState(p))),
         () => diffValuesBoolean(path, pathKey) && setPath(pathKey),
     );

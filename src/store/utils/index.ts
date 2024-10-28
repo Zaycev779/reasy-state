@@ -6,7 +6,8 @@ export type updatedParams = string | updatedParams[];
 export const Mutators = "mutators";
 export const ArrayMapKey = "[]";
 export const OptionalKey = "$";
-export const split = (value: string, type = /[\s$]+/) => value.split(type);
+export const split = (value: string, type: string | RegExp = OptionalKey) =>
+    value.split(type);
 export const pathToString = (path: string[]) => path.join("");
 export const { assign, entries, getPrototypeOf } = Object;
 export const { stringify, parse } = JSON;

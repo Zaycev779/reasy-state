@@ -30,8 +30,8 @@ export const updateGlobalData = (
 export const updateStore = <T>(
     storage: EStorage,
     path: string[],
+    options: Options<T>,
     params?: Partial<T> | ((prev: T) => Partial<T>),
-    options?: Options<T>,
     type: UpdateType = UpdateType.S,
     update = true,
     prevValues = getGlobalData(storage.s, path),

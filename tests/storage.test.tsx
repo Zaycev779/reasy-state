@@ -1,7 +1,7 @@
 import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render } from "@testing-library/react";
 import { CreateState, createState } from "reasy-state";
-const LOCAL_STORAGE_KEY = "E$#storage_test";
+const LOCAL_STORAGE_KEY = "E$#storage_test1";
 
 const getItemSpy = vi.spyOn(Storage.prototype, "getItem");
 const setItemSpy = vi.spyOn(Storage.prototype, "setItem");
@@ -18,7 +18,7 @@ it("create storage store", async () => {
             store: { value: 1, other: "test1" },
         },
         {
-            key: "storage_test",
+            key: "storage$_test1",
             storage: true,
         },
     );
@@ -86,8 +86,6 @@ it("create storage store", async () => {
     );
 
     expect(getItemSpy).toHaveBeenCalledWith(LOCAL_STORAGE_KEY);
-
-    //    EStorage.store["#storage_test"] = undefined;
 });
 
 it("load storage store", async () => {
@@ -96,7 +94,7 @@ it("load storage store", async () => {
             store: { value: 1, other: "test1" },
         },
         {
-            key: "storage_test",
+            key: "storage$_test1",
             storage: true,
         },
     );
