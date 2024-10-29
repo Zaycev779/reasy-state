@@ -1,23 +1,24 @@
-import { KeyCapitalize } from "./index";
+import { KeyCapitalize, ValueOf } from "./index";
 import { Flatten } from "./flatten";
 
-export enum UpdateType {
-    S = "set",
-    P = "patch",
-}
-export enum GeneratedType {
-    G = "get",
-    S = "set",
-    U = "use",
-    R = "reset",
-    H = "SSR",
-    h = "ssr",
-}
+export const UpdateType = {
+    S: "set",
+    P: "patch",
+} as const;
 
-export enum StorageType {
-    G = "get",
-    P = "put",
-}
+export const GeneratedType = {
+    G: "get",
+    S: "set",
+    U: "use",
+    R: "reset",
+    H: "SSR",
+    h: "ssr",
+} as const;
+
+export const StorageType = {
+    G: "get",
+    P: "put",
+} as const;
 
 type M = "mutators";
 
@@ -125,7 +126,7 @@ export type CreateResult<T> = PickM<SetM<T>>;
 
 export type IStore<T = Record<string, any>> = T;
 
-type IStaticFunc<T, U, N extends GeneratedType> = {
+type IStaticFunc<T, U, N extends ValueOf<typeof GeneratedType>> = {
     [P in keyof T as keyof U extends `$${P extends string ? string : never}`
         ? T extends U
             ? FuncName<T, P, N>
@@ -140,8 +141,8 @@ type IStaticFunc<T, U, N extends GeneratedType> = {
 type IStaticRes<
     T,
     P extends keyof T,
-    N extends GeneratedType,
-> = N extends GeneratedType.S ? FuncSet<T, P> : FuncGet<T, P>;
+    N extends ValueOf<typeof GeneratedType>,
+> = N extends typeof GeneratedType.S ? FuncSet<T, P> : FuncGet<T, P>;
 
 type FName<P> = IsArray<P, never, Uncapitalize<P & string>>;
 type IFn<T, U> = {
@@ -152,10 +153,11 @@ type IFn<T, U> = {
 
 type AnyFunc = (...args: any) => any;
 
-type FuncName<T, P extends keyof T, N extends GeneratedType> = T[P] extends
-    | Function
-    | void
-    | AnyFunc
+type FuncName<
+    T,
+    P extends keyof T,
+    N extends ValueOf<typeof GeneratedType>,
+> = T[P] extends Function | void | AnyFunc
     ? P extends `${infer X}[]${infer Y}`
         ? `${N}${KeyCapitalize<X>}${KeyCapitalize<Y>}`
         : never
@@ -188,9 +190,9 @@ type IResetFunc = {
     [GeneratedType.R]: () => void;
 };
 
-export type IGenerateFn<T, U> = IStaticFunc<T, U, GeneratedType.G> &
-    IStaticFunc<T, U, GeneratedType.S> &
-    IStaticFunc<T, U, GeneratedType.U> &
+export type IGenerateFn<T, U> = IStaticFunc<T, U, typeof GeneratedType.G> &
+    IStaticFunc<T, U, typeof GeneratedType.S> &
+    IStaticFunc<T, U, typeof GeneratedType.U> &
     IFn<T, U>;
 
 export type IGenerate<T, U = unknown> = IGenerateFn<Flatten<T>, Flatten<U>> &
@@ -201,7 +203,11 @@ export type ISSR<T, U> = { ssr: ISSRFunc<T, U> };
 
 type ISSRComp<T> = React.FC<{ value: T }>;
 
-type ISSRFunc<T, U, N extends GeneratedType = GeneratedType.H> = {
+type ISSRFunc<
+    T,
+    U,
+    N extends ValueOf<typeof GeneratedType> = typeof GeneratedType.H,
+> = {
     [P in keyof T as keyof U extends `$${P extends string ? string : never}`
         ? T extends U
             ? T[P] extends AnyFunc

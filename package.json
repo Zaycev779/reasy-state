@@ -1,6 +1,6 @@
 {
   "name": "reasy-state",
-  "version": "1.0.54",
+  "version": "1.0.55",
   "description": "reasy-state - A state management library for React",
   "main": "dist/index.cjs.js",
   "module": "dist/index.esm.js",
@@ -27,6 +27,9 @@
   },
   "peerDependenciesMeta": {
     "react-dom": {
+      "optional": true
+    },
+    "react": {
       "optional": true
     }
   },

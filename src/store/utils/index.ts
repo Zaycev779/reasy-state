@@ -1,8 +1,7 @@
 import { EStorage } from "../global";
-import { Maybe } from "../types";
+import { Maybe, ValueOf } from "../types";
 import { StorageType } from "../types/store";
 
-export type updatedParams = string | updatedParams[];
 export const Mutators = "mutators";
 export const ArrayMapKey = "[]";
 export const OptionalKey = "$";
@@ -34,37 +33,35 @@ const getUpdatedPaths = <T extends object>(
     paths: string[] = [],
     updatedParams: T,
     prevValues: T,
-    res: string[][] = [],
-) => {
-    if (!isDefaultObject(updatedParams))
-        return prevValues !== updatedParams ? [paths] : [];
-
-    for (let key in assign({}, prevValues, updatedParams))
-        ((isDefaultObject(updatedParams[key]) &&
-            getUpdatedPaths(
-                concat(paths, key),
-                updatedParams[key] as object,
-                (prevValues && prevValues[key]) || {},
-                res,
-            )) ||
-            (prevValues && prevValues[key] !== updatedParams[key])) &&
-            res.push(concat(paths, key));
-    return res;
-};
+    res: string[][] = prevValues !== updatedParams ? [paths] : [],
+) => (
+    isDefaultObject(updatedParams) &&
+        entries(assign({}, prevValues, updatedParams)).every(
+            ([key]) =>
+                getUpdatedPaths(
+                    concat(paths, key),
+                    updatedParams[key] as object,
+                    (prevValues && prevValues[key]) || {},
+                    res,
+                ) && res.push(concat(paths, key)),
+        ),
+    res
+);
 
 export const getAdditional = <T>(
     map: EStorage["m"],
     paths: string[],
     filter = isArrayPathName,
     type = 1,
+    f: (e: [string, string[]]) => any = (entrie) => entrie[type],
 ) =>
     getFiltred(
         entries(map),
-        (entry: Record<string, string[]>) =>
-            pathToString(entry[1]).startsWith(pathToString(paths)) &&
+        (entry: [string, string[]]) =>
+            pathToString(entry[1]).match(pathToString(paths)) &&
             entry[1] > paths &&
             filter(entry[type]),
-    ).map((entrie: Record<string, string[]>) => entrie[type]) as T;
+    ).map(f) as T;
 
 export const isDefaultObject = (value: any) =>
     value && value.constructor === Object;
@@ -75,13 +72,19 @@ export const createCopy = (value: any) =>
 export const concat = (target: any[] | string, ...arrays: any): any =>
     target.concat(...arrays);
 
-const mergeMutate = (type: Maybe<StorageType> | 0, target: any, source: any) =>
+const mergeMutate = (
+    type: Maybe<ValueOf<typeof StorageType>> | 0,
+    target: any,
+    source: any,
+) =>
     type && isAFunction(target)
-        ? target((fn: Record<StorageType, any>) => fn[type](source))
+        ? target((fn: Record<ValueOf<typeof StorageType>, any>) =>
+              fn[type](source),
+          )
         : source;
 
 export const mergeDeep = (
-    type: Maybe<StorageType> | 0,
+    type: Maybe<ValueOf<typeof StorageType>> | 0,
     target: any,
     source?: any,
     ...sources: any[]
@@ -90,14 +93,15 @@ export const mergeDeep = (
 
     if (isDefaultObject(target) && isDefaultObject(source)) {
         for (let key in source) {
-            if (key === Mutators) continue;
-            if (isDefaultObject(source[key])) {
-                if (!target[key]) assign(target, { [key]: {} });
-                mergeDeep(type, target[key], source[key]);
-            } else {
-                assign(target, {
-                    [key]: mergeMutate(type, target[key], source[key]),
-                });
+            if (key !== Mutators) {
+                if (isDefaultObject(source[key])) {
+                    if (!target[key]) assign(target, { [key]: {} });
+                    mergeDeep(type, target[key], source[key]);
+                } else {
+                    assign(target, {
+                        [key]: mergeMutate(type, target[key], source[key]),
+                    });
+                }
             }
         }
     } else {
@@ -147,7 +151,7 @@ export const slice = <T extends string | any[]>(
     end?: number,
 ) => value.slice(start, end) as T;
 
-export const isAFunction = (value: any) => typeof value === "function";
+export const isAFunction = (value: any) => typeof value === typeof isAFunction;
 
 export const getParams = (params: any, ...args: any[]) =>
     isAFunction(params) ? params(...args) : params;

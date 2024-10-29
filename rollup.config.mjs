@@ -30,7 +30,7 @@ export default [{
         },
         { 
             file: "dist/index.esm.js", 
-            format: "es", 
+            format: "esm", 
             sourcemap: false,
             plugins: [
                 terser({
