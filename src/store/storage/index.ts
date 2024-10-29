@@ -1,8 +1,9 @@
+import { ValueOf } from "../types";
 import { Options, StorageOptions, StorageType } from "../types/store";
 import { mergeDeep, Mutators, parse, stringify, isClient } from "../utils";
 
 export const storageAction = <T>(
-    actionType: StorageType = StorageType.G,
+    actionType: ValueOf<typeof StorageType> = StorageType.G,
     { storage, key }: Options<T>,
     mergeValue: T | undefined,
 ): T | undefined => {

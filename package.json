@@ -28,6 +28,9 @@
   "peerDependenciesMeta": {
     "react-dom": {
       "optional": true
+    },
+    "react": {
+      "optional": true
     }
   },
   "devDependencies": {

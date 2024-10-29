@@ -14,7 +14,6 @@ import {
 import { useEvent } from "./use-event.hook";
 import { EStorage } from "../global";
 import React from "react";
-const { useState } = React;
 
 export const useStoreVal = (
     storage: EStorage,
@@ -22,25 +21,23 @@ export const useStoreVal = (
     filterFunc?: any,
 
     pathKey = storage.m[mapKey],
-    prevState?: any,
+    get = (path: string[]) => getGlobalData(storage.s, path, true, filterFunc),
+    prevState: any = get(pathKey),
 ) => {
-    const [path, setPath] = useState<string[]>(pathKey),
-        getState = (newPath?: string[]) =>
-            getGlobalData(storage.s, newPath || path, true, filterFunc),
-        [state, setState] = useState((prevState = getState())),
-        _setState = (values: any = getState()) =>
-            diffValuesBoolean(prevState, values) &&
-            (setState(values), (prevState = values));
+    const [[p, s], set] = React.useState<[string[], any]>([pathKey, prevState]);
+    const _setState = (values: any = get(p)) =>
+        diffValuesBoolean(prevState, values) &&
+        (set([p, values]), (prevState = values));
 
     useEvent<IStore>(
-        path && PUSH_EV_NAME + storage.id + pathToString(path),
-        (p) =>
+        p && PUSH_EV_NAME + storage.id + pathToString(p),
+        (val) =>
             _setState(
-                !isArrayPathName(path) || !isArray(p)
-                    ? createCopy(p)
-                    : slice(path, findPathArrayIndex(path)).reduce(
+                !isArrayPathName(p) || !isArray(val)
+                    ? createCopy(val)
+                    : slice(p, findPathArrayIndex(p)).reduce(
                           (prev, key) => prev.flatMap((val: any) => val[key]),
-                          getFiltred(p, filterFunc),
+                          getFiltred(val, filterFunc),
                       ),
             ),
         _setState,
@@ -48,9 +45,9 @@ export const useStoreVal = (
 
     useEvent<string[]>(
         PATH_MAP_EV_NAME + storage.id + mapKey,
-        (p) => p && (setPath(p), _setState(getState(p))),
-        () => diffValuesBoolean(path, pathKey) && setPath(pathKey),
+        (val) => val && set([val, get(val)]),
+        () => diffValuesBoolean(p, pathKey) && set([pathKey, s]),
     );
 
-    return state;
+    return s;
 };

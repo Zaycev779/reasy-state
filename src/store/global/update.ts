@@ -15,6 +15,7 @@ import {
     pathToString,
 } from "../utils";
 import { EStorage } from ".";
+import { ValueOf } from "../types";
 
 export const updateGlobalData = (
     src: Record<string, any>,
@@ -31,7 +32,7 @@ export const updateStore = <T>(
     path: string[],
     options: Options<T>,
     params?: Partial<T> | ((prev: T) => Partial<T>),
-    type: UpdateType = UpdateType.S,
+    type: ValueOf<typeof UpdateType> = UpdateType.S,
     update = true,
     prevValues = getGlobalData(storage.s, path),
     updatedParams = getParams(params, prevValues),
@@ -46,14 +47,12 @@ export const updateStore = <T>(
             : updatedParams,
     ),
     update &&
-        (getAdditional<string[]>(m, path, isOptionalPathName, 0).forEach(
-            (mapKey) => {
-                const prevPath = m[mapKey];
-                patchToGlobalMap(storage, mapKey);
-                diffValuesBoolean(prevPath, m[mapKey]) &&
-                    sendEvent(PATH_MAP_EV_NAME + id + mapKey, m[mapKey]);
-            },
-        ),
+        (getAdditional<string[]>(m, path, isOptionalPathName, 0, ([mapKey]) => {
+            const prevPath = m[mapKey];
+            patchToGlobalMap(storage, mapKey);
+            diffValuesBoolean(prevPath, m[mapKey]) &&
+                sendEvent(PATH_MAP_EV_NAME + id + mapKey, m[mapKey]);
+        }),
         getPaths(m, path, updatedParams, prevValues).every(
             (pathVal: string[]) =>
                 sendEvent(

@@ -56,7 +56,7 @@ const _createState = <T>(
     options: Options<T> = {} as Options<T>,
     id = options.key ? (options.key = E + options.key) : E + ++EStateId,
     storageValues = storageAction(StorageType.G, options, initialValues),
-    isInit: any = options.ssr,
+    isInit: any = options[GeneratedType.h],
     s = createCopy((!isInit && storageValues) || initialValues),
     storage: EStorage = {
         s,
@@ -113,8 +113,7 @@ const _createState = <T>(
                                 true,
                                 filterFunc,
                             );
-                        case GeneratedType.R:
-                        case GeneratedType.S: {
+                        default: {
                             const [arrParams] = args,
                                 arrIdx = findPathArrayIndex(basePath),
                                 path = arrParams
