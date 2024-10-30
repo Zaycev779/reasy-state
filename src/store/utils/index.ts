@@ -21,26 +21,25 @@ export const getPaths = (
     prevValues: any,
 ) =>
     paths.reduce(
-        (prev, val, idx) =>
-            concat(prev, [concat((prev && prev[idx - 1]) || [], val)]),
+        (prev, _, idx) => concat(prev, [slice(paths, 0, idx)]),
         concat(
             getUpdatedPaths(paths, updatedValues, prevValues),
             getAdditional(map, paths),
         ) as string[][],
     );
 
-const getUpdatedPaths = <T extends object>(
+const getUpdatedPaths = <T extends Record<string, any>>(
     paths: string[] = [],
     updatedParams: T,
     prevValues: T,
     res: string[][] = prevValues !== updatedParams ? [paths] : [],
-) => (
+): any => (
     isDefaultObject(updatedParams) &&
         entries(assign({}, prevValues, updatedParams)).every(
             ([key]) =>
                 getUpdatedPaths(
                     concat(paths, key),
-                    updatedParams[key] as object,
+                    updatedParams[key],
                     (prevValues && prevValues[key]) || {},
                     res,
                 ) && res.push(concat(paths, key)),
@@ -141,9 +140,6 @@ export const generateArray = (
               },
           )
         : prev;
-
-export const findPathArrayIndex = (array?: string[]) =>
-    (array && array.indexOf(ArrayMapKey) + 1) || 0;
 
 export const slice = <T extends string | any[]>(
     value: T,

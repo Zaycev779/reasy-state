@@ -9,6 +9,7 @@ import {
     CreateState,
     GeneratedType,
     IGenerate,
+    IStore,
     Options,
     StorageType,
     UpdateType,
@@ -18,11 +19,11 @@ import {
     capitalizeKeysToString,
     createCopy,
     generateArray,
-    findPathArrayIndex,
     pathToString,
     split,
     slice,
     isClient,
+    ArrayMapKey,
 } from "./utils";
 import { updateStore } from "./global/update";
 import { EStorage } from "./global";
@@ -30,18 +31,26 @@ import { EStorage } from "./global";
 let EStateId = 0;
 const E = "E#";
 
-export function createState<T>(
+export function createState<T = IStore>(
     params: WithM<T>,
     options?: Options<T>,
 ): IGenerate<CreateResult<T>>;
 export function createState<T>(): {
-    <U extends WithM<CreateState<T>>>(
-        params?: WithM<U>,
+    <
+        U extends WithM<CreateState<unknown extends T ? any : T>> = WithM<
+            CreateState<unknown extends T ? IStore : T>
+        >,
+    >(
+        params?: U,
         options?: Options<U & T>,
     ): IGenerate<
         CreateResult<
-            U extends { [K in string]: unknown }
+            IsUndefined<U, keyof U, Partial<T>, T> & U extends {
+                [K in string]: unknown;
+            }
                 ? IsUndefined<T, keyof T, Partial<U>, U>
+                : unknown extends T
+                ? U
                 : T
         >,
         CreateResult<IsUndefined<U, keyof U, Partial<T>, T>>
@@ -115,7 +124,10 @@ const _createState = <T>(
                             );
                         default: {
                             const [arrParams] = args,
-                                arrIdx = findPathArrayIndex(basePath),
+                                arrIdx =
+                                    (basePath &&
+                                        basePath.indexOf(ArrayMapKey) + 1) ||
+                                    0,
                                 path = arrParams
                                     ? slice(basePath, 0, arrIdx - 1)
                                     : basePath;

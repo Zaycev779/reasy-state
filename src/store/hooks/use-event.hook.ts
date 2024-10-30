@@ -3,10 +3,9 @@ import React from "react";
 
 export const useEvent = <T>(
     type: any,
-    onChange: (values: T) => void,
+    onChange: () => void,
     onChangeType: () => void,
-    onTargetEvent = (ev: Event) =>
-        onChange((ev as CustomEvent<{ p: T }>).detail.p),
+    onTargetEvent = () => onChange(),
 ) =>
     React.useLayoutEffect(
         () =>

@@ -40,6 +40,42 @@ it("create optional store", async () => {
     await findByText("value: 1");
 });
 
+it("create optional store 2", async () => {
+    type TStore = {
+        store: {
+            value: number;
+        };
+    };
+    const { useStoreValue, setStoreValue, getStoreValue, getStore } =
+        createState<TStore>()({
+            store: { value: 1 },
+        });
+
+    function Page() {
+        const value = useStoreValue() || 0;
+        const v = getStore().value;
+        return <div>value: {value}</div>;
+    }
+    function Button() {
+        return (
+            <button onClick={() => setStoreValue((prev) => (prev || 0) + 1)}>
+                button
+            </button>
+        );
+    }
+
+    const { getByText, findByText } = render(
+        <>
+            <Page />
+            <Button />
+        </>,
+    );
+    expect(getStoreValue()).toBe(1);
+    await findByText("value: 1");
+    fireEvent.click(getByText("button"));
+    await findByText("value: 2");
+});
+
 it("create optional store width CreateState type", async () => {
     type UserStore = {
         id: number;
@@ -54,6 +90,7 @@ it("create optional store width CreateState type", async () => {
     };
 
     const {
+        get,
         getUserStore$data,
         useUserStore$data$rating,
         useUserStoreId,
@@ -71,7 +108,6 @@ it("create optional store width CreateState type", async () => {
 
         return <div>id: {id}</div>;
     }
-
     function Page2() {
         renderCountsRating++;
         const rating = useUserStore$data$rating() || "-";
@@ -139,6 +175,7 @@ it("create optional store with any types", async () => {
     fireEvent.click(getByText("button"));
     expect(state?.get$userStore$value()).toBe("new value");
     await findByText("value: new value");
+    //@ts-ignore
     act(() => state.set(undefined));
     expect(state?.get$userStore$value()).toBe(undefined);
     expect(state?.get$userStore()).toBe(undefined);

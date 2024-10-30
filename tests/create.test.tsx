@@ -55,8 +55,47 @@ it("create primitive store", async () => {
     await findByText("value: 1");
 });
 
+it("create primitive store 2", async () => {
+    const { use } = createState()(1);
+
+    function Page() {
+        const store = use();
+
+        return <div>value: {store}</div>;
+    }
+
+    const { findByText } = render(
+        <>
+            <Page />
+        </>,
+    );
+
+    await findByText("value: 1");
+});
+
+it("create primitive store 3", async () => {
+    const { use } = createState<number>()();
+
+    function Page() {
+        const store = use();
+
+        return <div>value: {store}</div>;
+    }
+
+    const { findByText } = render(
+        <>
+            <Page />
+        </>,
+    );
+
+    await findByText("value:");
+});
+
 it("set store value", async () => {
     const {
+        get,
+        use,
+        set,
         useStore,
         setStore,
         useStoreValue,
@@ -66,12 +105,16 @@ it("set store value", async () => {
         useStoreOther,
         getStoreOther,
         setStoreOther,
-    } = createState({
-        store: { value: 1, other: "test" },
-    });
+    } = createState(
+        {
+            store: { value: 1, other: "test" },
+        },
+        { key: "c_test" },
+    );
     let renderCounts = 0;
     let renderCountsOther = 0;
     let renderCountsValue = 0;
+    let renderCountsUse = 0;
 
     function Page() {
         const store = useStore();
@@ -84,6 +127,13 @@ it("set store value", async () => {
         renderCountsValue++;
 
         return <div>value2: {value}</div>;
+    }
+
+    function Page3() {
+        const value = use().store.value;
+        renderCountsUse++;
+
+        return <div>value3: {value}</div>;
     }
 
     function PageOther() {
@@ -132,6 +182,7 @@ it("set store value", async () => {
             <PageOther />
             <Page />
             <Page2 />
+            <Page3 />
             <Button />
             <ButtonPrev />
             <Button2 />
@@ -150,20 +201,28 @@ it("set store value", async () => {
     expect(renderCountsOther).toBe(2);
 
     fireEvent.click(getByText("button 1"));
+    expect(renderCounts).toBe(3);
     expect(renderCountsOther).toBe(3);
     expect(renderCountsValue).toBe(2);
     expect(getStore().other).toBe("test1");
     await findByText("other: test1");
 
+    expect(getStoreValue()).toBe(2);
+    expect(getStore().value).toBe(2);
+    expect(get().store.value).toBe(2);
     await findByText("value1: 2");
     await findByText("value2: 2");
+    await findByText("value3: 2");
+
     fireEvent.click(getByText("button 2"));
+    expect(renderCounts).toBe(4);
     expect(renderCountsValue).toBe(3);
 
     await findByText("value1: 3");
     await findByText("value2: 3");
 
     fireEvent.click(getByText("button 3"));
+    expect(renderCounts).toBe(5);
     expect(renderCountsValue).toBe(4);
 
     await findByText("value1: 4");
@@ -178,7 +237,17 @@ it("set store value", async () => {
     expect(getStore().value).toBe(5);
     expect(getStoreValue()).toBe(5);
 
-    expect(renderCounts).toBe(5);
+    expect(renderCounts).toBe(6);
+    expect(renderCountsUse).toBe(6);
     expect(renderCountsValue).toBe(5);
     expect(renderCountsOther).toBe(3);
+
+    act(() =>
+        set({
+            store: { value: 0, other: "-" },
+        }),
+    );
+    await findByText("value1: 0");
+    await findByText("value2: 0");
+    await findByText("value3: 0");
 });
