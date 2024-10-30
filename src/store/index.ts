@@ -96,9 +96,16 @@ const _createState = <T>(
             return (
                 target[capitalizeKeysToString(split(name))] ||
                 (patchToGlobalMap(storage, mapKey),
-                (...[filterFunc, ...args]: any) => {
-                    const basePath = storage.m[mapKey];
+                (...args: any) => {
+                    const basePath = storage.m[mapKey],
+                        [filterFunc, arrParams] = args,
+                        arrIdx = basePath.indexOf(ArrayMapKey) + 1 || 0,
+                        path = arrIdx
+                            ? slice(basePath, 0, arrIdx - 1)
+                            : basePath;
+
                     isInit && storageInit();
+
                     switch (type) {
                         case GeneratedType.h:
                             return updateStore(
@@ -119,27 +126,17 @@ const _createState = <T>(
                             return getGlobalData(
                                 storage.s,
                                 basePath,
-                                true,
                                 filterFunc,
                             );
-                        default: {
-                            const [arrParams] = args,
-                                arrIdx =
-                                    (basePath &&
-                                        basePath.indexOf(ArrayMapKey) + 1) ||
-                                    0,
-                                path = arrParams
-                                    ? slice(basePath, 0, arrIdx - 1)
-                                    : basePath;
-
-                            (!args.length || arrIdx) &&
+                        default:
+                            (args.length < 2 || arrIdx) &&
                                 updateStore(
                                     storage,
                                     path,
                                     options,
                                     type === GeneratedType.R
                                         ? initialValues
-                                        : arrParams
+                                        : arrIdx
                                         ? generateArray(
                                               slice(basePath, arrIdx),
                                               getGlobalData(storage.s, path),
@@ -148,7 +145,6 @@ const _createState = <T>(
                                           )
                                         : filterFunc,
                                 );
-                        }
                     }
                 })
             );

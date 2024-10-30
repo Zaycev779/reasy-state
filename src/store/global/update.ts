@@ -37,9 +37,8 @@ export const updateStore = <T>(
     prevValues = getGlobalData(storage.s, path),
     updatedParams = getParams(params, prevValues),
     { id, m } = storage,
-) =>
-    path &&
-    (updateGlobalData(
+) => (
+    updateGlobalData(
         storage,
         concat(["s"], path),
         type === UpdateType.P
@@ -57,4 +56,5 @@ export const updateStore = <T>(
             (pathVal: string[]) =>
                 sendEvent(PUSH_EV_NAME + id + pathToString(pathVal)),
         ),
-        storageAction<any>(StorageType.P, options, storage.s)));
+        storageAction<any>(StorageType.P, options, storage.s))
+);
