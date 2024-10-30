@@ -34,7 +34,7 @@ export const patchToGlobalMap = (
     base = storage.m[root] || [],
     isArr = isArray(getGlobalData(storage.s, base)),
     c = concat(base, keys[0]),
-) =>
+): any =>
     isOptionalPathName(mapKey) &&
     ((storage.m[mapKey] = isArr ? concat(base, ArrayMapKey, keys) : c),
     !isArr && keys[1] && patchToGlobalMap(storage, mapKey, keys, c));
