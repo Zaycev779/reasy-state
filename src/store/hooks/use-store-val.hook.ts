@@ -33,12 +33,12 @@ export const useStoreVal = (
         p && PUSH_EV_NAME + storage.id + pathToString(p),
         (val) =>
             _setState(
-                !isArrayPathName(p) || !isArray(val)
-                    ? createCopy(val)
-                    : slice(p, findPathArrayIndex(p)).reduce(
+                isArrayPathName(p) && isArray(val)
+                    ? slice(p, findPathArrayIndex(p)).reduce(
                           (prev, key) => prev.flatMap((val: any) => val[key]),
                           getFiltred(val, filterFunc),
-                      ),
+                      )
+                    : createCopy(val),
             ),
         _setState,
     );

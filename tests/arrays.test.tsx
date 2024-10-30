@@ -344,6 +344,55 @@ it("create store with primitive array", async () => {
     expect(renderCounts).toBe(2);
 });
 
+it("create store with primitive array 2", async () => {
+    const { useStoreArray, setStoreArray } = createState<{
+        store: { array: number[] };
+    }>()({
+        store: {
+            array: [1],
+        },
+    });
+
+    let renderCounts = 0;
+    function Page() {
+        const value = useStoreArray();
+        renderCounts++;
+        return <div>array: {value.join(",")}</div>;
+    }
+
+    function Button() {
+        return (
+            <button
+                onClick={() =>
+                    setStoreArray((prev) => [
+                        ...prev,
+                        prev[prev.length - 1] + 1,
+                    ])
+                }
+            >
+                button
+            </button>
+        );
+    }
+
+    const { getByText, findByText } = render(
+        <>
+            <Page />
+            <Button />
+        </>,
+    );
+
+    expect(renderCounts).toBe(1);
+
+    await findByText("array: 1");
+
+    fireEvent.click(getByText("button"));
+
+    await findByText("array: 1,2");
+
+    expect(renderCounts).toBe(2);
+});
+
 it("create store with primitive optional array", async () => {
     type Store = {
         store: {

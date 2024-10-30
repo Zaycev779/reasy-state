@@ -22,10 +22,10 @@ export const updateGlobalData = (
     [path, ...rest]: string[],
     data?: any,
 ): any =>
-    !rest[0]
-        ? (src[path] = createCopy(data))
-        : (!src[path] && (src[path] = {}),
-          updateGlobalData(src[path], rest, data));
+    rest[0]
+        ? (!src[path] && (src[path] = {}),
+          updateGlobalData(src[path], rest, data))
+        : (src[path] = createCopy(data));
 
 export const updateStore = <T>(
     storage: EStorage,

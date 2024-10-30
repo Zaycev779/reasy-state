@@ -55,6 +55,42 @@ it("create primitive store", async () => {
     await findByText("value: 1");
 });
 
+it("create primitive store 2", async () => {
+    const { use } = createState()(1);
+
+    function Page() {
+        const store = use();
+
+        return <div>value: {store}</div>;
+    }
+
+    const { findByText } = render(
+        <>
+            <Page />
+        </>,
+    );
+
+    await findByText("value: 1");
+});
+
+it("create primitive store 3", async () => {
+    const { use } = createState<number>()();
+
+    function Page() {
+        const store = use();
+
+        return <div>value: {store}</div>;
+    }
+
+    const { findByText } = render(
+        <>
+            <Page />
+        </>,
+    );
+
+    await findByText("value:");
+});
+
 it("set store value", async () => {
     const {
         useStore,

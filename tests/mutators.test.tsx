@@ -115,9 +115,12 @@ it("created root mutator without types 3", async () => {
         store: {
             value: 1,
         },
+
         mutators: {
+            s: (a) => 1,
             inc: ({ set, get }, { store }) => {
                 set({ store: { value: (store?.value ?? 0) + 1 } });
+                return 1;
             },
         },
     });

@@ -74,7 +74,7 @@ type MTyping<PT, WPT = WithoutM<PT>> = PT extends {
 export type WithM<T> = T extends {
     [K: string]: unknown;
 }
-    ? T extends { [k in M]: any }
+    ? T extends { [k in M]: unknown }
         ? T
         : {
               [K in keyof T]: K extends M
@@ -84,7 +84,7 @@ export type WithM<T> = T extends {
                   : never;
           } & {
               [K in M]?: {
-                  [k: string]: (
+                  [k in string]: (
                       val: SetFn<WithoutM<T>>,
                       prev: WithoutM<T>,
                   ) => any;
@@ -125,17 +125,25 @@ type PickM<T> = T extends {
 export type CreateResult<T> = PickM<SetM<T>>;
 
 export type IStore<T = Record<string, any>> = T;
-
+/*
 type IStaticFunc<T, U, N extends ValueOf<typeof GeneratedType>> = {
     [P in keyof T as keyof U extends `$${P extends string ? string : never}`
         ? T extends U
             ? FuncName<T, P, N>
             : never
-        : FuncName<T, P, N>]: IStaticRes<T, P, N>;
+        : FuncName<T, P, N>]: IStaticRes< T, P, N>;
 } & {
     [P in keyof U as P extends `${string | ""}$${string}`
         ? FuncName<U, P, N>
-        : never]: IStaticRes<U, P, N>;
+        : never]: IStaticRes< U, P, N>;
+};*/
+
+type IStaticFunc<T, U, N extends ValueOf<typeof GeneratedType>> = {
+    [P in keyof (T & U) as FuncName<T & U, P, N>]: P extends keyof T
+        ? IStaticRes<T, P, N>
+        : P extends keyof U
+        ? IStaticRes<U, P, N>
+        : unknown;
 };
 
 type IStaticRes<

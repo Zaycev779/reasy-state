@@ -24,7 +24,8 @@ export const storageAction = <T>(
                 key,
                 stringify(mergeDeep(actionType, {}, mutators, mergeValue)),
             );
-        } catch {}
+        } finally {
+        }
     }
 
     return;
