@@ -51,13 +51,10 @@ export const updateStore = <T>(
             const prevPath = m[mapKey];
             patchToGlobalMap(storage, mapKey);
             diffValuesBoolean(prevPath, m[mapKey]) &&
-                sendEvent(PATH_MAP_EV_NAME + id + mapKey, m[mapKey]);
+                sendEvent(PATH_MAP_EV_NAME + id + mapKey);
         }),
         getPaths(m, path, updatedParams, prevValues).every(
             (pathVal: string[]) =>
-                sendEvent(
-                    PUSH_EV_NAME + id + pathToString(pathVal),
-                    getGlobalData(storage.s, pathVal),
-                ),
+                sendEvent(PUSH_EV_NAME + id + pathToString(pathVal)),
         ),
         storageAction<any>(StorageType.P, options, storage.s)));

@@ -1,16 +1,7 @@
 import { getGlobalData } from "../global/get";
 import { IStore } from "../types/store";
 import { PATH_MAP_EV_NAME, PUSH_EV_NAME } from "../events";
-import {
-    createCopy,
-    diffValuesBoolean,
-    findPathArrayIndex,
-    getFiltred,
-    isArray,
-    isArrayPathName,
-    pathToString,
-    slice,
-} from "../utils";
+import { createCopy, diffValuesBoolean, pathToString } from "../utils";
 import { useEvent } from "./use-event.hook";
 import { EStorage } from "../global";
 import React from "react";
@@ -26,31 +17,19 @@ export const useStoreVal = (
     prevState: any = get(pathKey),
 ) => {
     const [[p, s], set] = React.useState<[string[], any]>([pathKey, prevState]);
-    const _setState = (values: any = get(p)) => {
+    const _setState = (values: any = get(p)) =>
         diffValuesBoolean(prevState, values) &&
-            (set([p, values]), (prevState = values));
-    };
+        (set([p, values]), (prevState = values));
 
     useEvent<IStore>(
         p && PUSH_EV_NAME + storage.id + pathToString(p),
-        (val) =>
-            _setState(
-                createCopy(
-                    isArrayPathName(p) && isArray(val)
-                        ? slice(p, findPathArrayIndex(p)).reduce(
-                              (prev, key) =>
-                                  prev.flatMap((val: any) => val[key]),
-                              getFiltred(val, filterFunc),
-                          )
-                        : val,
-                ),
-            ),
+        _setState,
         _setState,
     );
 
     useEvent<string[]>(
         PATH_MAP_EV_NAME + storage.id + mapKey,
-        (val) => val && set([val, get(val)]),
+        (n = storage.m[mapKey]) => n && set([n, get(n)]),
         () => diffValuesBoolean(p, pathKey) && set([pathKey, s]),
     );
 

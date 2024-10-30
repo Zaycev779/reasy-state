@@ -19,11 +19,11 @@ import {
     capitalizeKeysToString,
     createCopy,
     generateArray,
-    findPathArrayIndex,
     pathToString,
     split,
     slice,
     isClient,
+    ArrayMapKey,
 } from "./utils";
 import { updateStore } from "./global/update";
 import { EStorage } from "./global";
@@ -124,7 +124,10 @@ const _createState = <T>(
                             );
                         default: {
                             const [arrParams] = args,
-                                arrIdx = findPathArrayIndex(basePath),
+                                arrIdx =
+                                    (basePath &&
+                                        basePath.indexOf(ArrayMapKey) + 1) ||
+                                    0,
                                 path = arrParams
                                     ? slice(basePath, 0, arrIdx - 1)
                                     : basePath;
