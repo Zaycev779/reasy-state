@@ -13,7 +13,7 @@ export const useStoreVal = (
 
     pathKey = storage.m[mapKey],
     get = (path: string[]) =>
-        createCopy(getGlobalData(storage.s, path, true, filterFunc)),
+        createCopy(getGlobalData(storage.s, path, filterFunc)),
     prevState: any = get(pathKey),
 ) => {
     const [[p, s], set] = React.useState<[string[], any]>([pathKey, prevState]);

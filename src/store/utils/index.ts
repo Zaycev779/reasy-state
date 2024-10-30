@@ -147,7 +147,7 @@ export const slice = <T extends string | any[]>(
     end?: number,
 ) => value.slice(start, end) as T;
 
-export const isAFunction = (value: any) => typeof value === typeof isAFunction;
+const isAFunction = (value: any) => typeof value === typeof isAFunction;
 
 export const getParams = (params: any, ...args: any[]) =>
     isAFunction(params) ? params(...args) : params;

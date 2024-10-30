@@ -817,10 +817,46 @@ it("deep array store", async () => {
     expect(arrayStore.get$arrs()).toStrictEqual(undefined);
     act(() => arrayStore.set$arrs$obj$objArr(() => true, [{ value: 1 }]));
     expect(arrayStore.get$arrs$obj$objArr()).toStrictEqual(undefined);
-    //    expect(arrayStore.get$arrs()).toStrictEqual(undefined);
+    expect(arrayStore.get$arrs()).toStrictEqual(undefined);
 
-    //    act(() => arrayStore.set$arrs$obj$objArr$value(() => true, 1));
-    //    expect(arrayStore.get$arrs$obj$objArr$value()).toStrictEqual(undefined);
+    act(() => arrayStore.set$arrs$obj$objArr$value(() => true, 1));
+    expect(arrayStore.get$arrs$obj$objArr$value()).toStrictEqual(undefined);
+
+    act(() =>
+        arrayStore.set$arrs([
+            {
+                id: 1,
+                obj: {
+                    val: 123,
+                },
+                arr: [1],
+            },
+            {
+                id: 2,
+                obj: {
+                    val: 123,
+                    oarr: [2],
+                    objArr: [{ value: 321 }],
+                },
+                arr2: [[11]],
+            },
+        ]),
+    );
+
+    expect(arrayStore.get$arrs$obj$objArr$value()).toStrictEqual([
+        undefined,
+        321,
+    ]);
+    expect(arrayStore.get$arrs$obj$oarr()).toStrictEqual([undefined, 2]);
+    act(() => arrayStore.set$arrs$obj$oarr(() => true, undefined));
+    expect(arrayStore.get$arrs$obj$oarr()).toStrictEqual([
+        undefined,
+        undefined,
+    ]);
+    expect(arrayStore.get$arrs$obj$objArr$value()).toStrictEqual([
+        undefined,
+        321,
+    ]);
 });
 
 it("deep array store 2", async () => {

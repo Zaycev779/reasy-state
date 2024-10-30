@@ -8,7 +8,6 @@ import {
     isArray,
     isDefaultObject,
     isOptionalPathName,
-    OptionalKey,
     reduceAssign,
     split,
 } from "../utils";
@@ -31,24 +30,11 @@ export const getStaticPath = (
 export const patchToGlobalMap = (
     storage: EStorage,
     mapKey: string,
-    baseMap: string = mapKey,
-    staticPath?: string[],
-    prevPath: string[] = [],
-    [staticName, firstKey, ...additionalKeys] = split(mapKey),
-    staticFromMap = staticPath || storage.m[staticName] || [],
-    c = concat(staticFromMap, prevPath),
-    isArr = isArray(getGlobalData(storage.s, c)),
+    [root, ...keys] = split(mapKey),
+    base = storage.m[root] || [],
+    isArr = isArray(getGlobalData(storage.s, base)),
+    c = concat(base, keys[0]),
 ): any =>
     isOptionalPathName(mapKey) &&
-    ((storage.m[baseMap] = isArr
-        ? concat(c, ArrayMapKey, firstKey, additionalKeys)
-        : concat(c, firstKey)),
-    !isArr &&
-        additionalKeys[0] &&
-        patchToGlobalMap(
-            storage,
-            OptionalKey + additionalKeys.join(OptionalKey),
-            baseMap,
-            staticFromMap,
-            concat(prevPath, firstKey),
-        ));
+    ((storage.m[mapKey] = isArr ? concat(base, ArrayMapKey, keys) : c),
+    !isArr && keys[1] && patchToGlobalMap(storage, mapKey, keys, c));
