@@ -21,8 +21,7 @@ export const getPaths = (
     prevValues: any,
 ) =>
     paths.reduce(
-        (prev, val, idx) =>
-            concat(prev, [concat((prev && prev[idx - 1]) || [], val)]),
+        (prev, _, idx) => concat(prev, [slice(paths, 0, idx)]),
         concat(
             getUpdatedPaths(paths, updatedValues, prevValues),
             getAdditional(map, paths),

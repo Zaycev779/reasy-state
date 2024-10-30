@@ -241,6 +241,7 @@ it("create mutators", async () => {
     };
 
     const {
+        get,
         userStoreDataClear,
         userStoreDataInc,
         userStoreDataDec,

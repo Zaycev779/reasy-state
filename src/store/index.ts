@@ -31,7 +31,7 @@ import { EStorage } from "./global";
 let EStateId = 0;
 const E = "E#";
 
-export function createState<T = { [k in string]?: any }>(
+export function createState<T = IStore>(
     params: WithM<T>,
     options?: Options<T>,
 ): IGenerate<CreateResult<T>>;

@@ -1,7 +1,8 @@
 import { KeyCapitalize } from "./index";
 
 export type Flatten<TValue> = CollapseEntries<
-    CreateEntries<TValue, { [P in keyof TValue]-?: TValue[P] }, "">
+    | CreateEntries<TValue, { [P in keyof TValue]-?: TValue[P] }, "">
+    | EmptyEntry<TValue>
 >;
 
 type Entry = { key: string; value: unknown };

@@ -90,6 +90,7 @@ it("create optional store width CreateState type", async () => {
     };
 
     const {
+        get,
         getUserStore$data,
         useUserStore$data$rating,
         useUserStoreId,
@@ -107,7 +108,6 @@ it("create optional store width CreateState type", async () => {
 
         return <div>id: {id}</div>;
     }
-
     function Page2() {
         renderCountsRating++;
         const rating = useUserStore$data$rating() || "-";
@@ -175,6 +175,7 @@ it("create optional store with any types", async () => {
     fireEvent.click(getByText("button"));
     expect(state?.get$userStore$value()).toBe("new value");
     await findByText("value: new value");
+    //@ts-ignore
     act(() => state.set(undefined));
     expect(state?.get$userStore$value()).toBe(undefined);
     expect(state?.get$userStore()).toBe(undefined);
