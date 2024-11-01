@@ -108,6 +108,7 @@ const _createState = <T>(
                                 path,
                                 filterFunc.value,
                                 UpdateType.S,
+                                0,
                             );
 
                         case GeneratedType.U:

@@ -31,7 +31,7 @@ export const updateStore = <T>(
     path: string[],
     params?: Partial<T> | ((prev: T) => Partial<T>),
     type: ValueOf<typeof UpdateType> = UpdateType.S,
-    update = isClient,
+    update: 0 | boolean = isClient,
     prevValues = getGlobalData(storage, path),
     updatedParams = getParams(params, prevValues),
     sendEvent = (route: string) =>
