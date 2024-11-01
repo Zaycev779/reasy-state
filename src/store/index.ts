@@ -7,6 +7,7 @@ import { IsUndefined } from "./types/flatten";
 import {
     CreateResult,
     CreateState,
+    EStorage,
     GeneratedType,
     IGenerate,
     IStore,
@@ -26,7 +27,6 @@ import {
     ArrayMapKey,
 } from "./utils";
 import { updateStore } from "./global/update";
-import { EStorage } from "./global";
 
 let EStateId = 0;
 const E = "E#";
@@ -110,7 +110,7 @@ const _createState = <T>(
                         case GeneratedType.h:
                             return updateStore(
                                 storage,
-                                basePath,
+                                path,
                                 options,
                                 filterFunc.value,
                                 UpdateType.S,
@@ -123,11 +123,7 @@ const _createState = <T>(
                                 return useStoreVal(storage, mapKey, filterFunc);
 
                         case GeneratedType.G:
-                            return getGlobalData(
-                                storage.s,
-                                basePath,
-                                filterFunc,
-                            );
+                            return getGlobalData(storage, basePath, filterFunc);
                         default:
                             (args.length < 2 || arrIdx) &&
                                 updateStore(
@@ -139,7 +135,7 @@ const _createState = <T>(
                                         : arrIdx
                                         ? generateArray(
                                               slice(basePath, arrIdx),
-                                              getGlobalData(storage.s, path),
+                                              getGlobalData(storage, path),
                                               arrParams,
                                               filterFunc,
                                           )

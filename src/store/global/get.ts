@@ -1,13 +1,13 @@
-import { EStorage } from "./index";
-import { getFiltred, isArray, isArrayPathName, slice } from "../utils";
+import { EStorage } from "../types/store";
+import { getFiltred, isArray, isPathNameType, slice } from "../utils";
 
-export const getGlobalData = <T extends EStorage["s"]>(
-    src: T,
+export const getGlobalData = <T extends EStorage>(
+    { s: src }: T,
     path: string[],
     filterFunc?: () => void,
 ) => {
     path.every((p, i) =>
-        isArrayPathName(p)
+        isPathNameType(p)
             ? ((src =
                   isArray(src) &&
                   arrayPathReduce(getFiltred(src, filterFunc), path, i + 1)),

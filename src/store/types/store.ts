@@ -1,6 +1,12 @@
 import { KeyCapitalize, ValueOf } from "./index";
 import { Flatten } from "./flatten";
 
+export type EStorage = {
+    s: Record<string, any>;
+    m: Record<string, string[]>;
+    id: string;
+};
+
 export const UpdateType = {
     S: "set",
     P: "patch",

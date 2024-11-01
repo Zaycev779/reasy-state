@@ -1,5 +1,5 @@
-import { EStorage } from "../global";
 import { getGlobalData } from "../global/get";
+import { EStorage } from "../types/store";
 import {
     ArrayMapKey,
     assign,
@@ -7,7 +7,6 @@ import {
     concat,
     isArray,
     isDefaultObject,
-    isOptionalPathName,
     reduceAssign,
     split,
 } from "../utils";
@@ -32,9 +31,12 @@ export const patchToGlobalMap = (
     mapKey: string,
     [root, ...keys] = split(mapKey),
     base = storage.m[root] || [],
-    isArr = isArray(getGlobalData(storage.s, base)),
+    isArr = isArray(getGlobalData(storage, base)),
     c = concat(base, keys[0]),
 ): any =>
-    isOptionalPathName(mapKey) &&
-    ((storage.m[mapKey] = isArr ? concat(base, ArrayMapKey, keys) : c),
-    !isArr && keys[1] && patchToGlobalMap(storage, mapKey, keys, c));
+    keys[0] &&
+    (storage.m[mapKey] = isArr
+        ? concat(base, ArrayMapKey, keys)
+        : keys[1]
+        ? patchToGlobalMap(storage, mapKey, keys, c)
+        : c);

@@ -1,6 +1,5 @@
-import { EStorage } from "../global";
 import { Maybe, ValueOf } from "../types";
-import { StorageType } from "../types/store";
+import { EStorage, StorageType } from "../types/store";
 
 export const Mutators = "mutators";
 export const ArrayMapKey = "[]";
@@ -36,13 +35,9 @@ const getUpdatedPaths = <T extends Record<string, any>>(
 ): any => (
     isDefaultObject(updatedParams) &&
         entries(assign({}, prevValues, updatedParams)).every(
-            ([key]) =>
-                getUpdatedPaths(
-                    concat(paths, key),
-                    updatedParams[key],
-                    (prevValues && prevValues[key]) || {},
-                    res,
-                ) && res.push(concat(paths, key)),
+            ([key, val, c = concat(paths, key)]) =>
+                getUpdatedPaths(c, val, prevValues && prevValues[key], res) &&
+                res.push(c),
         ),
     res
 );
@@ -50,16 +45,15 @@ const getUpdatedPaths = <T extends Record<string, any>>(
 export const getAdditional = <T>(
     map: EStorage["m"],
     paths: string[],
-    filter = isArrayPathName,
-    type = 1,
-    f: (e: [string, string[]]) => any = (entrie) => entrie[type],
+    pathNameType?: string,
+    f: (e: [string, string[]]) => any = (entrie) => entrie[1],
 ) =>
     getFiltred(
         entries(map),
         (entry: [string, string[]]) =>
             pathToString(entry[1]).match(pathToString(paths)) &&
             entry[1] > paths &&
-            filter(entry[type]),
+            isPathNameType(entry[+!pathNameType], pathNameType),
     ).map(f) as T;
 
 export const isDefaultObject = (value: any) =>
@@ -164,9 +158,7 @@ export const capitalizeName = (name: string) =>
 export const capitalizeKeysToString = (arr: string[]) =>
     pathToString(arr.map(capitalizeName));
 
-export const isArrayPathName = (name: string | string[]) =>
-    isOptionalPathName(name, ArrayMapKey);
-export const isOptionalPathName = (name: string | string[], t = OptionalKey) =>
+export const isPathNameType = (name: string | string[], t = ArrayMapKey) =>
     name.includes(t);
 
 export const reduceAssign = <T extends any>(
