@@ -7,6 +7,7 @@ import { IsUndefined } from "./types/flatten";
 import {
     CreateResult,
     CreateState,
+    EStorage,
     GeneratedType,
     IGenerate,
     IStore,
@@ -19,14 +20,12 @@ import {
     capitalizeKeysToString,
     createCopy,
     generateArray,
-    pathToString,
     split,
     slice,
     isClient,
     ArrayMapKey,
 } from "./utils";
 import { updateStore } from "./global/update";
-import { EStorage } from "./global";
 
 let EStateId = 0;
 const E = "E#";
@@ -63,36 +62,32 @@ export function createState<T>(params?: T, options?: Options<T>): any {
 const _createState = <T>(
     initialValues?: T,
     options: Options<T> = {} as Options<T>,
-    id = options.key ? (options.key = E + options.key) : E + ++EStateId,
+    id = (options.key = E + (options.key || ++EStateId)),
     storageValues = storageAction(StorageType.G, options, initialValues),
     isInit: any = options[GeneratedType.h],
-    s = createCopy((!isInit && storageValues) || initialValues),
     storage: EStorage = {
-        s,
-        m: getStaticPath(s),
         id,
-    },
-): IGenerate<CreateResult<T>> =>
-    new Proxy(generateMutators(storage, initialValues, options), {
+        s: createCopy((!isInit && storageValues) || initialValues),
+        o: options,
+    } as EStorage,
+): IGenerate<CreateResult<T>> => (
+    (storage.m = getStaticPath(storage.s)),
+    new Proxy(generateMutators(storage, initialValues), {
         get: (
             target: any,
             name: string,
             proxy: typeof Proxy,
-            [type, ...functionName] = split(
-                name.replace(GeneratedType.H, GeneratedType.h),
-                /(?=[A-Z$])/,
-            ),
-            mapKey = pathToString(functionName),
+            [, type, mapKey] = split(name, /(SSR|[^A-Z$]+)(.*)/),
             storageInit = () => (
                 (isInit = 0),
-                isClient &&
-                    storageValues &&
+                storageValues &&
                     requestAnimationFrame(() =>
-                        updateStore<T>(storage, [], options, storageValues),
+                        updateStore<T>(storage, [], storageValues),
                     )
             ),
         ): any => {
             if (name === GeneratedType.h) return proxy;
+
             return (
                 target[capitalizeKeysToString(split(name))] ||
                 (patchToGlobalMap(storage, mapKey),
@@ -107,14 +102,13 @@ const _createState = <T>(
                     isInit && storageInit();
 
                     switch (type) {
-                        case GeneratedType.h:
+                        case GeneratedType.H:
                             return updateStore(
                                 storage,
-                                basePath,
-                                options,
+                                path,
                                 filterFunc.value,
                                 UpdateType.S,
-                                false,
+                                0,
                             );
 
                         case GeneratedType.U:
@@ -123,23 +117,18 @@ const _createState = <T>(
                                 return useStoreVal(storage, mapKey, filterFunc);
 
                         case GeneratedType.G:
-                            return getGlobalData(
-                                storage.s,
-                                basePath,
-                                filterFunc,
-                            );
+                            return getGlobalData(storage, basePath, filterFunc);
                         default:
                             (args.length < 2 || arrIdx) &&
                                 updateStore(
                                     storage,
                                     path,
-                                    options,
                                     type === GeneratedType.R
                                         ? initialValues
                                         : arrIdx
                                         ? generateArray(
                                               slice(basePath, arrIdx),
-                                              getGlobalData(storage.s, path),
+                                              getGlobalData(storage, path),
                                               arrParams,
                                               filterFunc,
                                           )
@@ -149,4 +138,5 @@ const _createState = <T>(
                 })
             );
         },
-    });
+    })
+);

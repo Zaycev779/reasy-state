@@ -1,30 +1,30 @@
-import { EStorage } from "./index";
-import { getFiltred, isArray, isArrayPathName, slice } from "../utils";
+import { EStorage } from "../types/store";
+import { getFiltred, isArray, isPathNameType, slice } from "../utils";
 
-export const getGlobalData = <T extends EStorage["s"]>(
-    src: T,
+export const getGlobalData = <T extends EStorage>(
+    { s: src }: T,
     path: string[],
     filterFunc?: () => void,
 ) => {
     path.every((p, i) =>
-        isArrayPathName(p)
-            ? ((src =
-                  isArray(src) &&
-                  arrayPathReduce(getFiltred(src, filterFunc), path, i + 1)),
+        isPathNameType(p)
+            ? ((src = arrayPathReduce(
+                  getFiltred(src, filterFunc),
+                  slice(path, i + 1),
+              )),
               0)
             : (src = src && src[p]),
     );
     return src;
 };
 
-const arrayPathReduce = (value: any[], path: string[], index: number): any =>
-    value.flatMap((e: any) =>
-        slice(path, index).reduce(
-            (prev, key, idx) =>
-                prev &&
-                (isArray(prev)
-                    ? arrayPathReduce(prev, path, index + idx)
-                    : prev[key]),
-            e,
-        ),
-    );
+const arrayPathReduce = (value: any[], path: string[]): any =>
+    isArray(value)
+        ? value.flatMap((e: any) =>
+              path.reduce(
+                  (prev, _, idx) =>
+                      prev && arrayPathReduce(prev, slice(path, idx)),
+                  e,
+              ),
+          )
+        : value[path[0]];

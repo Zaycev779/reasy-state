@@ -1,8 +1,7 @@
-import { EStorage } from "./global";
 import { getGlobalData } from "./global/get";
 import { updateStore } from "./global/update";
 import { ValueOf } from "./types";
-import { Options, UpdateType } from "./types/store";
+import { EStorage, UpdateType } from "./types/store";
 import {
     capitalizeKeysToString,
     concat,
@@ -15,7 +14,6 @@ import {
 export const generateMutators = <T extends any>(
     storage: EStorage,
     values: T,
-    options: Options<any>,
     prevKey: string[] = [],
 ): any =>
     reduceAssign<any>(values, (key, val) =>
@@ -25,18 +23,16 @@ export const generateMutators = <T extends any>(
                   (
                       key,
                       fn,
-                      get = () => getGlobalData(storage.s, prevKey),
+                      get = () => getGlobalData(storage, prevKey),
                       set = (arg: any, type: ValueOf<typeof UpdateType>) => (
                           updateStore(
                               storage,
                               prevKey,
-                              options,
                               getParams(arg, get()),
                               type,
                           ),
                           get()
                       ),
-                      patch = (arg: any) => set(arg, UpdateType.P),
                   ) => ({
                       [capitalizeKeysToString(concat(prevKey, key))]: (
                           ...args: any
@@ -46,7 +42,8 @@ export const generateMutators = <T extends any>(
                                   {
                                       get,
                                       [UpdateType.S]: set,
-                                      [UpdateType.P]: patch,
+                                      [UpdateType.P]: (arg: any) =>
+                                          set(arg, UpdateType.P),
                                   },
                                   get(),
                               ),
@@ -55,5 +52,5 @@ export const generateMutators = <T extends any>(
                   }),
               )
             : isDefaultObject(val) &&
-              generateMutators(storage, val, options, concat(prevKey, key)),
+              generateMutators(storage, val, concat(prevKey, key)),
     );

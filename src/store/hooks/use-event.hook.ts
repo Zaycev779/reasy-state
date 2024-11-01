@@ -1,13 +1,13 @@
 /* eslint-disable no-restricted-globals */
 import React from "react";
 
-export const useEvent = <T>(
+export const useEvent = (
     type: any,
     onChange: () => void,
-    onChangeType: () => void,
+    onChangeType: () => void = onChange,
     onTargetEvent = () => onChange(),
 ) =>
-    React.useLayoutEffect(
+    React.useEffect(
         () =>
             type &&
             (onChangeType(),
