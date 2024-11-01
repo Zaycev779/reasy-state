@@ -5,6 +5,7 @@ import {
     assign,
     capitalizeName,
     concat,
+    EmptyPath,
     isArray,
     isDefaultObject,
     reduceAssign,
@@ -13,7 +14,7 @@ import {
 
 export const getStaticPath = (
     store: any,
-    prev: string = "",
+    prev: string = EmptyPath,
     path: string[] = [],
 ): Record<string, string[]> =>
     reduceAssign(

@@ -2,19 +2,20 @@ import { Maybe, ValueOf } from "../types";
 import { EStorage, StorageType } from "../types/store";
 
 export const Mutators = "mutators";
-export const ArrayMapKey = "[]";
+export const ArrayMapKey = "*";
 export const OptionalKey = "$";
+export const EmptyPath = "";
 export const split = (value: string, type: string | RegExp = OptionalKey) =>
     value.split(type);
-export const pathToString = (path: string[]) => path.join("");
 
-export const { assign, entries } = Object;
+export const object = Object;
+export const { assign, entries } = object;
 export const { stringify, parse } = JSON;
 export const isArray = Array.isArray;
 export const isClient = typeof window == "object";
 
 export const getPaths = (
-    map: EStorage["m"],
+    storage: EStorage,
     paths: string[],
     updatedValues: any,
     prevValues: any,
@@ -23,7 +24,7 @@ export const getPaths = (
         (prev, _, idx) => concat(prev, [slice(paths, 0, idx)]),
         concat(
             getUpdatedPaths(paths, updatedValues, prevValues),
-            getAdditional(map, paths),
+            getAdditional(storage, paths),
         ) as string[][],
     );
 
@@ -43,21 +44,20 @@ const getUpdatedPaths = <T extends Record<string, any>>(
 );
 
 export const getAdditional = <T>(
-    map: EStorage["m"],
+    storage: EStorage,
     paths: string[],
     pathNameType?: string,
     f: (e: [string, string[]]) => any = (entrie) => entrie[1],
 ) =>
     getFiltred(
-        entries(map),
+        entries(storage.m),
         (entry: [string, string[]]) =>
-            pathToString(entry[1]).match(pathToString(paths)) &&
-            entry[1] > paths &&
+            (EmptyPath + entry[1]).match(paths + ",") &&
             isPathNameType(entry[+!pathNameType], pathNameType),
     ).map(f) as T;
 
 export const isDefaultObject = (value: any) =>
-    value && value.constructor === Object;
+    value && value.constructor === object;
 
 export const createCopy = (value: any) =>
     isDefaultObject(value) ? mergeDeep(0, {}, value) : value;
@@ -108,9 +108,8 @@ export const generateArray = (
     prev: any,
     newValue: any,
     filterFunc: Function = () => 1,
-    l = keys.length,
 ) =>
-    isArray(prev) && l
+    isArray(prev)
         ? (prev as any[]).map(
               (_prevVal, _1, _2, prevVal = createCopy(_prevVal)) => {
                   filterFunc(prevVal) &&
@@ -118,15 +117,13 @@ export const generateArray = (
                           (pr, key, idx) =>
                               pr &&
                               (pr[key] =
-                                  idx + 1 === l
+                                  idx + 1 === keys.length
                                       ? getParams(newValue, pr[key])
-                                      : isArray(pr[key])
-                                      ? generateArray(
+                                      : generateArray(
                                             slice(keys, idx + 1),
                                             pr[key],
                                             newValue,
-                                        )
-                                      : pr[key]),
+                                        )),
                           prevVal,
                       );
 
@@ -156,17 +153,17 @@ export const capitalizeName = (name: string) =>
     name && name[0].toUpperCase() + slice(name, 1);
 
 export const capitalizeKeysToString = (arr: string[]) =>
-    pathToString(arr.map(capitalizeName));
+    arr.map(capitalizeName).join(EmptyPath);
 
 export const isPathNameType = (name: string | string[], t = ArrayMapKey) =>
     name.includes(t);
 
 export const reduceAssign = <T extends any>(
-    store: T,
+    store: T = {} as T,
     value: (key: string, val: any) => any,
     init = {},
 ) =>
-    entries(store || {}).reduce(
+    entries<T>(store as any).reduce(
         (prev, entrie) => assign(prev, value(...entrie)),
         init,
     );

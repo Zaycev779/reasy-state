@@ -1,8 +1,8 @@
-import { PATH_MAP_EV_NAME, PUSH_EV_NAME, sendEvent } from "../events";
+import { PATH_MAP_EV_NAME, PUSH_EV_NAME } from "../events";
 import { getGlobalData } from "./get";
 import { patchToGlobalMap } from "../maps/maps";
 import { storageAction } from "../storage";
-import { EStorage, Options, StorageType, UpdateType } from "../types/store";
+import { EStorage, StorageType, UpdateType } from "../types/store";
 import {
     concat,
     createCopy,
@@ -10,9 +10,9 @@ import {
     getAdditional,
     getParams,
     getPaths,
+    isClient,
     mergeDeep,
     OptionalKey,
-    pathToString,
 } from "../utils";
 import { ValueOf } from "../types";
 
@@ -29,13 +29,13 @@ export const updateGlobalData = (
 export const updateStore = <T>(
     storage: EStorage,
     path: string[],
-    options: Options<T>,
     params?: Partial<T> | ((prev: T) => Partial<T>),
     type: ValueOf<typeof UpdateType> = UpdateType.S,
-    update = true,
+    update = isClient,
     prevValues = getGlobalData(storage, path),
     updatedParams = getParams(params, prevValues),
-    { id, m } = storage,
+    sendEvent = (route: string) =>
+        dispatchEvent(new CustomEvent(storage.id + route)),
 ) => (
     updateGlobalData(
         storage,
@@ -46,18 +46,17 @@ export const updateStore = <T>(
     ),
     update &&
         (getAdditional<string[]>(
-            m,
+            storage,
             path,
             OptionalKey,
             ([mapKey, prevPath]) => (
                 patchToGlobalMap(storage, mapKey),
-                diffValuesBoolean(prevPath, m[mapKey]) &&
-                    sendEvent(PATH_MAP_EV_NAME + id + mapKey)
+                diffValuesBoolean(prevPath, storage.m[mapKey]) &&
+                    sendEvent(PATH_MAP_EV_NAME + mapKey)
             ),
         ),
-        getPaths(m, path, updatedParams, prevValues).every(
-            (pathVal: string[]) =>
-                sendEvent(PUSH_EV_NAME + id + pathToString(pathVal)),
+        getPaths(storage, path, updatedParams, prevValues).every(
+            (pathVal: string[]) => sendEvent(PUSH_EV_NAME + pathVal),
         ),
-        storageAction<any>(StorageType.P, options, storage.s))
+        storageAction<any>(StorageType.P, storage.o, storage.s))
 );

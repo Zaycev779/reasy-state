@@ -8,23 +8,23 @@ export const getGlobalData = <T extends EStorage>(
 ) => {
     path.every((p, i) =>
         isPathNameType(p)
-            ? ((src =
-                  isArray(src) &&
-                  arrayPathReduce(getFiltred(src, filterFunc), path, i + 1)),
+            ? ((src = arrayPathReduce(
+                  getFiltred(src, filterFunc),
+                  slice(path, i + 1),
+              )),
               0)
             : (src = src && src[p]),
     );
     return src;
 };
 
-const arrayPathReduce = (value: any[], path: string[], index: number): any =>
-    value.flatMap((e: any) =>
-        slice(path, index).reduce(
-            (prev, key, idx) =>
-                prev &&
-                (isArray(prev)
-                    ? arrayPathReduce(prev, path, index + idx)
-                    : prev[key]),
-            e,
-        ),
-    );
+const arrayPathReduce = (value: any[], path: string[]): any =>
+    isArray(value)
+        ? value.flatMap((e: any) =>
+              path.reduce(
+                  (prev, _, idx) =>
+                      prev && arrayPathReduce(prev, slice(path, idx)),
+                  e,
+              ),
+          )
+        : value[path[0]];

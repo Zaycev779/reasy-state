@@ -1,7 +1,7 @@
 import { getGlobalData } from "../global/get";
 import { EStorage } from "../types/store";
 import { PATH_MAP_EV_NAME, PUSH_EV_NAME } from "../events";
-import { createCopy, diffValuesBoolean, pathToString } from "../utils";
+import { createCopy, diffValuesBoolean } from "../utils";
 import { useEvent } from "./use-event.hook";
 import React from "react";
 
@@ -23,11 +23,11 @@ export const useStoreVal = (
         diffValuesBoolean(prevState, values) &&
         (set([p, values]), (prevState = values));
 
-    useEvent(p && PUSH_EV_NAME + storage.id + pathToString(p), _setState);
+    useEvent(p && storage.id + PUSH_EV_NAME + p, _setState);
 
     useEvent(
-        PATH_MAP_EV_NAME + storage.id + mapKey,
-        (n = storage.m[mapKey]) => n && set([n, get(n)]),
+        storage.id + PATH_MAP_EV_NAME + mapKey,
+        (n = storage.m[mapKey]) => set([n, get(n)]),
         () => diffValuesBoolean(p, pathKey) && set([pathKey, state]),
     );
 
