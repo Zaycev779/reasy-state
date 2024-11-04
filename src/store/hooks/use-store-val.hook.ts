@@ -23,7 +23,7 @@ export const useStoreVal = (
         diffValuesBoolean(prevState, values) &&
         (set([p, values]), (prevState = values));
 
-    useEvent(p && storage.id + PUSH_EV_NAME + p, _setState);
+    useEvent(storage.id + PUSH_EV_NAME + p, _setState);
 
     useEvent(
         storage.id + PATH_MAP_EV_NAME + mapKey,

@@ -8,11 +8,11 @@ export const useEvent = (
     onTargetEvent = () => onChange(),
 ) =>
     React.useEffect(
-        () =>
-            type &&
-            (onChangeType(),
+        () => (
+            onChangeType(),
             addEventListener(type, onTargetEvent),
-            () => removeEventListener(type, onTargetEvent)),
+            () => removeEventListener(type, onTargetEvent)
+        ),
         // eslint-disable-next-line react-hooks/exhaustive-deps
         [type],
     );

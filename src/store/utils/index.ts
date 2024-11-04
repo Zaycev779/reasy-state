@@ -29,10 +29,10 @@ export const getPaths = (
     );
 
 const getUpdatedPaths = <T extends Record<string, any>>(
-    paths: string[] = [],
+    paths: string[],
     updatedParams: T,
     prevValues: T,
-    res: string[][] = prevValues !== updatedParams ? [paths] : [],
+    res: string[][] = [paths],
 ): any => (
     isDefaultObject(updatedParams) &&
         entries(assign({}, prevValues, updatedParams)).every(
