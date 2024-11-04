@@ -39,7 +39,7 @@ export type CreateState<T, PT = T, D = PT> = T extends {
       }>
     : T;
 
-type WithoutM<T> = T extends {
+export type WithoutM<T> = T extends {
     [K: string]: unknown;
 }
     ? Omit<
@@ -99,7 +99,7 @@ export type WithM<T> = T extends {
           }
     : T;
 
-type SetM<T> = T extends (...args: any) => infer D
+type SetM<T> = T extends (...args: infer X) => infer D
     ? D extends Promise<infer S>
         ? S extends Function
             ? S
@@ -151,7 +151,11 @@ type FName<P> = IsArray<P, never, Uncapitalize<P & string>>;
 type IFn<T, U> = {
     [P in keyof T as T[P] extends Function
         ? FName<P>
-        : never]: P extends keyof U ? () => U[P] : T[P];
+        : never]: P extends keyof U
+        ? U[P] extends Function
+            ? U[P]
+            : () => U[P]
+        : T[P];
 };
 
 type AnyFunc = (...args: any) => any;

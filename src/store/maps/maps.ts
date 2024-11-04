@@ -2,7 +2,6 @@ import { getGlobalData } from "../global/get";
 import { EStorage } from "../types/store";
 import {
     ArrayMapKey,
-    assign,
     capitalizeName,
     concat,
     EmptyPath,
@@ -19,11 +18,9 @@ export const getStaticPath = (
 ): Record<string, string[]> =>
     reduceAssign(
         store,
-        (key, val, name = prev + capitalizeName(key), p = concat(path, key)) =>
-            assign(
-                { [name]: p },
-                isDefaultObject(val) && getStaticPath(val, name, p),
-            ),
+        (key, val) =>
+            isDefaultObject(store) &&
+            getStaticPath(val, prev + capitalizeName(key), concat(path, key)),
         { [prev]: path },
     );
 
