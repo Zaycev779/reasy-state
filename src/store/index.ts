@@ -23,7 +23,7 @@ import {
     split,
     slice,
     isClient,
-    ArrayMapKey,
+    isPathNameType,
 } from "./utils";
 import { updateStore } from "./global/update";
 
@@ -94,7 +94,7 @@ const _createState = <T>(
                 (...args: any) => {
                     const basePath = storage.m[mapKey],
                         [filterFunc, arrParams] = args,
-                        arrIdx = basePath.indexOf(ArrayMapKey) + 1 || 0,
+                        arrIdx = isPathNameType(basePath),
                         isH = type === GeneratedType.H,
                         path = arrIdx
                             ? slice(basePath, 0, arrIdx - 1)

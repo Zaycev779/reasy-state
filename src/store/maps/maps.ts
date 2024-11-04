@@ -31,12 +31,10 @@ export const patchToGlobalMap = (
     storage: EStorage,
     mapKey: string,
     [root, ...keys] = split(mapKey),
-    base = storage.m[root] || [],
-    c = concat(base, keys[0]),
+    base = storage.m[root],
 ): any =>
-    keys[0] &&
-    (storage.m[mapKey] = isArray(getGlobalData(storage, base))
-        ? concat(base, ArrayMapKey, keys)
-        : keys[1]
-        ? patchToGlobalMap(storage, mapKey, keys, c)
-        : c);
+    keys[0]
+        ? (storage.m[mapKey] = isArray(getGlobalData(storage, base))
+              ? concat(base, ArrayMapKey, keys)
+              : patchToGlobalMap(storage, mapKey, keys, concat(base, keys[0])))
+        : base;

@@ -1,18 +1,14 @@
-import { PATH_MAP_EV_NAME, PUSH_EV_NAME } from "../events";
 import { getGlobalData } from "./get";
-import { patchToGlobalMap } from "../maps/maps";
 import { storageAction } from "../storage";
 import { EStorage, StorageType, UpdateType } from "../types/store";
 import {
     concat,
     createCopy,
-    diffValuesBoolean,
-    getAdditional,
     getParams,
-    getPaths,
+    updatePaths,
     isClient,
     mergeDeep,
-    OptionalKey,
+    getUpdatedPaths,
 } from "../utils";
 import { ValueOf } from "../types";
 
@@ -34,8 +30,6 @@ export const updateStore = <T>(
     update: 0 | boolean = isClient,
     prevValues = getGlobalData(storage, path),
     updatedParams = getParams(params, prevValues),
-    sendEvent = (route: string) =>
-        dispatchEvent(new CustomEvent(storage.id + route)),
 ) => (
     updateGlobalData(
         storage,
@@ -45,18 +39,10 @@ export const updateStore = <T>(
             : updatedParams,
     ),
     update &&
-        (getAdditional<string[]>(
+        (updatePaths(
             storage,
             path,
-            OptionalKey,
-            ([mapKey, prevPath]) => (
-                patchToGlobalMap(storage, mapKey),
-                diffValuesBoolean(prevPath, storage.m[mapKey]) &&
-                    sendEvent(PATH_MAP_EV_NAME + mapKey)
-            ),
-        ),
-        getPaths(storage, path, updatedParams, prevValues).every(
-            (pathVal: string[]) => sendEvent(PUSH_EV_NAME + pathVal),
+            getUpdatedPaths(path, updatedParams, prevValues),
         ),
         storageAction<any>(StorageType.P, storage.o, storage.s))
 );
