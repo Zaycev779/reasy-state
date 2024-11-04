@@ -110,6 +110,82 @@ it("created root mutator without types 2", async () => {
     await findByText("value: 2");
 });
 
+it("created root mutator with types 2.2", async () => {
+    type State = CreateState<{ value: number; mutators: { inc: void } }>;
+
+    const { useValue, inc } = createState<State>({
+        value: 1,
+        mutators: {
+            inc: ({ set }, { value }) => set({ value: value + 1 }),
+        },
+    });
+
+    function Page() {
+        const value = useValue();
+        return <div>value: {value}</div>;
+    }
+
+    function Button() {
+        return <button onClick={() => inc()}>inc</button>;
+    }
+
+    const { getByText, findByText } = render(
+        <>
+            <Page />
+            <Button />
+        </>,
+    );
+
+    await findByText("value: 1");
+
+    fireEvent.click(getByText("inc"));
+    await findByText("value: 2");
+});
+
+it("created root mutator without types 2.3", async () => {
+    type State = {
+        value: number;
+        mutators: {
+            add: (value: number) => Promise<number>;
+        };
+    };
+
+    const { useValue, add } = createState<State>()({
+        value: 1,
+        mutators: {
+            add:
+                ({ set, get }) =>
+                async (addValue) => {
+                    await new Promise((f) => setTimeout(f, 1000));
+                    return set({ value: get().value + addValue }).value;
+                },
+        },
+    });
+
+    function Page() {
+        const value = useValue();
+        return <div>value: {value}</div>;
+    }
+    const onClick = () =>
+        add(1).then((value) => console.log("new value = ", value));
+
+    function Button() {
+        return <button onClick={onClick}>add</button>;
+    }
+
+    const { getByText, findByText } = render(
+        <>
+            <Page />
+            <Button />
+        </>,
+    );
+
+    await findByText("value: 1");
+
+    fireEvent.click(getByText("add"));
+    await findByText("value: 2");
+});
+
 it("created root mutator without types 3", async () => {
     const { useStoreValue, inc } = createState()({
         store: {

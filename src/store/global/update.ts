@@ -5,12 +5,20 @@ import {
     concat,
     createCopy,
     getParams,
-    updatePaths,
     isClient,
     mergeDeep,
     getUpdatedPaths,
+    slice,
+    getFiltred,
+    entries,
+    EmptyPath,
+    OptionalKey,
+    isPathNameType,
+    diffValuesBoolean,
+    PATH_MAP_EV_NAME,
 } from "../utils";
 import { ValueOf } from "../types";
+import { patchToGlobalMap } from "../maps/maps";
 
 export const updateGlobalData = (
     src: Record<string, any>,
@@ -24,25 +32,41 @@ export const updateGlobalData = (
 
 export const updateStore = <T>(
     storage: EStorage,
-    path: string[],
+    paths: string[],
     params?: Partial<T> | ((prev: T) => Partial<T>),
     type: ValueOf<typeof UpdateType> = UpdateType.S,
     update: 0 | boolean = isClient,
-    prevValues = getGlobalData(storage, path),
+    prevValues = getGlobalData(storage, paths),
     updatedParams = getParams(params, prevValues),
+
+    sendEvent = (route: string | string[]) =>
+        dispatchEvent(new CustomEvent(storage.id + route)),
 ) => (
     updateGlobalData(
         storage,
-        concat(["s"], path),
+        concat(["s"], paths),
         type === UpdateType.P
             ? mergeDeep(0, {}, prevValues, updatedParams)
             : updatedParams,
     ),
     update &&
-        (updatePaths(
-            storage,
-            path,
-            getUpdatedPaths(path, updatedParams, prevValues),
-        ),
+        (paths
+            .reduce(
+                (prev, _, idx) => concat(prev, [slice(paths, 0, idx)]),
+                concat(
+                    getUpdatedPaths(paths, updatedParams, prevValues),
+                    getFiltred(
+                        entries(storage.m),
+                        ([mapKey, path]: [string, string[]]) =>
+                            (EmptyPath + path).match(paths + ",") &&
+                            (isPathNameType(mapKey, OptionalKey) &&
+                                (patchToGlobalMap(storage, mapKey),
+                                diffValuesBoolean(path, storage.m[mapKey]) &&
+                                    sendEvent(PATH_MAP_EV_NAME + mapKey)),
+                            isPathNameType(path)),
+                    ).map((entrie: [string, string[]]) => entrie[1]),
+                ) as string[][],
+            )
+            .every(sendEvent),
         storageAction<any>(StorageType.P, storage.o, storage.s))
 );

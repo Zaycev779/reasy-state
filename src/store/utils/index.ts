@@ -1,6 +1,5 @@
-import { patchToGlobalMap } from "../maps/maps";
 import { Maybe, ValueOf } from "../types";
-import { EStorage, StorageType } from "../types/store";
+import { StorageType } from "../types/store";
 
 export const PATH_MAP_EV_NAME = "#";
 export const Mutators = "mutators";
@@ -15,32 +14,6 @@ export const { assign, entries } = object;
 export const { stringify, parse } = JSON;
 export const isArray = Array.isArray;
 export const isClient = typeof window == "object";
-
-export const updatePaths = (
-    storage: EStorage,
-    paths: string[],
-    updatedPaths: string[][],
-    sendEvent = (route: string | string[]) =>
-        dispatchEvent(new CustomEvent(storage.id + route)),
-) =>
-    paths
-        .reduce(
-            (prev, _, idx) => concat(prev, [slice(paths, 0, idx)]),
-            concat(
-                updatedPaths,
-                getFiltred(
-                    entries(storage.m),
-                    ([mapKey, path]: [string, string[]]) =>
-                        (EmptyPath + path).match(paths + ",") &&
-                        (isPathNameType(mapKey, OptionalKey) &&
-                            (patchToGlobalMap(storage, mapKey),
-                            diffValuesBoolean(path, storage.m[mapKey]) &&
-                                sendEvent(PATH_MAP_EV_NAME + mapKey)),
-                        isPathNameType(path)),
-                ).map((entrie: [string, string[]]) => entrie[1]),
-            ) as string[][],
-        )
-        .every(sendEvent);
 
 export const getUpdatedPaths = <T extends Record<string, any>>(
     paths: string[],
@@ -89,12 +62,13 @@ export const mergeDeep = (
         for (let key in source) {
             if (key !== Mutators) {
                 if (isDefaultObject(source[key])) {
-                    if (!target[key]) assign(target, { [key]: {} });
-                    mergeDeep(type, target[key], source[key]);
+                    mergeDeep(
+                        type,
+                        (target[key] = target[key] || {}),
+                        source[key],
+                    );
                 } else {
-                    assign(target, {
-                        [key]: mergeMutate(type, target[key], source[key]),
-                    });
+                    target[key] = mergeMutate(type, target[key], source[key]);
                 }
             }
         }

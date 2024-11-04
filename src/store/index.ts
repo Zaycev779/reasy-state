@@ -15,6 +15,7 @@ import {
     StorageType,
     UpdateType,
     WithM,
+    WithoutM,
 } from "./types/store";
 import {
     capitalizeKeysToString,
@@ -52,7 +53,7 @@ export function createState<T>(): {
                 ? U
                 : T
         >,
-        CreateResult<IsUndefined<U, keyof U, Partial<T>, T>>
+        CreateResult<IsUndefined<U, keyof U, Partial<WithoutM<T>>, WithoutM<T>>>
     >;
 };
 export function createState<T>(params?: T, options?: Options<T>): any {
@@ -115,18 +116,18 @@ const _createState = <T>(
                                 updateStore(
                                     storage,
                                     path,
-                                    type === GeneratedType.R
-                                        ? initialValues
-                                        : isH
+                                    isH
                                         ? filterFunc.value
-                                        : arrIdx
-                                        ? generateArray(
-                                              slice(basePath, arrIdx),
-                                              getGlobalData(storage, path),
-                                              arrParams,
-                                              filterFunc,
-                                          )
-                                        : filterFunc,
+                                        : type === UpdateType.S
+                                        ? arrIdx
+                                            ? generateArray(
+                                                  slice(basePath, arrIdx),
+                                                  getGlobalData(storage, path),
+                                                  arrParams,
+                                                  filterFunc,
+                                              )
+                                            : filterFunc
+                                        : initialValues,
                                     UpdateType.S,
                                     !isH,
                                 );

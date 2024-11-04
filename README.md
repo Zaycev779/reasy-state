@@ -36,17 +36,15 @@ const userStore = {
     id: 1,
     name: "User Name",
     settings: {
-        notification: {
-            message: true,
-        },
+        notification: true,
     },
 };
 
 export const {
     getUserStoreId,
     useUserStoreName,
-    useUserStoreSettingsNotificationMessage,
-    setUserStoreSettingsNotificationMessage,
+    useUserStoreSettingsNotification,
+    setUserStoreSettingsNotification,
     reset,
 } = createState({ userStore });
 ```
@@ -60,6 +58,7 @@ import { getUserStoreId, useUserStoreName, reset } from "./store";
 
 const UserComponent = () => {
     const userName = useUserStoreName();
+
     return (
         <div>
             <p onClick={() => console.log("User ID:", getUserStoreId())}>
@@ -75,21 +74,19 @@ const UserComponent = () => {
 // setting.tsx
 
 import {
-    setUserStoreSettingsNotificationMessage,
-    useUserStoreSettingsNotificationMessage,
+    setUserStoreSettingsNotification,
+    useUserStoreSettingsNotification,
 } from "./store";
 
 const SettingsNotificationComponent = () => {
-    const checked = useUserStoreSettingsNotificationMessage();
-
-    const onChange = () =>
-        setUserStoreSettingsNotificationMessage((prev) => !prev);
+    const checked = useUserStoreSettingsNotification();
 
     return (
-        <>
-            <span>Notification</span>
-            <input type="checkbox" checked={checked} onChange={onChange} />
-        </>
+        <input
+            type="checkbox"
+            checked={checked}
+            onChange={() => setUserStoreSettingsNotification((prev) => !prev)}
+        />
     );
 };
 ```
@@ -110,123 +107,33 @@ mutators: {
 // store.ts
 import { createState, CreateState } from "reasy-state";
 
-type UserStore = {
-    id: number,
-    data: {
-        rating: number,
-        other: number,
-        mutators: {
-            clear: void, // clear function
-            inc: void, // increment function
-            dec: Promise<boolean>, // decrement async function
-            add: (value: number) => void, // add value function with arg
-            remove: (value: number) => Promise<string>, // remove value async function with arg
-        },
-    },
+type State = CreateState<{ value: number; mutators: { inc: void } }>;
+
+export const { useValue, inc } = createState<State>({
+    value: 1,
     mutators: {
-        ratingInc: void,
-        changeId: void,
+        inc: ({ set }, { value }) => set({ value: value + 1 }),
     },
-};
-
-const userStore: CreateState<UserStore> = {
-    id: 1,
-    data: {
-        rating: 0,
-        other: 1,
-        mutators: {
-            clear: ({ set }) => set({ rating: 0, other: 0 }),
-            inc: ({ patch }, { rating }) => patch({ rating: rating + 1 }),
-            /* OR
-      inc: ({ patch, get }) => patch({ rating: get().rating + 1 }),
-      */
-            dec: async ({ patch, get }) => {
-                await new Promise((f) => setTimeout(f, 1000));
-                patch({ rating: get().rating - 1 });
-                return true;
-            },
-            /* OR
-      dec: async ({ patch }) => {
-        await new Promise((f) => setTimeout(f, 1000));
-        patch(({ rating }) => ({ rating: rating - 1 }));
-        return true;
-      },
-      */
-            add:
-                ({ patch }, { rating }) =>
-                (value) =>
-                    patch({ rating: rating + value }),
-            remove:
-                ({ patch, get }) =>
-                async (value) => {
-                    await new Promise((f) => setTimeout(f, 1000));
-                    patch({ rating: get().rating - value });
-                    return "success";
-                },
-        },
-    },
-    mutators: {
-        // hooks useUserStoreData, useUserStoreDataRating, useUserStoreDataOther will not be called
-        changeId: ({ patch }) => patch({ id: 2 }),
-
-        // some data.mutators.inc, hooks useUserStoreId and useUserStoreDataOther will not be called
-        ratingInc: ({ patch }, { data: { rating } }) =>
-            patch({ data: { rating: rating + 1 } }),
-    },
-};
-
-export const {
-    userStoreDataClear,
-    userStoreDataInc,
-    userStoreDataDec,
-    userStoreDataAdd,
-    userStoreDataRemove,
-    useUserStoreDataRating,
-} = createState({ userStore });
+});
 ```
 
 ```jsx
-// rating.tsx
-import {
-    useUserStoreDataRating,
-    userStoreDataAdd,
-    userStoreDataClear,
-    userStoreDataInc,
-    userStoreDataDec,
-    userStoreDataRemove,
-} from "./store.ts";
+// page.tsx
+import { useValue, inc } from "./store.ts";
 
-export const UserRating = () => {
-    const rating = useUserStoreDataRating();
+export const Page = () => {
+    const value = useValue();
 
     return (
         <>
-            <div>
-                <button
-                    onClick={async () => {
-                        await userStoreDataRemove(5); // return "success"
-                    }}
-                >
-                    -5
-                </button>
-                <button
-                    onClick={async () => {
-                        await userStoreDataDec(); // return true
-                    }}
-                >
-                    -
-                </button>
-                <span>{rating}</span>
-                <button onClick={userStoreDataInc}>+</button>
-                <button onClick={() => userStoreDataAdd(5)}>+5</button>
-            </div>
-            <button onClick={userStoreDataClear}>Clear</button>
+            <div>value: {value}</div>
+            <button onClick={() => inc()}>inc</button>
         </>
     );
 };
 ```
 
-Also, you can avoid specifying mutator types explicitly by using currying
+Also, you can avoid specifying mutator types explicitly by using currying, and also use nested mutators
 
 ```jsx
 // store.ts
@@ -242,19 +149,63 @@ type UserStore = {
 };
 
 export const {
-  userStoreDataClear, // return new rating value
+  userStoreDataClear,
   useUserStoreDataRating,
 } = createState<UserStore>()({
   userStore: {
     id: 1,
     data: {
-      rating: 0,
+      rating: 1,
       mutators: {
-        clear: ({ set }) => set({ rating: 0 }).rating,
+        clear: ({ set }) => set({ rating: 0 }).rating, // return 0
       },
     },
   },
 });
+```
+
+Async mutators
+
+```jsx
+// store.ts
+import { createState, CreateState } from "reasy-state";
+
+type State = {
+    value: number;
+    mutators: {
+        add: (value: number) => Promise<number>;
+    };
+};
+
+const { useValue, add } = createState<State>()({
+    value: 1,
+    mutators: {
+        add:
+            ({ set, get }) =>
+            async (addValue) => {
+                await new Promise((f) => setTimeout(f, 1000));
+                return set({ value: get().value + addValue }).value;
+            },
+    },
+});
+```
+
+```jsx
+// page.tsx
+import { useValue, inc } from "./store.ts";
+
+export const Page = () => {
+    const value = useValue();
+    const onClick = () =>
+          add(1).then((value) => console.log("new value = ", value));
+
+    return (
+        <>
+            <div>value: {value}</div>
+            <button onClick={onClick}>add async</button>
+        </>
+    );
+};
 ```
 
 ### Undefined params
@@ -387,14 +338,20 @@ You can save the state in the store( `localStorage` (default), `sessionStorage` 
 To do this, specify a unique `key` and configure saving if necessary
 
 ```jsx
-    const { ... } = createState({ store: { value: "value" } }, { key: "storage_state_1", storage: true });
+    const { ... } = createState(
+        { store: { value: "value" } },
+        { key: "storage_state_1", storage: true }
+    );
 ```
 
 :warning: If SSR is used together with storage, the latter will be initialized only after the component is rendered to avoid hydration warning.
 To do this, specify the `ssr: true` parameter.
 
 ```jsx
-    const { ... } = createState({ store: { value: "value" } }, { key: "storage_state_2", storage: true, ssr: true });
+    const { ... } = createState(
+        { store: { value: "value" } },
+        { key: "storage_state_2", storage: true, ssr: true }
+    );
 ```
 
 If necessary, you can mutate the data on read and write like this (This can be useful when using momentjs for example):
