@@ -23,7 +23,7 @@ import {
     split,
     slice,
     isClient,
-    ArrayMapKey,
+    isPathNameType,
 } from "./utils";
 import { updateStore } from "./global/update";
 
@@ -94,7 +94,8 @@ const _createState = <T>(
                 (...args: any) => {
                     const basePath = storage.m[mapKey],
                         [filterFunc, arrParams] = args,
-                        arrIdx = basePath.indexOf(ArrayMapKey) + 1 || 0,
+                        arrIdx = isPathNameType(basePath),
+                        isH = type === GeneratedType.H,
                         path = arrIdx
                             ? slice(basePath, 0, arrIdx - 1)
                             : basePath;
@@ -102,15 +103,6 @@ const _createState = <T>(
                     isInit && storageInit();
 
                     switch (type) {
-                        case GeneratedType.H:
-                            return updateStore(
-                                storage,
-                                path,
-                                filterFunc.value,
-                                UpdateType.S,
-                                0,
-                            );
-
                         case GeneratedType.U:
                             if (isClient)
                                 // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -119,12 +111,14 @@ const _createState = <T>(
                         case GeneratedType.G:
                             return getGlobalData(storage, basePath, filterFunc);
                         default:
-                            (args.length < 2 || arrIdx) &&
+                            (args.length < 2 || arrIdx || isH) &&
                                 updateStore(
                                     storage,
                                     path,
                                     type === GeneratedType.R
                                         ? initialValues
+                                        : isH
+                                        ? filterFunc.value
                                         : arrIdx
                                         ? generateArray(
                                               slice(basePath, arrIdx),
@@ -133,6 +127,8 @@ const _createState = <T>(
                                               filterFunc,
                                           )
                                         : filterFunc,
+                                    UpdateType.S,
+                                    !isH,
                                 );
                     }
                 })

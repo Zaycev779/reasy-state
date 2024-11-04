@@ -1,6 +1,8 @@
+import { patchToGlobalMap } from "../maps/maps";
 import { Maybe, ValueOf } from "../types";
 import { EStorage, StorageType } from "../types/store";
 
+export const PATH_MAP_EV_NAME = "#";
 export const Mutators = "mutators";
 export const ArrayMapKey = "*";
 export const OptionalKey = "$";
@@ -14,25 +16,37 @@ export const { stringify, parse } = JSON;
 export const isArray = Array.isArray;
 export const isClient = typeof window == "object";
 
-export const getPaths = (
+export const updatePaths = (
     storage: EStorage,
     paths: string[],
-    updatedValues: any,
-    prevValues: any,
+    updatedPaths: string[][],
+    sendEvent = (route: string | string[]) =>
+        dispatchEvent(new CustomEvent(storage.id + route)),
 ) =>
-    paths.reduce(
-        (prev, _, idx) => concat(prev, [slice(paths, 0, idx)]),
-        concat(
-            getUpdatedPaths(paths, updatedValues, prevValues),
-            getAdditional(storage, paths),
-        ) as string[][],
-    );
+    paths
+        .reduce(
+            (prev, _, idx) => concat(prev, [slice(paths, 0, idx)]),
+            concat(
+                updatedPaths,
+                getFiltred(
+                    entries(storage.m),
+                    ([mapKey, path]: [string, string[]]) =>
+                        (EmptyPath + path).match(paths + ",") &&
+                        (isPathNameType(mapKey, OptionalKey) &&
+                            (patchToGlobalMap(storage, mapKey),
+                            diffValuesBoolean(path, storage.m[mapKey]) &&
+                                sendEvent(PATH_MAP_EV_NAME + mapKey)),
+                        isPathNameType(path)),
+                ).map((entrie: [string, string[]]) => entrie[1]),
+            ) as string[][],
+        )
+        .every(sendEvent);
 
-const getUpdatedPaths = <T extends Record<string, any>>(
-    paths: string[] = [],
+export const getUpdatedPaths = <T extends Record<string, any>>(
+    paths: string[],
     updatedParams: T,
     prevValues: T,
-    res: string[][] = prevValues !== updatedParams ? [paths] : [],
+    res: string[][] = [paths],
 ): any => (
     isDefaultObject(updatedParams) &&
         entries(assign({}, prevValues, updatedParams)).every(
@@ -42,19 +56,6 @@ const getUpdatedPaths = <T extends Record<string, any>>(
         ),
     res
 );
-
-export const getAdditional = <T>(
-    storage: EStorage,
-    paths: string[],
-    pathNameType?: string,
-    f: (e: [string, string[]]) => any = (entrie) => entrie[1],
-) =>
-    getFiltred(
-        entries(storage.m),
-        (entry: [string, string[]]) =>
-            (EmptyPath + entry[1]).match(paths + ",") &&
-            isPathNameType(entry[+!pathNameType], pathNameType),
-    ).map(f) as T;
 
 export const isDefaultObject = (value: any) =>
     value && value.constructor === object;
@@ -116,14 +117,13 @@ export const generateArray = (
                       keys.reduce(
                           (pr, key, idx) =>
                               pr &&
-                              (pr[key] =
-                                  idx + 1 === keys.length
-                                      ? getParams(newValue, pr[key])
-                                      : generateArray(
-                                            slice(keys, idx + 1),
-                                            pr[key],
-                                            newValue,
-                                        )),
+                              (pr[key] = keys[idx + 1]
+                                  ? generateArray(
+                                        slice(keys, idx + 1),
+                                        pr[key],
+                                        newValue,
+                                    )
+                                  : getParams(newValue, pr[key])),
                           prevVal,
                       );
 
@@ -156,7 +156,7 @@ export const capitalizeKeysToString = (arr: string[]) =>
     arr.map(capitalizeName).join(EmptyPath);
 
 export const isPathNameType = (name: string | string[], t = ArrayMapKey) =>
-    name.includes(t);
+    name.indexOf(t) + 1;
 
 export const reduceAssign = <T extends any>(
     store: T = {} as T,
