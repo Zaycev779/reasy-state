@@ -3,9 +3,9 @@ import { Options, StorageOptions, StorageType } from "../types/store";
 import { mergeDeep, Mutators, parse, stringify, isClient } from "../utils";
 
 export const storageAction = <T>(
-    actionType: ValueOf<typeof StorageType> = StorageType.G,
     { storage, key }: Options<T>,
     mergeValue: T | undefined,
+    actionType: ValueOf<typeof StorageType> = StorageType.G,
     data?: any,
 ): T | undefined => {
     if (storage && isClient) {

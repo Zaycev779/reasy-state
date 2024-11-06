@@ -7,15 +7,9 @@ import {
     getParams,
     isClient,
     mergeDeep,
-    getUpdatedPaths,
-    slice,
-    getFiltred,
     entries,
-    EmptyPath,
     OptionalKey,
     isPathNameType,
-    diffValuesBoolean,
-    PATH_MAP_EV_NAME,
 } from "../utils";
 import { ValueOf } from "../types";
 import { patchToGlobalMap } from "../maps/maps";
@@ -38,9 +32,6 @@ export const updateStore = <T>(
     update: 0 | boolean = isClient,
     prevValues = getGlobalData(storage, paths),
     updatedParams = getParams(params, prevValues),
-
-    sendEvent = (route: string | string[]) =>
-        dispatchEvent(new CustomEvent(storage.id + route)),
 ) => (
     updateGlobalData(
         storage,
@@ -50,23 +41,18 @@ export const updateStore = <T>(
             : updatedParams,
     ),
     update &&
-        (paths
-            .reduce(
-                (prev, _, idx) => concat(prev, [slice(paths, 0, idx)]),
-                concat(
-                    getUpdatedPaths(paths, updatedParams, prevValues),
-                    getFiltred(
-                        entries(storage.m),
-                        ([mapKey, path]: [string, string[]]) =>
-                            (EmptyPath + path).match(paths + ",") &&
-                            (isPathNameType(mapKey, OptionalKey) &&
-                                (patchToGlobalMap(storage, mapKey),
-                                diffValuesBoolean(path, storage.m[mapKey]) &&
-                                    sendEvent(PATH_MAP_EV_NAME + mapKey)),
-                            isPathNameType(path)),
-                    ).map((entrie: [string, string[]]) => entrie[1]),
-                ) as string[][],
-            )
-            .every(sendEvent),
-        storageAction<any>(StorageType.P, storage.o, storage.s))
+        (entries(storage.m).map(
+            ([mapKey, path, p = path + ",", d = paths + ","]: [
+                string,
+                string[],
+                ...any,
+            ]) =>
+                (d.match(p) ||
+                    (p.match(d) &&
+                        (isPathNameType(mapKey, OptionalKey) &&
+                            patchToGlobalMap(storage, mapKey),
+                        1))) &&
+                dispatchEvent(new CustomEvent(storage.id + mapKey)),
+        ),
+        storageAction<any>(storage.o, storage.s, StorageType.P))
 );
