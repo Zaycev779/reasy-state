@@ -64,7 +64,7 @@ const _createState = <T>(
     initialValues?: T,
     options: Options<T> = {} as Options<T>,
     id = (options.key = E + (options.key || ++EStateId)),
-    storageValues = storageAction(StorageType.G, options, initialValues),
+    storageValues = storageAction(options, initialValues),
     isInit: any = options[GeneratedType.h],
     storage: EStorage = {
         id,

@@ -15,42 +15,31 @@ export const generateMutators = <T extends any>(
     storage: EStorage,
     values: T,
     prevKey: string[] = [],
+    nextKey: string | string[] = prevKey,
+    get = () => getGlobalData(storage, prevKey),
+    set = (arg: any, type: ValueOf<typeof UpdateType>) => (
+        updateStore(storage, prevKey, getParams(arg, get()), type), get()
+    ),
 ): any =>
     reduceAssign<any>(values, (key, val) =>
-        key === Mutators
-            ? reduceAssign(
-                  val,
-                  (
-                      key,
-                      fn,
-                      get = () => getGlobalData(storage, prevKey),
-                      set = (arg: any, type: ValueOf<typeof UpdateType>) => (
-                          updateStore(
-                              storage,
-                              prevKey,
-                              getParams(arg, get()),
-                              type,
+        nextKey === Mutators
+            ? {
+                  [capitalizeKeysToString(concat(prevKey, key))]: (
+                      ...args: any
+                  ) =>
+                      getParams(
+                          val(
+                              {
+                                  get,
+                                  [UpdateType.S]: set,
+                                  [UpdateType.P]: (arg: any) =>
+                                      set(arg, UpdateType.P),
+                              },
+                              get(),
                           ),
-                          get()
+                          ...args,
                       ),
-                  ) => ({
-                      [capitalizeKeysToString(concat(prevKey, key))]: (
-                          ...args: any
-                      ) =>
-                          getParams(
-                              fn(
-                                  {
-                                      get,
-                                      [UpdateType.S]: set,
-                                      [UpdateType.P]: (arg: any) =>
-                                          set(arg, UpdateType.P),
-                                  },
-                                  get(),
-                              ),
-                              ...args,
-                          ),
-                  }),
-              )
+              }
             : isDefaultObject(val) &&
-              generateMutators(storage, val, concat(prevKey, key)),
+              generateMutators(storage, val, concat(prevKey, nextKey), key),
     );

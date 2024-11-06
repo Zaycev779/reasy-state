@@ -1,7 +1,6 @@
 import { Maybe, ValueOf } from "../types";
 import { StorageType } from "../types/store";
 
-export const PATH_MAP_EV_NAME = "#";
 export const Mutators = "mutators";
 export const ArrayMapKey = "*";
 export const OptionalKey = "$";
@@ -14,21 +13,6 @@ export const { assign, entries } = object;
 export const { stringify, parse } = JSON;
 export const isArray = Array.isArray;
 export const isClient = typeof window == "object";
-
-export const getUpdatedPaths = <T extends Record<string, any>>(
-    paths: string[],
-    updatedParams: T,
-    prevValues: T,
-    res: string[][] = [paths],
-): any => (
-    isDefaultObject(updatedParams) &&
-        entries(assign({}, prevValues, updatedParams)).every(
-            ([key, val, c = concat(paths, key)]) =>
-                getUpdatedPaths(c, val, prevValues && prevValues[key], res) &&
-                res.push(c),
-        ),
-    res
-);
 
 export const isDefaultObject = (value: any) =>
     value && value.constructor === object;
@@ -112,16 +96,10 @@ export const slice = <T extends string | any[]>(
     end?: number,
 ) => value.slice(start, end) as T;
 
-const isAFunction = (value: any) => typeof value === typeof isAFunction;
+export const isAFunction = (value: any) => typeof value === typeof isAFunction;
 
 export const getParams = (params: any, ...args: any[]) =>
     isAFunction(params) ? params(...args) : params;
-
-export const getFiltred = (params: any, filterFunc: any) =>
-    isAFunction(filterFunc) ? params.filter(filterFunc) : params;
-
-export const diffValuesBoolean = (prevObject: any, newObject: any) =>
-    stringify(prevObject) !== stringify(newObject);
 
 export const capitalizeName = (name: string) =>
     name && name[0].toUpperCase() + slice(name, 1);

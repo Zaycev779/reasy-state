@@ -243,3 +243,62 @@ it("create emty primitive store", async () => {
     fireEvent.click(getByText("button"));
     await findByText("value: 1");
 });
+
+it("create optional store with any types 2", async () => {
+    const state = createState<Record<string, any>>({ userStore: {} });
+
+    function Page() {
+        const value = state?.use$userStore$value();
+
+        return (
+            <>
+                <div>value: {value || "-"}</div>
+            </>
+        );
+    }
+
+    function Page2() {
+        const value = state?.use$userStore()?.value;
+
+        return (
+            <>
+                <div>value2: {value || "-"}</div>
+            </>
+        );
+    }
+
+    function Button() {
+        return (
+            <button onClick={() => state.set$userStore$value("new value")}>
+                button
+            </button>
+        );
+    }
+    const { getByText, findByText } = render(
+        <>
+            <Page />
+            <Page2 />
+            <Button />
+        </>,
+    );
+    expect(state?.get$userStore()).toStrictEqual({});
+    expect(state?.get$userStore$value()).toBe(undefined);
+    await findByText("value: -");
+    await findByText("value2: -");
+    fireEvent.click(getByText("button"));
+    expect(state?.get()).toStrictEqual({ userStore: { value: "new value" } });
+
+    expect(state?.get$userStore()).toStrictEqual({ value: "new value" });
+
+    await findByText("value: new value");
+    await findByText("value2: new value");
+    expect(state?.get$userStore$value()).toBe("new value");
+    act(() => state.set({ userStore: undefined }));
+    expect(state?.get$userStore()).toBe(undefined);
+    expect(state?.get$userStore$value()).toBe(undefined);
+
+    act(() => state.set$userStore$val2(123));
+
+    expect(state?.get$userStore$value()).toBe(undefined);
+    expect(state?.get$userStore()).toStrictEqual({ val2: 123 });
+});

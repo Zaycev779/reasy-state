@@ -1,7 +1,7 @@
+/* eslint-disable no-restricted-globals */
 import { getGlobalData } from "../global/get";
 import { EStorage } from "../types/store";
-import { createCopy, diffValuesBoolean, PATH_MAP_EV_NAME } from "../utils";
-import { useEvent } from "./use-event.hook";
+import { createCopy, stringify } from "../utils";
 import React from "react";
 
 export const useStoreVal = (
@@ -9,27 +9,23 @@ export const useStoreVal = (
     mapKey: string,
     filterFunc?: any,
 
-    pathKey = storage.m[mapKey],
-    get = (path: string[]) =>
-        createCopy(getGlobalData(storage, path, filterFunc)),
-    prevState: any = get(pathKey),
+    get = () =>
+        createCopy(getGlobalData(storage, storage.m[mapKey], filterFunc)),
+    prevState: any = get(),
+    type = storage.id + mapKey,
 ) => {
-    const [[p, state], set] = React.useState<[string[], any]>([
-        pathKey,
-        prevState,
-    ]);
+    const [state, set] = React.useState<[string[], any]>(prevState);
+    const onTargetEvent = (_: any, values: any = get()) =>
+        stringify(prevState) !== stringify(values) &&
+        (set(values), (prevState = values));
 
-    useEvent(
-        storage.id + p,
-        (values: any = get(p)) =>
-            diffValuesBoolean(prevState, values) &&
-            (set([p, values]), (prevState = values)),
-    );
-
-    useEvent(
-        storage.id + PATH_MAP_EV_NAME + mapKey,
-        (n = storage.m[mapKey]) => set([n, get(n)]),
-        () => diffValuesBoolean(p, pathKey) && set([pathKey, state]),
+    React.useEffect(
+        () => (
+            addEventListener(type, onTargetEvent),
+            () => removeEventListener(type, onTargetEvent)
+        ),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [type],
     );
 
     return state;
