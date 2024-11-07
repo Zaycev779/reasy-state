@@ -107,7 +107,7 @@ export const capitalizeName = (name: string) =>
 export const capitalizeKeysToString = (arr: string[]) =>
     arr.map(capitalizeName).join(EmptyPath);
 
-export const isPathNameType = (name: string | string[], t = ArrayMapKey) =>
+export const isPathNameType = (name: string | any[], t: any = ArrayMapKey) =>
     name.indexOf(t) + 1;
 
 export const reduceAssign = <T extends any>(

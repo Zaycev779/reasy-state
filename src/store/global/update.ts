@@ -1,6 +1,6 @@
 import { storageAction } from "../storage";
 import { EStorage } from "../types/store";
-import { createCopy, getParams, isClient, entries } from "../utils";
+import { createCopy, getParams, isClient, entries, concat } from "../utils";
 import { patchToGlobalMap } from "../maps/maps";
 
 export const updateGlobalData = (
@@ -25,17 +25,14 @@ export const updateStore = <T>(
     updateGlobalData(storage, "s", paths, params, patch),
     update &&
         (entries(storage.m).map(
-            ([
-                mapKey,
-                path,
-                p = path + ",",
-                d = paths + ",",
-                c = storage.c[mapKey],
-            ]: [string, string[], ...any]) =>
+            ([mapKey, path, p = path + ",", d = paths + ","]: [
+                string,
+                string[],
+                ...any,
+            ]) =>
                 d.match(p) +
                     (p.match(d) && patchToGlobalMap(storage, mapKey)) &&
-                c &&
-                c.map(getParams),
+                (storage.c[mapKey] || []).map(getParams),
         ),
         storageAction<any>(storage.o, storage.s))
 );

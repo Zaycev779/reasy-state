@@ -1,7 +1,7 @@
 /* eslint-disable no-restricted-globals */
 import { getGlobalData } from "../global/get";
 import { EStorage } from "../types/store";
-import { concat, createCopy, stringify } from "../utils";
+import { concat, createCopy, isPathNameType, stringify } from "../utils";
 import React from "react";
 
 export const useStoreVal = (
@@ -22,12 +22,10 @@ export const useStoreVal = (
                 stringify(prevState) !== stringify(state) &&
                     set((prevState = state))
             ),
+            c = storage.c,
         ) => (
-            (storage.c[mapKey] = concat(storage.c[mapKey] || [], fn)),
-            () =>
-                (storage.c[mapKey] = storage.c[mapKey].filter(
-                    (f) => f !== fn,
-                )) as any
+            (c[mapKey] = concat(c[mapKey] || [], fn)),
+            () => c[mapKey].splice(isPathNameType(c[mapKey], fn) - 1, 1) as any
         ),
         [mapKey],
     );
