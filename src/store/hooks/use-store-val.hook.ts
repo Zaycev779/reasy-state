@@ -1,7 +1,7 @@
 /* eslint-disable no-restricted-globals */
 import { getGlobalData } from "../global/get";
 import { EStorage } from "../types/store";
-import { createCopy, stringify } from "../utils";
+import { concat, createCopy, stringify } from "../utils";
 import React from "react";
 
 export const useStoreVal = (
@@ -12,19 +12,24 @@ export const useStoreVal = (
     get = () =>
         createCopy(getGlobalData(storage, storage.m[mapKey], filterFunc)),
     prevState: any = get(),
-    type = storage.id + mapKey,
 ) => {
-    const [state, set] = React.useState<[string[], any]>(prevState);
-    const onTargetEvent = (_: any, values: any = get()) =>
-        stringify(prevState) !== stringify(values) && set((prevState = values));
+    let [state, set] = React.useState<[string[], any]>(prevState);
 
     React.useEffect(
-        () => (
-            addEventListener(type, onTargetEvent),
-            () => removeEventListener(type, onTargetEvent)
+        (
+            fn = () => (
+                (state = get()),
+                stringify(prevState) !== stringify(state) &&
+                    set((prevState = state))
+            ),
+        ) => (
+            (storage.c[mapKey] = concat(storage.c[mapKey] || [], fn)),
+            () =>
+                (storage.c[mapKey] = storage.c[mapKey].filter(
+                    (f) => f !== fn,
+                )) as any
         ),
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [type],
+        [mapKey],
     );
 
     return state;

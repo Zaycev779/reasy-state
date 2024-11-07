@@ -25,14 +25,17 @@ export const updateStore = <T>(
     updateGlobalData(storage, "s", paths, params, patch),
     update &&
         (entries(storage.m).map(
-            ([mapKey, path, p = path + ",", d = paths + ","]: [
-                string,
-                string[],
-                ...any,
-            ]) =>
+            ([
+                mapKey,
+                path,
+                p = path + ",",
+                d = paths + ",",
+                c = storage.c[mapKey],
+            ]: [string, string[], ...any]) =>
                 d.match(p) +
                     (p.match(d) && patchToGlobalMap(storage, mapKey)) &&
-                dispatchEvent(new CustomEvent(storage.id + mapKey)),
+                c &&
+                c.map(getParams),
         ),
         storageAction<any>(storage.o, storage.s))
 );

@@ -68,6 +68,7 @@ const _createState = <T>(
         id,
         s: createCopy((!isInit && storageValues) || initialValues),
         o: options,
+        c: {},
     } as EStorage,
 ): IGenerate<CreateResult<T>> => (
     (storage.m = getStaticPath(storage.s)),
