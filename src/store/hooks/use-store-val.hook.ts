@@ -7,24 +7,23 @@ import React from "react";
 export const useStoreVal = (
     storage: EStorage,
     mapKey: string,
+    onLoad: () => void,
     filterFunc?: any,
-
     get = () =>
         createCopy(getGlobalData(storage, storage.m[mapKey], filterFunc)),
     prevState: any = get(),
+    c = storage.c,
 ) => {
-    let [state, set] = React.useState<[string[], any]>(prevState);
+    let [state, set] = React.useState<[string[], any]>(prevState),
+        fn = () => (
+            (state = get()),
+            stringify(prevState) !== stringify(state) &&
+                set((prevState = state))
+        );
 
     React.useEffect(
-        (
-            fn = () => (
-                (state = get()),
-                stringify(prevState) !== stringify(state) &&
-                    set((prevState = state))
-            ),
-            c = storage.c,
-        ) => (
-            (c[mapKey] = concat(c[mapKey] || [], fn)),
+        () => (
+            ((c[mapKey] = concat(c[mapKey] || [], fn)), onLoad()),
             () => c[mapKey].splice(isPathNameType(c[mapKey], fn) - 1, 1) as any
         ),
         [mapKey],

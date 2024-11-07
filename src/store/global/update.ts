@@ -1,6 +1,6 @@
 import { storageAction } from "../storage";
 import { EStorage } from "../types/store";
-import { createCopy, getParams, isClient, entries, concat } from "../utils";
+import { createCopy, getParams, isClient, entries } from "../utils";
 import { patchToGlobalMap } from "../maps/maps";
 
 export const updateGlobalData = (
