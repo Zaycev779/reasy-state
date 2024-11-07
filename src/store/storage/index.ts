@@ -1,11 +1,10 @@
-import { ValueOf } from "../types";
 import { Options, StorageOptions, StorageType } from "../types/store";
 import { mergeDeep, Mutators, parse, stringify, isClient } from "../utils";
 
 export const storageAction = <T>(
     { storage, key }: Options<T>,
     mergeValue: T | undefined,
-    actionType: ValueOf<typeof StorageType> = StorageType.G,
+    actionType?: 1,
     data?: any,
 ): T | undefined => {
     if (storage && isClient) {
@@ -13,10 +12,10 @@ export const storageAction = <T>(
             const type = (storage as StorageOptions<T>).type || localStorage;
             const mutators = (storage as StorageOptions<T>)[Mutators];
 
-            return actionType === StorageType.G
+            return actionType
                 ? (data = type.getItem(key)) &&
                       mergeDeep(
-                          actionType,
+                          StorageType.G,
                           {},
                           mergeValue,
                           mutators,
@@ -25,7 +24,7 @@ export const storageAction = <T>(
                 : type.setItem(
                       key,
                       stringify(
-                          mergeDeep(actionType, {}, mutators, mergeValue),
+                          mergeDeep(StorageType.P, {}, mutators, mergeValue),
                       ),
                   );
         } finally {

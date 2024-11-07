@@ -1,31 +1,32 @@
 /* eslint-disable no-restricted-globals */
 import { getGlobalData } from "../global/get";
 import { EStorage } from "../types/store";
-import { createCopy, stringify } from "../utils";
+import { concat, createCopy, isPathNameType, stringify } from "../utils";
 import React from "react";
 
 export const useStoreVal = (
     storage: EStorage,
     mapKey: string,
+    onLoad: () => void,
     filterFunc?: any,
-
     get = () =>
         createCopy(getGlobalData(storage, storage.m[mapKey], filterFunc)),
     prevState: any = get(),
-    type = storage.id + mapKey,
+    c = storage.c,
 ) => {
-    const [state, set] = React.useState<[string[], any]>(prevState);
-    const onTargetEvent = (_: any, values: any = get()) =>
-        stringify(prevState) !== stringify(values) &&
-        (set(values), (prevState = values));
+    let [state, set] = React.useState<[string[], any]>(prevState),
+        fn = () => (
+            (state = get()),
+            stringify(prevState) !== stringify(state) &&
+                set((prevState = state))
+        );
 
     React.useEffect(
         () => (
-            addEventListener(type, onTargetEvent),
-            () => removeEventListener(type, onTargetEvent)
+            ((c[mapKey] = concat(c[mapKey] || [], fn)), onLoad()),
+            () => c[mapKey].splice(isPathNameType(c[mapKey], fn) - 1, 1) as any
         ),
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [type],
+        [mapKey],
     );
 
     return state;

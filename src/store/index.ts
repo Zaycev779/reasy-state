@@ -12,8 +12,6 @@ import {
     IGenerate,
     IStore,
     Options,
-    StorageType,
-    UpdateType,
     WithM,
     WithoutM,
 } from "./types/store";
@@ -23,7 +21,6 @@ import {
     generateArray,
     split,
     slice,
-    isClient,
     isPathNameType,
 } from "./utils";
 import { updateStore } from "./global/update";
@@ -64,12 +61,13 @@ const _createState = <T>(
     initialValues?: T,
     options: Options<T> = {} as Options<T>,
     id = (options.key = E + (options.key || ++EStateId)),
-    storageValues = storageAction(options, initialValues),
+    storageValues = storageAction(options, initialValues, 1),
     isInit: any = options[GeneratedType.h],
     storage: EStorage = {
         id,
         s: createCopy((!isInit && storageValues) || initialValues),
         o: options,
+        c: {},
     } as EStorage,
 ): IGenerate<CreateResult<T>> => (
     (storage.m = getStaticPath(storage.s)),
@@ -79,13 +77,7 @@ const _createState = <T>(
             name: string,
             proxy: typeof Proxy,
             [, type, mapKey] = split(name, /(SSR|[^A-Z$]+)(.*)/),
-            storageInit = () => (
-                (isInit = 0),
-                storageValues &&
-                    requestAnimationFrame(() =>
-                        updateStore<T>(storage, [], storageValues),
-                    )
-            ),
+            fIsInit: any = isInit,
         ): any => {
             if (name === GeneratedType.h) return proxy;
 
@@ -93,32 +85,49 @@ const _createState = <T>(
                 target[capitalizeKeysToString(split(name))] ||
                 (patchToGlobalMap(storage, mapKey),
                 (...args: any) => {
-                    const basePath = storage.m[mapKey],
+                    let basePath = storage.m[mapKey],
                         [filterFunc, arrParams] = args,
                         arrIdx = isPathNameType(basePath),
-                        isH = type === GeneratedType.H,
+                        SSR = type === GeneratedType.H,
                         path = arrIdx
                             ? slice(basePath, 0, arrIdx - 1)
-                            : basePath;
-
-                    isInit && storageInit();
-
-                    switch (type) {
-                        case GeneratedType.U:
-                            if (isClient)
-                                // eslint-disable-next-line react-hooks/rules-of-hooks
-                                return useStoreVal(storage, mapKey, filterFunc);
-
-                        case GeneratedType.G:
-                            return getGlobalData(storage, basePath, filterFunc);
-                        default:
-                            (args.length < 2 || arrIdx || isH) &&
+                            : basePath,
+                        onLoad = () =>
+                            fIsInit &&
+                            ((fIsInit = 0),
+                            storageValues &&
                                 updateStore(
                                     storage,
                                     path,
-                                    isH
+                                    getGlobalData(
+                                        { s: storageValues } as EStorage,
+                                        path,
+                                    ),
+                                ));
+
+                    switch (type) {
+                        case GeneratedType.U:
+                            return useStoreVal(
+                                storage,
+                                mapKey,
+                                onLoad,
+                                filterFunc,
+                            );
+
+                        case GeneratedType.G:
+                            return (
+                                onLoad(),
+                                getGlobalData(storage, basePath, filterFunc)
+                            );
+
+                        default:
+                            (args.length < 2 || arrIdx || SSR) &&
+                                updateStore(
+                                    storage,
+                                    path,
+                                    SSR
                                         ? filterFunc.value
-                                        : type === UpdateType.S
+                                        : type === GeneratedType.S
                                         ? arrIdx
                                             ? generateArray(
                                                   slice(basePath, arrIdx),
@@ -128,8 +137,8 @@ const _createState = <T>(
                                               )
                                             : filterFunc
                                         : initialValues,
-                                    UpdateType.S,
-                                    !isH,
+                                    0,
+                                    !SSR,
                                 );
                     }
                 })
