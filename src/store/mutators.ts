@@ -1,6 +1,5 @@
 import { getGlobalData } from "./global/get";
 import { updateStore } from "./global/update";
-import { ValueOf } from "./types";
 import { EStorage, UpdateType } from "./types/store";
 import {
     capitalizeKeysToString,
@@ -17,8 +16,8 @@ export const generateMutators = <T extends any>(
     prevKey: string[] = [],
     nextKey: string | string[] = prevKey,
     get = () => getGlobalData(storage, prevKey),
-    set = (arg: any, type: ValueOf<typeof UpdateType>) => (
-        updateStore(storage, prevKey, getParams(arg, get()), type), get()
+    set = (arg: any, patch?: 0 | 1) => (
+        updateStore(storage, prevKey, getParams(arg, get()), patch), get()
     ),
 ): any =>
     reduceAssign<any>(values, (key, val) =>
@@ -32,8 +31,7 @@ export const generateMutators = <T extends any>(
                               {
                                   get,
                                   [UpdateType.S]: set,
-                                  [UpdateType.P]: (arg: any) =>
-                                      set(arg, UpdateType.P),
+                                  [UpdateType.P]: (arg: any) => set(arg, 1),
                               },
                               get(),
                           ),

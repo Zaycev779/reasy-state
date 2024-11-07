@@ -16,8 +16,7 @@ export const useStoreVal = (
 ) => {
     const [state, set] = React.useState<[string[], any]>(prevState);
     const onTargetEvent = (_: any, values: any = get()) =>
-        stringify(prevState) !== stringify(values) &&
-        (set(values), (prevState = values));
+        stringify(prevState) !== stringify(values) && set((prevState = values));
 
     React.useEffect(
         () => (

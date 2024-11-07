@@ -12,8 +12,6 @@ import {
     IGenerate,
     IStore,
     Options,
-    StorageType,
-    UpdateType,
     WithM,
     WithoutM,
 } from "./types/store";
@@ -64,7 +62,7 @@ const _createState = <T>(
     initialValues?: T,
     options: Options<T> = {} as Options<T>,
     id = (options.key = E + (options.key || ++EStateId)),
-    storageValues = storageAction(options, initialValues),
+    storageValues = storageAction(options, initialValues, 1),
     isInit: any = options[GeneratedType.h],
     storage: EStorage = {
         id,
@@ -79,13 +77,6 @@ const _createState = <T>(
             name: string,
             proxy: typeof Proxy,
             [, type, mapKey] = split(name, /(SSR|[^A-Z$]+)(.*)/),
-            storageInit = () => (
-                (isInit = 0),
-                storageValues &&
-                    requestAnimationFrame(() =>
-                        updateStore<T>(storage, [], storageValues),
-                    )
-            ),
         ): any => {
             if (name === GeneratedType.h) return proxy;
 
@@ -96,12 +87,17 @@ const _createState = <T>(
                     const basePath = storage.m[mapKey],
                         [filterFunc, arrParams] = args,
                         arrIdx = isPathNameType(basePath),
-                        isH = type === GeneratedType.H,
+                        SSR = type === GeneratedType.H,
                         path = arrIdx
                             ? slice(basePath, 0, arrIdx - 1)
                             : basePath;
 
-                    isInit && storageInit();
+                    isInit &&
+                        ((isInit = 0),
+                        storageValues &&
+                            requestAnimationFrame(() =>
+                                updateStore<T>(storage, [], storageValues),
+                            ));
 
                     switch (type) {
                         case GeneratedType.U:
@@ -111,14 +107,15 @@ const _createState = <T>(
 
                         case GeneratedType.G:
                             return getGlobalData(storage, basePath, filterFunc);
+
                         default:
-                            (args.length < 2 || arrIdx || isH) &&
+                            (args.length < 2 || arrIdx || SSR) &&
                                 updateStore(
                                     storage,
                                     path,
-                                    isH
+                                    SSR
                                         ? filterFunc.value
-                                        : type === UpdateType.S
+                                        : type === GeneratedType.S
                                         ? arrIdx
                                             ? generateArray(
                                                   slice(basePath, arrIdx),
@@ -128,8 +125,8 @@ const _createState = <T>(
                                               )
                                             : filterFunc
                                         : initialValues,
-                                    UpdateType.S,
-                                    !isH,
+                                    0,
+                                    !SSR,
                                 );
                     }
                 })

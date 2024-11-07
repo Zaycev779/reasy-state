@@ -4,6 +4,7 @@ import { Flatten } from "./flatten";
 export type EStorage<T = any> = {
     s: Record<string, any>;
     m: Record<string, string[]>;
+    c: Record<string, () => void>;
     id: string;
     o: Options<T>;
 };

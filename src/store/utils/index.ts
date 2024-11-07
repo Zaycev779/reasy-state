@@ -17,8 +17,8 @@ export const isClient = typeof window == "object";
 export const isDefaultObject = (value: any) =>
     value && value.constructor === object;
 
-export const createCopy = (value: any) =>
-    isDefaultObject(value) ? mergeDeep(0, {}, value) : value;
+export const createCopy = (value: any, prev: any = {}) =>
+    isDefaultObject(value) ? mergeDeep(0, prev, value) : value;
 
 export const concat = (target: any[] | string, ...arrays: any): any =>
     target.concat(...arrays);
@@ -66,12 +66,12 @@ export const generateArray = (
     keys: string[],
     prev: any,
     newValue: any,
-    filterFunc: Function = () => 1,
+    filterFunc?: Function,
 ) =>
     isArray(prev)
         ? (prev as any[]).map(
               (_prevVal, _1, _2, prevVal = createCopy(_prevVal)) => {
-                  filterFunc(prevVal) &&
+                  (!filterFunc || filterFunc(prevVal)) &&
                       keys.reduce(
                           (pr, key, idx) =>
                               pr &&
