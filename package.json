@@ -1,6 +1,6 @@
 {
   "name": "reasy-state",
-  "version": "1.0.62",
+  "version": "1.0.63",
   "description": "reasy-state - A state management library for React",
   "main": "dist/index.cjs.js",
   "module": "dist/index.mjs",
