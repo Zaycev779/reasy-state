@@ -1,5 +1,5 @@
 import { getGlobalData } from "./global/get";
-import { useStoreVal } from "./hooks/use-store-val.hook";
+import { useStore } from "./hooks/use-store-val.hook";
 import { getStaticPath, patchToGlobalMap } from "./maps/maps";
 import { generateMutators } from "./mutators";
 import { storageAction } from "./storage";
@@ -8,6 +8,7 @@ import {
     CreateResult,
     CreateState,
     EStorage,
+    First,
     GeneratedType,
     IGenerate,
     IStore,
@@ -47,8 +48,8 @@ export function createState<T>(): {
             }
                 ? IsUndefined<T, keyof T, Partial<U>, U>
                 : unknown extends T
-                ? U
-                : T
+                  ? U
+                  : T
         >,
         CreateResult<IsUndefined<U, keyof U, Partial<WithoutM<T>>, WithoutM<T>>>
     >;
@@ -76,11 +77,13 @@ const _createState = <T>(
             target: any,
             name: string,
             proxy: typeof Proxy,
-            [, type, mapKey] = split(name, /(SSR|[^A-Z$]+)(.*)/),
+            [, type, first, mapKey] = split(
+                name,
+                /(SSR|(?:[^A-Z$]+(First|)?))(.*)/,
+            ),
             fIsInit: any = isInit,
         ): any => {
             if (name === GeneratedType.h) return proxy;
-
             return (
                 target[capitalizeKeysToString(split(name))] ||
                 (patchToGlobalMap(storage, mapKey),
@@ -106,18 +109,25 @@ const _createState = <T>(
                                 ));
 
                     switch (type) {
+                        case `${GeneratedType.U}${First}`:
                         case GeneratedType.U:
-                            return useStoreVal(
+                            return useStore(
                                 storage,
                                 mapKey,
                                 onLoad,
                                 filterFunc,
+                                first,
                             );
-
+                        case `${GeneratedType.G}${First}`:
                         case GeneratedType.G:
                             return (
                                 onLoad(),
-                                getGlobalData(storage, basePath, filterFunc)
+                                getGlobalData(
+                                    storage,
+                                    basePath,
+                                    filterFunc,
+                                    first,
+                                )
                             );
 
                         default:
@@ -128,15 +138,18 @@ const _createState = <T>(
                                     SSR
                                         ? filterFunc.value
                                         : type === GeneratedType.S
-                                        ? arrIdx
-                                            ? generateArray(
-                                                  slice(basePath, arrIdx),
-                                                  getGlobalData(storage, path),
-                                                  arrParams,
-                                                  filterFunc,
-                                              )
-                                            : filterFunc
-                                        : initialValues,
+                                          ? arrIdx
+                                              ? generateArray(
+                                                    slice(basePath, arrIdx),
+                                                    getGlobalData(
+                                                        storage,
+                                                        path,
+                                                    ),
+                                                    arrParams,
+                                                    filterFunc,
+                                                )
+                                              : filterFunc
+                                          : initialValues,
                                     0,
                                     !SSR,
                                 );

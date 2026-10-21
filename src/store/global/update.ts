@@ -3,7 +3,7 @@ import { EStorage } from "../types/store";
 import { createCopy, getParams, isClient, entries } from "../utils";
 import { patchToGlobalMap } from "../maps/maps";
 
-export const updateGlobalData = (
+export const updateData = (
     src: Record<string, any>,
     path: string,
     [next, ...rest]: string[],
@@ -12,7 +12,7 @@ export const updateGlobalData = (
     target = src[path],
 ): any =>
     next
-        ? updateGlobalData((src[path] = target || {}), next, rest, data, patch)
+        ? updateData((src[path] = target || {}), next, rest, data, patch)
         : (src[path] = createCopy(getParams(data, target), patch && target));
 
 export const updateStore = <T>(
@@ -22,7 +22,7 @@ export const updateStore = <T>(
     patch?: 0 | 1,
     update: 0 | boolean = isClient,
 ) => (
-    updateGlobalData(storage, "s", paths, params, patch),
+    updateData(storage, "s", paths, params, patch),
     update &&
         (entries(storage.m).map(
             ([mapKey, path, p = path + ",", d = paths + ","]: [

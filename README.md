@@ -192,7 +192,7 @@ const { useValue, add } = createState<State>()({
 
 ```jsx
 // page.tsx
-import { useValue, inc } from "./store.ts";
+import { useValue, add } from "./store.ts";
 
 export const Page = () => {
     const value = useValue();
@@ -231,11 +231,13 @@ export const { useUserStore$data$rating } = createState({ userStore });
 
 You can use arrays parameters functions using the `$` sign
 
-For array element `set`, `get` and `use` functions, you can use a filter to specify which elements you need to get or change
+For array element `set`, `getFirst`, `use`, `useFirst` functions, you can use a filter to specify which elements you need to get or change
 
 ```jsx
 get`[...functionName]`(filterFunction?);
 use`[...functionName]`(filterFunction?);
+getFirst`[...functionName]`(filterFunction?);
+useFirst`[...functionName]`(filterFunction?);
 set`[...functionName]`(filterFunction, newValue);
 ```
 
@@ -267,6 +269,7 @@ export const {
 ```jsx
 export const Ratings = () => {
     const ratings = useUserStoreSubscribers$rating(({ rating }) => rating);
+    const ratingById3 = useFirstUserStoreSubscribers$rating(({ rating }) => rating);
 
     const add = () =>
         setUserStoreSubscribers$rating(
@@ -278,6 +281,7 @@ export const Ratings = () => {
 
     return (
         <div>
+            <p>Rating By Id 3 = {ratingById3}</p>
             <p>Positive ratings = {ratings.join(",")}</p>
             <button onClick={add}>Add rating for id 2</button>
             <button onClick={clear}>Clear rating for all</button>

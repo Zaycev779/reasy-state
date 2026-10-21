@@ -623,7 +623,7 @@ it("deep array store", async () => {
                 val:{" "}
                 {!Array.isArray(value)
                     ? "-"
-                    : value?.map(({ obj }) => obj.val).join(",") ?? "-"}
+                    : (value?.map(({ obj }) => obj.val).join(",") ?? "-")}
             </div>
         );
     }
@@ -635,7 +635,7 @@ it("deep array store", async () => {
                 ids:{" "}
                 {!Array.isArray(value)
                     ? "-"
-                    : value?.map(({ id }) => id).join(",") ?? "-"}
+                    : (value?.map(({ id }) => id).join(",") ?? "-")}
             </div>
         );
     }
@@ -644,7 +644,7 @@ it("deep array store", async () => {
         const value = arrayStore.use$arrs$arr((val) => val.arr);
         return (
             <div>
-                arr: {!Array.isArray(value) ? "-" : value?.join(",") ?? "-"}
+                arr: {!Array.isArray(value) ? "-" : (value?.join(",") ?? "-")}
             </div>
         );
     }
@@ -653,7 +653,7 @@ it("deep array store", async () => {
         const value = arrayStore.use$arrs$obj$oarr((val) => val.obj.oarr);
         return (
             <div>
-                oarr: {!Array.isArray(value) ? "-" : value?.join(",") ?? "-"}
+                oarr: {!Array.isArray(value) ? "-" : (value?.join(",") ?? "-")}
             </div>
         );
     }
@@ -664,7 +664,8 @@ it("deep array store", async () => {
         );
         return (
             <div>
-                objarr: {!Array.isArray(value) ? "-" : value?.join(",") ?? "-"}
+                objarr:{" "}
+                {!Array.isArray(value) ? "-" : (value?.join(",") ?? "-")}
             </div>
         );
     }
@@ -673,7 +674,7 @@ it("deep array store", async () => {
         const value = arrayStore.use$arrs$arr2(({ arr2 }) => arr2);
         return (
             <div>
-                arr2: {!Array.isArray(value) ? "-" : value?.join(",") ?? "-"}
+                arr2: {!Array.isArray(value) ? "-" : (value?.join(",") ?? "-")}
             </div>
         );
     }
@@ -900,7 +901,7 @@ it("deep array store 3", async () => {
         const value = arrayStore.use$arrs$id();
         return (
             <div>
-                ids: {!Array.isArray(value) ? "-" : value?.join(",") ?? "-"}
+                ids: {!Array.isArray(value) ? "-" : (value?.join(",") ?? "-")}
             </div>
         );
     }
@@ -909,7 +910,8 @@ it("deep array store 3", async () => {
         const value = arrayStore.use$arrs$obj$objArr$value();
         return (
             <div>
-                objArr: {!Array.isArray(value) ? "-" : value?.join(",") ?? "-"}
+                objArr:{" "}
+                {!Array.isArray(value) ? "-" : (value?.join(",") ?? "-")}
             </div>
         );
     }
@@ -1050,5 +1052,35 @@ it("deep array store 3", async () => {
                 arr2: [],
             },
         ]),
+    );
+});
+
+it("first element in array", async () => {
+    type Data = {
+        store?: {
+            value: string;
+            array: { id: number; name: string }[];
+        };
+    };
+
+    const {
+        get$store$array$id,
+        getFirst$store$array$id,
+        getFirst$store$array$name,
+        set$store$array,
+    } = createState<Data>()();
+
+    expect(getFirst$store$array$id()).toBe(undefined);
+    set$store$array([
+        { id: 1, name: "test1" },
+        { id: 2, name: "test2" },
+        { id: 3, name: "test3" },
+    ]);
+    expect(get$store$array$id()).toStrictEqual([1, 2, 3]);
+
+    expect(getFirst$store$array$id()).toStrictEqual(1);
+
+    expect(getFirst$store$array$name(({ id }) => id === 2)).toStrictEqual(
+        "test2",
     );
 });

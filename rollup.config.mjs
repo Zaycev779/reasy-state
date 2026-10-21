@@ -28,24 +28,24 @@ export default [{
                 }),
             ] 
         },
-        { 
-            file: "dist/index.esm.js", 
-            format: "esm", 
+        {
+            file: "dist/index.mjs",
+            format: "esm",
             sourcemap: false,
             plugins: [
                 terser({
-                ecma: 2020,
-                mangle: { toplevel: true },
-                compress: {
-                    module: true,
-                    toplevel: true,
-                    unsafe_arrows: true,
-                    drop_console: true,
-                    passes: 2,
-                },
-                output: { quote_style: 1 }
-                })
-            ] 
+                    ecma: 2020,
+                    mangle: { toplevel: true },
+                    compress: {
+                        module: true,
+                        toplevel: true,
+                        unsafe_arrows: true,
+                        drop_console: true,
+                        passes: 2,
+                    },
+                    output: { quote_style: 1 },
+                }),
+            ],
         },
     ],
     plugins: [

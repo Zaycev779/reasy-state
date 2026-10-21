@@ -29,6 +29,7 @@ export const StorageType = {
 } as const;
 
 type M = "mutators";
+export const First = "First";
 
 export type CreateState<T, PT = T, D = PT> = T extends {
     [K: string]: unknown;
@@ -74,8 +75,11 @@ type MTyping<PT, WPT = WithoutM<PT>> = PT extends {
           [K in keyof T]: T[K] extends (...args: infer D) => Promise<void>
               ? (s: SetFn<WPT>, prev: WPT) => (...args: D) => ReturnType<T[K]>
               : T[K] extends (...args: infer D) => void
-              ? (fn: SetFn<WPT>, prev: WPT) => (...args: D) => ReturnType<T[K]>
-              : (fn: SetFn<WPT>, prev: WPT) => T[K];
+                ? (
+                      fn: SetFn<WPT>,
+                      prev: WPT,
+                  ) => (...args: D) => ReturnType<T[K]>
+                : (fn: SetFn<WPT>, prev: WPT) => T[K];
       }
     : never;
 
@@ -88,8 +92,8 @@ export type WithM<T> = T extends {
               [K in keyof T]: K extends M
                   ? T[K]
                   : WithM<T[K]> extends infer Y
-                  ? Y
-                  : never;
+                    ? Y
+                    : never;
           } & {
               [K in M]?: {
                   [k in string]: (
@@ -106,15 +110,15 @@ type SetM<T> = T extends (...args: infer X) => infer D
             ? S
             : () => Promise<S>
         : D extends Function
-        ? D
-        : () => D
+          ? D
+          : () => D
     : T extends {
-          [K in string]: unknown;
-      }
-    ? {
-          [K in keyof T]: SetM<T[K]> extends infer Y ? Y : never;
-      }
-    : T;
+            [K in string]: unknown;
+        }
+      ? {
+            [K in keyof T]: SetM<T[K]> extends infer Y ? Y : never;
+        }
+      : T;
 
 type PickObj<T> = {
     [K in keyof T as K extends M ? never : K]: PickM<T[K]>;
@@ -134,19 +138,20 @@ export type CreateResult<T> = PickM<SetM<T>>;
 
 export type IStore<T = Record<string, any>> = T;
 
-type IStaticFunc<T, U, N extends ValueOf<typeof GeneratedType>> = {
-    [P in keyof (T & U) as FuncName<T & U, P, N>]: P extends keyof T
-        ? IStaticRes<T, P, N>
+type IStaticFunc<T, U, N extends ValueOf<typeof GeneratedType>, F = false> = {
+    [P in keyof (T & U) as FuncName<T & U, P, N, F>]: P extends keyof T
+        ? IStaticRes<T, P, N, F>
         : P extends keyof U
-        ? IStaticRes<U, P, N>
-        : unknown;
+          ? IStaticRes<U, P, N, F>
+          : unknown;
 };
 
 type IStaticRes<
     T,
     P extends keyof T,
     N extends ValueOf<typeof GeneratedType>,
-> = N extends typeof GeneratedType.S ? FuncSet<T, P> : FuncGet<T, P>;
+    F,
+> = N extends typeof GeneratedType.S ? FuncSet<T, P> : FuncGet<T, P, F>;
 
 type FName<P> = IsArray<P, never, Uncapitalize<P & string>>;
 type IFn<T, U> = {
@@ -165,19 +170,20 @@ type FuncName<
     T,
     P extends keyof T,
     N extends ValueOf<typeof GeneratedType>,
+    F = false,
 > = T[P] extends Function | void | AnyFunc
     ? P extends `${infer X}[]${infer Y}`
-        ? `${N}${KeyCapitalize<X>}${KeyCapitalize<Y>}`
+        ? `${N}${F extends true ? typeof First | "" : ""}${KeyCapitalize<X>}${KeyCapitalize<Y>}`
         : never
     : `${N}${KeyCapitalize<P>}`;
 
-type FuncGet<T, P extends keyof T> = IsArray<
+type FuncGet<T, P extends keyof T, F> = IsArray<
     P,
     T[P] extends (arg: infer A) => infer D
         ? (
               arg?: A,
           ) =>
-              | (D extends any[] ? D : D[])
+              | (D extends any[] ? D : F extends true ? D : D[])
               | (P extends `${string}$${string}[]${string}` ? undefined : never)
         : never,
     () => T[P] | (P extends `${string}$${string}` ? undefined : never)
@@ -201,6 +207,8 @@ type IResetFunc = {
 export type IGenerateFn<T, U> = IStaticFunc<T, U, typeof GeneratedType.G> &
     IStaticFunc<T, U, typeof GeneratedType.S> &
     IStaticFunc<T, U, typeof GeneratedType.U> &
+    IStaticFunc<T, U, typeof GeneratedType.G, true> &
+    IStaticFunc<T, U, typeof GeneratedType.U, true> &
     IFn<T, U>;
 
 export type IGenerate<T, U = unknown> = IGenerateFn<Flatten<T>, Flatten<U>> &
@@ -227,8 +235,8 @@ type ISSRFunc<
     [P in keyof U as U[P] extends AnyFunc
         ? never
         : P extends `${string | ""}$${string}`
-        ? FuncName<U, P, N>
-        : never]: ISSRComp<U[P]>;
+          ? FuncName<U, P, N>
+          : never]: ISSRComp<U[P]>;
 };
 
 export type Options<T> = {
@@ -262,8 +270,8 @@ type StorageM<T> = T extends {
           [K in keyof T]?: StorageM<T[K]> extends infer R ? R : never;
       }
     : T extends undefined
-    ? never
-    : FStorage<T>;
+      ? never
+      : FStorage<T>;
 
 type FStorage<T> = {
     (

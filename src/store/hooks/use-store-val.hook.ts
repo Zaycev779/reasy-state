@@ -1,16 +1,19 @@
 /* eslint-disable no-restricted-globals */
 import { getGlobalData } from "../global/get";
 import { EStorage } from "../types/store";
-import { concat, createCopy, isPathNameType, stringify } from "../utils";
+import { concat, createCopy, stringify } from "../utils";
 import React from "react";
 
-export const useStoreVal = (
+export const useStore = (
     storage: EStorage,
     mapKey: string,
     onLoad: () => void,
     filterFunc?: any,
+    first?: any,
     get = () =>
-        createCopy(getGlobalData(storage, storage.m[mapKey], filterFunc)),
+        createCopy(
+            getGlobalData(storage, storage.m[mapKey], filterFunc, first),
+        ),
     prevState: any = get(),
     c = storage.c,
 ) => {
@@ -24,7 +27,7 @@ export const useStoreVal = (
     React.useEffect(
         () => (
             ((c[mapKey] = concat(c[mapKey] || [], fn)), onLoad()),
-            () => c[mapKey].splice(isPathNameType(c[mapKey], fn) - 1, 1) as any
+            () => c[mapKey].splice(c[mapKey].indexOf(fn), 1) as any
         ),
         [mapKey],
     );

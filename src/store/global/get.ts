@@ -5,11 +5,16 @@ export const getGlobalData = <T extends EStorage>(
     { s: src }: T,
     path: string[],
     filterFunc?: () => void,
+    first?: any,
 ) => {
     path.every((p, i) =>
         isPathNameType(p)
             ? ((src = arrayPathReduce(
-                  isAFunction(filterFunc) ? src.filter(filterFunc) : src,
+                  isAFunction(filterFunc)
+                      ? src?.[first ? "find" : "filter"](filterFunc)
+                      : first
+                        ? src[0]
+                        : src,
                   slice(path, i + 1),
               )),
               0)

@@ -5,19 +5,19 @@
         "emitDecoratorMetadata": true,
         "experimentalDecorators": true,
         "allowSyntheticDefaultImports": true,
-        "target": "es5",
+        "target": "es6",
         "module": "esnext",
         "sourceMap": true,
-        "baseUrl": "./",
-        "incremental": true,
+         "incremental": true,
         "strict": true,
         "noImplicitAny": false,
         "jsx": "react-jsx",
         "declaration": true,
         "declarationDir": "types",
         "emitDeclarationOnly": true,
-        "moduleResolution":"node",
+        "moduleResolution":"bundler",
         "paths": {
+            "@/*": ["./src/*"],
             "reasy-state": ["./src/index.ts"],
             "reasy-state/*": ["./src/*.ts"]
         }
